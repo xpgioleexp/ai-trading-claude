@@ -203,7 +203,7 @@ Each phase ends with something you can play. The game stays working the whole ti
 **The same rules apply to every asset:**
 - PNG with a transparent background, pixel art, no blur, no anti-aliasing
 - Exact sizes as listed. Tiles are 32×32, characters 32×48.
-- Light comes from the upper left. Use the palette in `design/ART-DIRECTION.md`.
+- Light comes from the upper left. Palette: grass `#A8BE7C`, foliage `#6F925B`, wood `#B88D60`, water `#79AAA4`, panels `#F3E9CF`, outlines `#38493D`, rose accent `#C68F89`.
 - Each animation is a horizontal strip of equal frames. The character's feet stay on the same pixel row in every frame.
 - One file per asset or strip, named as in the lists below (for example `avatar_walk_down.png`).
 - No text drawn inside images. All text comes from code.
