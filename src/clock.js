@@ -5,17 +5,40 @@ export const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
 // One season per real week (plan decision 4, recommended option).
 export const DAYS_PER_SEASON = 7;
 
-// Days since 1970-01-01 in the device's local calendar.
-export function dayNumber(date) {
+// Days since 1970-01-01 in the given time zone (the device's when none is set).
+// Both partners use the jar's shared time zone, so a new day starts for both at once.
+export function dayNumber(date, timeZone) {
+  if (timeZone) {
+    try {
+      const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
+        .format(date).split('-').map(Number);
+      return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+    } catch {
+      // Unknown zone: fall back to the device calendar.
+    }
+  }
   return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
 }
 
+export function deviceTimeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+// Seasons follow Monday-to-Sunday weeks. Day 4 (1970-01-05) was a Monday.
 export function seasonOf(day) {
-  return SEASONS[Math.floor(day / DAYS_PER_SEASON) % SEASONS.length];
+  return SEASONS[Math.floor((day + 3) / DAYS_PER_SEASON) % SEASONS.length];
 }
 
 export function dayOfSeason(day) {
-  return (day % DAYS_PER_SEASON) + 1;
+  return ((day + 3) % DAYS_PER_SEASON) + 1;
+}
+
+export function dateOfDay(day) {
+  return new Date(day * 86400000).toISOString().slice(0, 10);
 }
 
 export function weatherOf(seed, day) {

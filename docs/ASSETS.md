@@ -63,6 +63,32 @@ Give this page to ChatGPT (or any artist) when asking for art. Every piece the g
 | `bunny_0_0`, `bunny_1_0`, `bunny_0_1` | 14 × 12 | Bunny standing, mid-hop, and asleep |
 | `fx_heart` | 7 × 6 | Small heart |
 
+### Couple places
+| Name | Size | What |
+|---|---|---|
+| `board_plain`, `board_new` | 18 × 26 | Notice board; `_new` has a red pin for an unfinished mission |
+| `well_0`, `well_1`, `well_2` | 20 × 28 | Wishing well with 0, 1 or 2 little lights in it |
+| `picnic` | 32 × 14 | Picnic blanket with a basket, lying flat |
+| `easel` | 16 × 26 | Small easel holding a calendar page |
+
+### Animals
+| Name | Size | What |
+|---|---|---|
+| `animal_<species>_<frame>_<asleep>_<inWater>` | frog 14 × 12, turtle 16 × 12, snail 14 × 11, marimo 12 × 12 | `frame` 0 or 1 (moving), `asleep` 0 or 1, `inWater` 0 or 1 (frog, turtle, marimo). The bunny keeps its `bunny_*` names |
+| `fx_note`, `fx_bubble`, `fx_sparkle`, `fx_zzz` | 6–7 px | Music note, bubble, sparkle, sleeping z |
+
+### Decorations
+`decor_<type>` at 16 × 16. Trees are 24 × 34 and seasonal: `decor_<type>_<season>`.
+- **Trees:** pine, oak, birch, willow, cherry, sapling
+- **Plants:** bush, pumpkin, reeds, fern, mushroom, tallmushroom, moss, clover, puddle, lilypad
+- **Flowers:** lavender, sunflower, butterflies, daisy, flower, blueflower, bellflower
+- **Paths:** pathstone, pathwood
+- **Furniture:** fence, bridge, birdhouse, hammock, picnic, mailbox, signpost, log, stump, seat
+- **Homes:** tent, cabin, treehouse
+- **Lights:** campfire, windchime, lantern, fireflyjar, fairylights
+- **Animal care:** waterbowl, foodbowl, petbed, tunnel
+- **Treasures:** crystal, stone, riverstone
+
 ### Mine
 | Name | Size | What |
 |---|---|---|

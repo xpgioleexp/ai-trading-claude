@@ -1,13 +1,21 @@
-// Little Us terrarium: game loop, input and the actions for each object in the jar.
+// Little Us terrarium: game loop, input and the actions for each place in the jar.
 import * as R from './rules.js';
-import { ITEMS, ROD_ZONE, MINE_LAYERS } from './data.js';
-import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay } from './clock.js';
-import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, forageTiles } from './world.js';
+import { ITEMS, ROD_ZONE, MINE_LAYERS, FORAGE } from './data.js';
+import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay, deviceTimeZone } from './clock.js';
+import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
 import { drawScene, tileCenter, pointToTile, W, H } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
 import { DIRS } from './avatar.js';
 import * as UI from './ui.js';
+import { C, loadContent, weekOf } from './content.js';
+import { cloud, connect, setDoc, privatePath } from './cloud.js';
+import { S, startShared, onShared, partnerId, saveBed, shareLook, rainingNow } from './shared.js';
+import { adopted, makeResident, updateResident, startMotion, adopt } from './animals.js';
+import { FLAT_DECOR } from './sprites-more.js';
+import * as T from './together.js';
+import { openBuild, placeDecor, openAnimal, openMore } from './places.js';
+import { openHangout, startHangout } from './hangout.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -30,12 +38,20 @@ function loadSave() {
   }
 }
 
+let cloudTimer = null;
 function save() {
+  g.state.savedAt = Date.now();
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(g.state));
   } catch {
     // Storage can be blocked (private windows). The game still plays.
   }
+  // Your own progress also follows you to your other devices.
+  if (cloud.mode === 'cloud') {
+    clearTimeout(cloudTimer);
+    cloudTimer = setTimeout(() => setDoc(privatePath('game'), { state: g.state, savedAt: g.state.savedAt }).catch(() => {}), 1500);
+  }
+  shareLook(g.state.avatar);
 }
 
 function newSeed() {
@@ -47,26 +63,56 @@ function newSeed() {
 function refreshClock() {
   g.date = new Date();
   const hour = g.debugHour ?? g.date.getHours();
-  g.today = dayNumber(g.date) + (g.state.dayOffset || 0);
+  g.today = dayNumber(g.date, S.world?.timeZone) + (g.state.dayOffset || 0);
   g.season = seasonOf(g.today);
-  g.weather = weatherOf(g.state.seed, g.today);
+  g.weather = rainingNow() ? (g.season === 'winter' ? 'snow' : 'rain') : weatherOf(g.state.seed, g.today);
   g.hour = hour;
   g.night = isNightHour(hour);
   g.part = partOfDay(hour);
-  g.unreadMail = g.state.mailRead !== g.today;
+  g.unreadMail = g.state.mailRead !== g.today || (C.ready && T.unreadNotes(g) > 0);
+  const week = weekOf(g.today);
+  g.boardNew = C.ready && S.missions[`${week}--${cloud.me}`]?.state !== 'done';
+  g.wellLights = Math.min(2, Object.keys(S.discoveries['old-well']?.lights || {}).length);
 }
 
 function checkNewDay() {
   refreshClock();
   const events = R.rollover(g.state, g.today);
+  if (g.scene === 'jar') {
+    if (g.night) T.noticeDiscovery('firefly-grove');
+    if (g.weather === 'rain') T.noticeDiscovery('rain-pool');
+  }
   if (!events.length && g.state.daily.day === g.today && g.lastDay === g.today) return;
   g.lastDay = g.today;
   if (g.scene === 'mine') leaveMine();
   for (const e of events) {
     if (e.type === 'payout') UI.toast(`Good morning! The crate paid ${e.amount} pebbles.`);
-    if (e.type === 'rain-watered') UI.toast('The rain watered your garden.');
+    if (e.type === 'rain-watered') {
+      UI.toast('The rain watered your garden.');
+      g.state.garden.forEach((bed, i) => { if (bed.crop) saveSharedBed(i); });
+    }
   }
   save();
+}
+
+// ---------- shared garden ----------
+
+function saveSharedBed(i) {
+  if (cloud.mode === 'cloud') saveBed(i, g.state.garden[i]);
+}
+
+function pullGarden() {
+  if (cloud.mode !== 'cloud') return;
+  const beds = Object.keys(S.garden);
+  if (!beds.length) {
+    // First person to connect brings their garden along.
+    g.state.garden.forEach((bed, i) => { if (bed.crop) saveSharedBed(i); });
+    return;
+  }
+  BEDS.forEach((b, i) => {
+    const doc = S.garden['bed-' + i];
+    g.state.garden[i] = doc ? { crop: doc.crop ?? null, count: doc.count || 0, last: doc.last ?? -1 } : { crop: null, count: 0, last: -1 };
+  });
 }
 
 // ---------- player movement ----------
@@ -81,7 +127,7 @@ function walkable(c, r) {
     if (!inBounds(c, r)) return false;
     return !g.rocks.some(rock => rock.c === c && rock.r === r && !g.mineBroken.has(rock.id));
   }
-  return isWalkable(c, r);
+  return isWalkable(c, r, g.decorBlocked);
 }
 
 function walkPath(path, onArrive) {
@@ -153,42 +199,85 @@ function updatePlayer(dt) {
   }
 }
 
-// ---------- bunny ----------
+// ---------- your partner, live ----------
 
-function updateBunny(dt) {
-  const b = g.bunny;
-  if (g.scene !== 'jar' || g.night) {
-    b.frame = 0;
-    return;
+let lastPresence = '';
+function sendPresence() {
+  const room = cloud.room;
+  if (!room) return;
+  const p = g.player;
+  const data = { scene: g.scene, layer: g.layer, x: Math.round(p.x), y: Math.round(p.y), dir: p.dir, frame: p.frame, pose: p.pose, look: g.state.avatar, uid: cloud.me };
+  const key = JSON.stringify(data);
+  if (key === lastPresence) return;
+  lastPresence = key;
+  room.presence(data).catch(() => {});
+}
+
+function readOthers() {
+  const room = cloud.room;
+  if (!room) { g.others = []; return; }
+  const out = [];
+  const seen = new Set();
+  for (const peer of room.peers()) {
+    if (peer.isMe || peer.kind !== 'viewer') continue;
+    const pr = peer.presence || {};
+    if (typeof pr.x !== 'number' || typeof pr.y !== 'number' || !pr.look) continue;
+    const id = peer.by || pr.uid || peer.peer;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    // Glide toward the latest position instead of jumping.
+    const prev = g.others.find(o => o.id === id);
+    const o = prev || { id, x: pr.x, y: pr.y };
+    Object.assign(o, {
+      tx: Math.max(0, Math.min(W, pr.x)), ty: Math.max(0, Math.min(H, pr.y)), dir: pr.dir | 0, frame: pr.frame | 0,
+      pose: ['walk', 'sit', 'cast', 'swing', 'crouch'].includes(pr.pose) ? pr.pose : 'walk',
+      scene: pr.scene === 'mine' ? 'mine' : 'jar', layer: pr.layer | 0, look: cleanLook(pr.look),
+    });
+    out.push(o);
   }
-  if (!b.path.length) {
-    b.wait -= dt;
-    b.frame = 0;
-    if (b.wait <= 0) {
-      const spots = forageTiles();
-      const goal = spots[Math.floor(Math.random() * spots.length)];
-      b.path = pathTo((c, r) => isWalkable(c, r), { c: b.c, r: b.r }, goal)?.slice(0, 4) || [];
-      b.wait = 2 + Math.random() * 4;
+  g.others = out;
+  const hereNow = out.length > 0;
+  const chip = document.querySelector('#partner');
+  if (chip) {
+    chip.hidden = !hereNow;
+    chip.textContent = hereNow ? `${T.nameOf(out[0].id)} is here` : '';
+  }
+}
+
+function cleanLook(l) {
+  const n = (v, max) => Math.max(0, Math.min(max, v | 0));
+  return { skin: n(l.skin, 4), hairStyle: n(l.hairStyle, 5), hairColor: n(l.hairColor, 6), outfit: n(l.outfit, 5), outfitStyle: n(l.outfitStyle, 2) };
+}
+
+function updateOthers(dt) {
+  for (const o of g.others) {
+    o.x += (o.tx - o.x) * Math.min(1, dt * 10);
+    o.y += (o.ty - o.y) * Math.min(1, dt * 10);
+  }
+}
+
+// ---------- residents ----------
+
+function syncResidents() {
+  const want = adopted();
+  g.residents = g.residents.filter(a => want.includes(a.species));
+  for (const sp of want) if (!g.residents.some(a => a.species === sp)) g.residents.push(makeResident(sp));
+}
+
+function animalReacts(a, motion, actionId) {
+  startMotion(a, motion, g.t);
+  const x = a.x, y = a.y - 14;
+  if (motion === 'notes') for (let i = 0; i < 3; i++) g.effects.push({ kind: 'note', x: x + i * 4 - 4, y: y - i * 3, t0: g.t + i * 0.15 });
+  else if (motion === 'bubbles') for (let i = 0; i < 4; i++) g.effects.push({ kind: 'bubble', x: x + i * 3 - 5, y, t0: g.t + i * 0.12 });
+  else g.effects.push({ kind: 'heart', x, y, t0: g.t });
+  if ((actionId === 'dig' || actionId === 'forage') && Math.random() < 0.35) {
+    const pool = FORAGE.filter(f => f.season === g.season && !f.rare);
+    const find = pool[Math.floor(Math.random() * pool.length)];
+    if (find && R.addItem(g.state, find.id, 1)) {
+      save();
+      popItem(find.id, x, y);
+      UI.toast(`${S.animals[a.species]?.name || 'Your friend'} found a ${find.name.toLowerCase()} for you!`, find.id);
     }
-    return;
-  }
-  const next = b.path[0];
-  const t = tileCenter(next.c, next.r);
-  const dx = t.x - b.x, dy = t.y + 3 - b.y;
-  const dist = Math.hypot(dx, dy);
-  const step = 26 * dt;
-  b.hop = (b.hop || 0) + dt;
-  b.frame = Math.floor(b.hop * 6) % 2;
-  if (Math.abs(dx) > 0.5) b.flip = dx < 0;
-  if (dist <= step) {
-    b.x = t.x;
-    b.y = t.y + 3;
-    b.c = next.c;
-    b.r = next.r;
-    b.path.shift();
-  } else {
-    b.x += (dx / dist) * step;
-    b.y += (dy / dist) * step;
   }
 }
 
@@ -198,10 +287,6 @@ function popItem(id, x, y) {
   g.effects.push({ kind: 'item', id, x, y, t0: g.t });
 }
 
-function heart(x, y) {
-  g.effects.push({ kind: 'heart', x, y, t0: g.t });
-}
-
 function gained(id, n = 1) {
   popItem(id, g.player.x, g.player.y - 26);
   UI.toast(`+${n} ${ITEMS[id].name}`, id);
@@ -209,26 +294,28 @@ function gained(id, n = 1) {
 
 // ---------- jar actions ----------
 
+function residentAt(x, y) {
+  return g.residents.find(a => !a.hidden && Math.hypot(x - a.x, y - a.y + 4) < 12);
+}
+
 function tapJar(c, r, x, y) {
-  // Pet the bunny
-  if (Math.hypot(x - g.bunny.x, y - g.bunny.y + 4) < 12) {
-    walkNextTo([{ c: g.bunny.c, r: g.bunny.r }], () => {
-      heart(g.bunny.x, g.bunny.y - 14);
-      g.bunny.path = [];
-      g.bunny.wait = 3;
-      if (!g.pettedToday) UI.toast(g.night ? 'Bun is asleep. You give a gentle pat.' : 'Bun leans into the pat.');
-      g.pettedToday = true;
-    });
+  if (g.build) return placeTap(c, r);
+  // Animals
+  const a = residentAt(x, y);
+  if (a) {
+    const near = a.inWater ? footprintTiles(OBJECTS.find(o => o.id === 'pond')) : [{ c: a.c, r: a.r }];
+    walkNextTo(near, () => openAnimal(g, a));
     return;
   }
   // Forage
   const fi = g.state.daily.forage.findIndex((f, i) => f.c === c && f.r === r && !g.state.daily.picked.includes(i));
-  if (fi >= 0) {
+  if (fi >= 0 && walkable(c, r)) {
     walkTo(c, r, () => {
       const id = R.pickForage(g.state, fi);
       if (id) {
         save();
         gained(id);
+        if (id === 'morel' || id === 'chanterelle') T.noticeDiscovery('mushroom-ring');
       } else UI.toast('Your bag is full.');
     });
     return;
@@ -239,7 +326,16 @@ function tapJar(c, r, x, y) {
     walkNextTo([{ c, r }], () => useBed(bi));
     return;
   }
-  // Objects
+  // Decorations
+  const deco = g.decor.find(d => d.c === c && d.r === r);
+  if (deco && !FLAT_DECOR.has(deco.type)) {
+    walkNextTo([{ c, r }], () => {
+      if (deco.type === 'log') T.noticeDiscovery('hollow-log');
+      else UI.toast(C.decorByType[deco.type]?.name || 'A decoration');
+    });
+    return;
+  }
+  // Places
   const o = objectAt(c, r);
   if (o) {
     if (o.walkable) walkTo(o.c, o.r, () => useObject(o));
@@ -254,15 +350,21 @@ function useBed(i) {
   const stage = R.bedStage(bed, g.today);
   crouch();
   if (stage < 0) {
-    UI.openSeedPicker(g, i, seed => UI.toast(`Planted ${ITEMS[seed].name.replace(' seeds', '')}. Water it every day.`, seed));
+    UI.openSeedPicker(g, i, seed => {
+      saveSharedBed(i);
+      UI.toast(`Planted ${ITEMS[seed].name.replace(' seeds', '')}. Water it every day.`, seed);
+    });
   } else if (stage === 3) {
     const id = R.harvestBed(g.state, i, g.today);
     if (id) {
       save();
+      saveSharedBed(i);
       gained(id);
+      T.noticeDiscovery('seed-garden');
     } else UI.toast('Your bag is full.');
   } else if (R.waterBed(g.state, i, g.today)) {
     save();
+    saveSharedBed(i);
     UI.toast('Watered. It will grow overnight.');
   } else UI.toast('Already watered today. Come back tomorrow.');
 }
@@ -272,13 +374,28 @@ function crouch() {
   g.poseUntil = g.t + 0.5;
 }
 
+function ready() {
+  if (C.ready && S.ready) return true;
+  UI.toast('The jar is still waking up. Try again in a moment.');
+  return false;
+}
+
 function useObject(o) {
   switch (o.id) {
     case 'tent': return UI.openWardrobe(g);
-    case 'mailbox': return UI.openMail(g);
+    case 'mailbox': return ready() && T.openMailbox(g, UI.letters(g));
     case 'crate': return UI.openCrate(g);
     case 'workbench': return UI.openWorkbench(g);
     case 'stall': return UI.openShop(g);
+    case 'board': return ready() && T.openBoard(g);
+    case 'well': return ready() && T.openDreams(g);
+    case 'easel': return ready() && T.openCalendar(g);
+    case 'picnic':
+      g.player.pose = 'sit';
+      g.player.dir = DIRS.down;
+      if (!ready()) return;
+      T.noticeDiscovery('picnic-oak');
+      return openHangout(g);
     case 'tree': {
       const got = R.shakeTree(g.state, g.today);
       if (got) {
@@ -290,13 +407,47 @@ function useObject(o) {
     case 'bench':
       g.player.pose = 'sit';
       g.player.dir = DIRS.down;
-      UI.toast('You sit and watch the jar for a while.');
-      return;
+      return ready() && T.openToday(g);
     case 'pond': return startFishing(o);
     case 'cave':
       if (g.state.mine.deepest >= 11) return UI.openElevator(g, enterMine);
       return enterMine(1);
   }
+}
+
+// ---------- building ----------
+
+function decorTaken(c, r, ignoreId) {
+  return g.decor.some(d => d.id !== ignoreId && d.c === c && d.r === r);
+}
+
+function startPlacing(opts) {
+  g.build = { ...opts, ghost: null };
+  document.querySelector('#btn-cancel').hidden = false;
+  UI.toast(`Tap a free spot for the ${(C.decorByType[opts.type]?.name || 'decoration').toLowerCase()}, then tap it again to place it.`);
+}
+
+function stopPlacing() {
+  g.build = null;
+  document.querySelector('#btn-cancel').hidden = true;
+}
+
+function placeTap(c, r) {
+  const b = g.build;
+  const forage = g.state.daily.forage.some((f, i) => f.c === c && f.r === r && !g.state.daily.picked.includes(i));
+  const ok = isWalkable(c, r) && !decorTaken(c, r, b.moveId) && !forage && !(g.player.c === c && g.player.r === r);
+  if (b.ghost && b.ghost.c === c && b.ghost.r === r && ok) {
+    if (placeDecor(g, b, c, r)) UI.toast(b.moveId ? 'Moved.' : 'Placed!');
+    stopPlacing();
+    return;
+  }
+  b.ghost = { type: b.type, c, r, ok };
+  if (!ok) UI.toast('That spot is taken. Try an open patch of grass.');
+}
+
+function syncDecor() {
+  g.decor = Object.entries(S.decor).map(([id, d]) => ({ id, type: d.type, c: d.c | 0, r: d.r | 0 })).filter(d => C.decorByType[d.type]);
+  g.decorBlocked = new Set(g.decor.filter(d => !FLAT_DECOR.has(d.type)).map(d => tileKey(d.c, d.r)));
 }
 
 // ---------- fishing ----------
@@ -389,6 +540,8 @@ function landFish(f) {
   popItem(id, f.bobber.x, f.bobber.y - 8);
   const note = isNew ? ' New to your log!' : record ? ' A new record!' : '';
   endFishing(`You caught a ${item.name.toLowerCase()}! ${size} cm.${note}`, id);
+  const caught = Object.values(g.state.log.fish).reduce((s, e) => s + e.count, 0);
+  if (caught >= 5) T.noticeDiscovery('spring');
 }
 
 // ---------- mine ----------
@@ -404,6 +557,8 @@ function enterMine(layer) {
   save();
   placePlayer(R.MINE_START.c, R.MINE_START.r);
   UI.updateHud(g);
+  T.noticeDiscovery('moon-cave');
+  if (layer >= 21) T.noticeDiscovery('crystal-pool');
 }
 
 function leaveMine() {
@@ -506,6 +661,10 @@ function onKey(e) {
     if (e.key === 'Escape') UI.closeSheet();
     return;
   }
+  if (e.key === 'Escape' && g.build) {
+    stopPlacing();
+    return;
+  }
   if (e.key === ' ' || e.key === 'Enter') {
     if (g.fishing) {
       e.preventDefault();
@@ -548,6 +707,7 @@ function fitCanvas() {
 
 let last = 0;
 let clockTimer = 0;
+let presenceTimer = 0;
 
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000 || 0);
@@ -559,12 +719,22 @@ function frame(now) {
     checkNewDay();
     UI.updateHud(g);
   }
+  presenceTimer -= dt;
+  if (presenceTimer <= 0) {
+    presenceTimer = 0.1;
+    sendPresence();
+    readOthers();
+  }
   if (g.poseUntil && g.t > g.poseUntil) {
     g.poseUntil = 0;
     if (g.player.pose === 'crouch') g.player.pose = 'walk';
   }
   updatePlayer(dt);
-  updateBunny(dt);
+  updateOthers(dt);
+  if (g.scene === 'jar') {
+    const ctxRes = { night: g.night, player: { c: g.player.c, r: g.player.r }, blocked: g.decorBlocked };
+    for (const a of g.residents) updateResident(a, dt, g.t, ctxRes);
+  }
   updateFishing(dt);
   updateAction(dt);
   g.effects = g.effects.filter(e => g.t - e.t0 < 1.3);
@@ -574,6 +744,63 @@ function frame(now) {
 
 // ---------- start ----------
 
+async function bootShared() {
+  try {
+    await loadContent();
+  } catch {
+    UI.toast('Could not load the questions and missions. Reload to try again.');
+    return;
+  }
+  await connect();
+  if (cloud.mode === 'cloud') {
+    // Pick up your progress from another device if it's newer.
+    const snap = await cloud.db.doc(privatePath('game')).get().catch(() => null);
+    const remote = snap?.exists ? snap.data() : null;
+    if (remote?.state && (remote.savedAt || 0) > (g.state.savedAt || 0)) {
+      g.state = R.migrate(remote.state, remote.state.seed, g.today);
+    }
+  }
+  onShared(kind => {
+    if (kind === 'world' || kind === 'ready') adoptWorldSeed();
+    if (kind === 'garden') pullGarden();
+    if (kind === 'decor' || kind === 'ready') syncDecor();
+    if (kind === 'animals' || kind === 'ready') syncResidents();
+    if (kind === 'people') T.refreshNames().then(() => UI.refreshSheet());
+    refreshClock();
+    UI.updateHud(g);
+    UI.refreshSheet();
+  });
+  await startShared({ seed: g.state.seed, today: g.today, timeZone: deviceTimeZone() });
+  cloud.onRoom = room => { if (room) startHangout(room); };
+  if (cloud.room) startHangout(cloud.room);
+  await T.refreshNames();
+  pullGarden();
+  // Every new jar starts with one resident.
+  setTimeout(() => {
+    if (!Object.keys(S.animals).length) adopt('bunny', g.state).then(ok => { if (ok) save(); });
+  }, 2500);
+  shareLook(g.state.avatar);
+  save();
+}
+
+// Both partners use the jar's seed, so weather, forage and questions match.
+function adoptWorldSeed() {
+  const seed = S.world?.seed;
+  if (!seed || seed === g.state.seed) return;
+  g.state.seed = seed;
+  g.state.daily = null;
+  checkNewDay();
+}
+
+function resetMine() {
+  const keep = { avatar: g.state.avatar, seed: g.state.seed, reminder: g.state.reminder, mailSeen: g.state.mailSeen };
+  g.state = { ...R.newState(keep.seed, g.today), ...keep, rewards: g.state.rewards };
+  R.rollover(g.state, g.today);
+  pullGarden();
+  if (g.scene === 'mine') leaveMine();
+  save();
+}
+
 function start(hotData = {}) {
   const saved = hotData.state || loadSave();
   const seed = saved?.seed || newSeed();
@@ -582,13 +809,10 @@ function start(hotData = {}) {
     state: R.migrate(saved, seed, today),
     scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(),
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
-    bunny: { c: 6, r: 6, x: 0, y: 0, frame: 0, path: [], wait: 1, flip: false },
-    fishing: null, action: null, effects: [], hold: false, t: 0,
-    debugHour: null, save,
+    residents: [], decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
+    fishing: null, action: null, effects: [], hold: false, t: 0, today,
+    debugHour: null, save, startPlacing, animalReacts, resetMine,
   };
-  const b = tileCenter(g.bunny.c, g.bunny.r);
-  g.bunny.x = b.x;
-  g.bunny.y = b.y + 3;
   placePlayer(START_TILE.c, START_TILE.r);
   checkNewDay();
   UI.updateHud(g);
@@ -602,11 +826,16 @@ function start(hotData = {}) {
   if (window.ResizeObserver) new ResizeObserver(fitCanvas).observe(document.querySelector('#stage'));
   fitCanvas();
 
-  document.querySelector('#sheet-close').addEventListener('click', UI.closeSheet);
-  document.querySelector('#btn-bag').addEventListener('click', () => UI.openBag(g));
-  document.querySelector('#btn-log').addEventListener('click', () => UI.openLog(g));
-  document.querySelector('#btn-style').addEventListener('click', () => UI.openWardrobe(g));
-  document.querySelector('#btn-leave').addEventListener('click', leaveMine);
+  const on = (sel, fn) => document.querySelector(sel).addEventListener('click', fn);
+  on('#sheet-close', UI.closeSheet);
+  on('#btn-bag', () => UI.openBag(g));
+  on('#btn-today', () => ready() && T.openToday(g));
+  on('#btn-mail', () => ready() && T.openMailbox(g, UI.letters(g)));
+  on('#btn-journal', () => ready() && T.openJournal(g));
+  on('#btn-build', () => ready() && openBuild(g));
+  on('#btn-more', () => ready() && openMore(g));
+  on('#btn-leave', leaveMine);
+  on('#btn-cancel', stopPlacing);
 
   if (debug) {
     const tools = document.querySelector('#debug');
@@ -635,10 +864,11 @@ function start(hotData = {}) {
     if (n) clearIconURLs();
   });
   requestAnimationFrame(frame);
+  bootShared();
 }
 
 // Lets tests and the browser console look at the running game.
-window.littleUs = { get game() { return g; } };
+window.littleUs = { get game() { return g; }, S, cloud, C, partnerId };
 
 const hot = window.claude?.hot;
 if (hot?.ready) hot.ready(start);

@@ -14,15 +14,19 @@
 <body>
 <div id="app">
   <header id="hud">
-    <div class="hud-left"><span class="brand">Little Us</span><span id="pebbles" class="pebbles" aria-label="Pebbles">0</span></div>
+    <div class="hud-left"><span class="brand">Little Us</span><span id="pebbles" class="pebbles" aria-label="Pebbles">0</span><span id="partner" class="partner-chip" hidden></span></div>
     <div id="clock" class="clock"></div>
   </header>
-  <main id="stage"><canvas id="game" width="320" height="352" aria-label="Your terrarium. Tap the ground to walk, tap things to use them."></canvas></main>
+  <main id="stage"><canvas id="game" width="320" height="384" aria-label="Your terrarium. Tap the ground to walk, tap things to use them."></canvas></main>
   <nav id="tray" aria-label="Tools">
     <button class="tray-btn" id="btn-bag" type="button">Bag</button>
-    <button class="tray-btn" id="btn-log" type="button">Log</button>
-    <button class="tray-btn" id="btn-style" type="button">Wardrobe</button>
+    <button class="tray-btn" id="btn-today" type="button">Today</button>
+    <button class="tray-btn" id="btn-mail" type="button">Mail</button>
+    <button class="tray-btn" id="btn-journal" type="button">Journal</button>
+    <button class="tray-btn" id="btn-build" type="button">Build</button>
+    <button class="tray-btn" id="btn-more" type="button">More</button>
     <button class="tray-btn alt" id="btn-leave" type="button" hidden>Leave cave</button>
+    <button class="tray-btn alt" id="btn-cancel" type="button" hidden>Stop placing</button>
   </nav>
   <div id="debug" hidden>
     <button class="btn" type="button" data-debug="day">Next day</button>

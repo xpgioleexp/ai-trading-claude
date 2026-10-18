@@ -7,14 +7,15 @@ import {
   ladderUpSprite, bunnySprite, heartSprite,
 } from './sprites.js';
 import { avatarSprite, DIRS } from './avatar.js';
+import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR } from './sprites-more.js';
 import { hashString } from './rng.js';
 
 export const W = 320;
-export const H = 352;
+export const H = 384;
 export const GX = 24;
 export const GY = 100;
 export const SOIL_TOP = GY + ROWS * TILE;
-const JAR = { x: 12, y: 40, w: 296, h: 300, r: 24 };
+const JAR = { x: 12, y: 40, w: 296, h: 332, r: 24 };
 
 export function tileCenter(c, r) {
   return { x: GX + c * TILE + TILE / 2, y: GY + r * TILE + TILE / 2 };
@@ -78,6 +79,11 @@ function drawJarWorld(ctx, g) {
   const cave = OBJECTS.find(o => o.id === 'cave');
   ctx.drawImage(caveSprite(), GX + cave.c * TILE, GY + cave.r * TILE);
   BEDS.forEach((b, i) => ctx.drawImage(bedSprite(g.state.garden[i].last === g.today), GX + b.c * TILE, GY + b.r * TILE));
+  const picnic = OBJECTS.find(o => o.id === 'picnic');
+  ctx.drawImage(picnicSprite(), GX + picnic.c * TILE, GY + picnic.r * TILE + 2);
+  for (const d of g.decor) {
+    if (FLAT_DECOR.has(d.type)) ctx.drawImage(decorSprite(d.type, g.season), GX + d.c * TILE, GY + d.r * TILE);
+  }
 
   // Forage on the ground, with a small glint.
   g.state.daily.forage.forEach((f, i) => {
@@ -102,6 +108,15 @@ function drawJarWorld(ctx, g) {
     if (o.id === 'stall') at(o, stallSprite(), 0, 2);
     if (o.id === 'tree') at(o, treeSprite(g.season, !g.state.daily.shook), 0, -2);
     if (o.id === 'bench') at(o, benchSprite(), 0, -1);
+    if (o.id === 'board') at(o, boardSprite(g.boardNew), 0, -2);
+    if (o.id === 'well') at(o, wellSprite(g.wellLights), 0, -1);
+    if (o.id === 'easel') at(o, easelSprite(), 0, -2);
+  }
+  for (const d of g.decor) {
+    if (FLAT_DECOR.has(d.type)) continue;
+    const img = decorSprite(d.type, g.season);
+    const x = GX + d.c * TILE + 8 - img.width / 2, y = GY + (d.r + 1) * TILE - img.height;
+    items.push({ y: GY + (d.r + 1) * TILE - 2, draw: () => ctx.drawImage(img, x, y) });
   }
   BEDS.forEach((b, i) => {
     const bed = g.state.garden[i];
@@ -113,19 +128,42 @@ function drawJarWorld(ctx, g) {
       items.push({ y: 999, draw: () => px(ctx, GX + b.c * TILE + 12, GY + b.r * TILE - 6, 2, 2, PAL.linenHi) });
     }
   });
-  if (g.bunny) {
-    const b = g.bunny;
-    const img = bunnySprite(b.frame, g.night);
+  for (const a of g.residents) {
+    if (a.hidden) continue;
+    const sleeping = g.night || a.mode === 'sleep';
+    const img = a.species === 'bunny' ? bunnySprite(a.frame, sleeping) : animalSprite(a.species, a.frame, sleeping, a.inWater);
     items.push({
-      y: b.y,
+      y: a.inWater ? a.y - 40 : a.y,
       draw: () => {
         ctx.save();
-        if (b.flip) {
-          ctx.translate(Math.round(b.x), 0);
+        const top = Math.round(a.y) - img.height + 1;
+        if (a.flip) {
+          ctx.translate(Math.round(a.x), 0);
           ctx.scale(-1, 1);
-          ctx.drawImage(img, -7, Math.round(b.y) - 11);
-        } else ctx.drawImage(img, Math.round(b.x) - 7, Math.round(b.y) - 11);
+          ctx.drawImage(img, -Math.round(img.width / 2), top);
+        } else ctx.drawImage(img, Math.round(a.x) - Math.round(img.width / 2), top);
         ctx.restore();
+        if (sleeping && Math.floor(g.t) % 2 === 0) ctx.drawImage(zzzSprite(), Math.round(a.x) + 4, top - 6);
+        if (g.selected === a) px(ctx, Math.round(a.x) - 1, top - 5, 3, 3, PAL.rose);
+      },
+    });
+  }
+  for (const o of g.others) {
+    if (o.scene !== 'jar') continue;
+    items.push({ y: o.y, draw: () => drawAvatarAt(ctx, o, o.look, false, g.t) });
+  }
+  if (g.build?.ghost) {
+    const gh = g.build.ghost;
+    const img = decorSprite(gh.type, g.season);
+    items.push({
+      y: 998,
+      draw: () => {
+        ctx.globalAlpha = 0.65;
+        ctx.drawImage(img, GX + gh.c * TILE + 8 - img.width / 2, GY + (gh.r + 1) * TILE - img.height);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = gh.ok ? '#9DBA74' : '#D9533C';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(GX + gh.c * TILE + 0.5, GY + gh.r * TILE + 0.5, TILE - 1, TILE - 1);
       },
     });
   }
@@ -193,18 +231,26 @@ function roundRect(ctx, x, y, w, h, r, color) {
 }
 
 function drawPlayer(ctx, g) {
-  const p = g.player;
-  const look = g.state.avatar;
+  drawAvatarAt(ctx, g.player, g.state.avatar, true, g.t);
+}
+
+function drawAvatarAt(ctx, p, look, isMe, t) {
+  if (!look) return;
   const x = Math.round(p.x) - 8, y = Math.round(p.y) - 22;
   ctx.fillStyle = 'rgba(41,55,47,0.25)';
   ctx.fillRect(x + 3, Math.round(p.y) + 1, 10, 2);
-  ctx.drawImage(avatarSprite(look, p.dir, p.frame, p.pose), x, y);
+  ctx.drawImage(avatarSprite(look, p.dir || 0, p.frame || 0, p.pose || 'walk'), x, y);
   // Tools in hand
   if (p.pose === 'swing') {
     const up = p.frame === 0;
     const hx = p.dir === DIRS.left ? x + 1 : x + 13;
     px(ctx, hx, y + (up ? 6 : 12), 1, 7, PAL.woodShade);
     px(ctx, hx - 3, y + (up ? 5 : 18), 7, 2, PAL.stoneHi);
+  }
+  if (!isMe) {
+    // a small heart over your partner
+    const bob = Math.round(Math.sin(t * 3) * 1);
+    ctx.drawImage(heartSprite(), x + 5, y - 9 + bob);
   }
 }
 
@@ -382,6 +428,9 @@ function drawMine(ctx, g) {
     });
   }
   items.push({ y: g.player.y, draw: () => drawPlayer(ctx, g) });
+  for (const o of g.others) {
+    if (o.scene === 'mine' && o.layer === g.layer) items.push({ y: o.y, draw: () => drawAvatarAt(ctx, o, o.look, false, g.t) });
+  }
   items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
 
   // Deeper bands are darker; the lantern lights around you.
@@ -403,6 +452,9 @@ function drawEffects(ctx, g) {
     const age = g.t - e.t0;
     const y = e.y - age * 18;
     if (e.kind === 'heart') ctx.drawImage(heartSprite(), Math.round(e.x) - 3, Math.round(y));
+    if (e.kind === 'note') ctx.drawImage(noteSprite(), Math.round(e.x + Math.sin(age * 6) * 3) - 3, Math.round(y));
+    if (e.kind === 'bubble') ctx.drawImage(bubbleSprite(), Math.round(e.x + Math.sin(age * 4 + e.x) * 4) - 3, Math.round(y));
+    if (e.kind === 'sparkle' && Math.floor(age * 8) % 2 === 0) ctx.drawImage(sparkleSprite(), Math.round(e.x) - 3, Math.round(e.y) - 3);
     if (e.kind === 'item') {
       ctx.globalAlpha = Math.max(0, 1 - age / 1.2);
       ctx.drawImage(itemIcon(e.id), Math.round(e.x) - 8, Math.round(y) - 8);

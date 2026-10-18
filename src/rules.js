@@ -26,6 +26,9 @@ export function newState(seed, today) {
     mine: { deepest: 0 },
     daily: null,
     dayOffset: 0,
+    rewards: {},
+    mailSeen: 0,
+    reminder: '19:00',
   };
 }
 

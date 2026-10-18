@@ -2,7 +2,12 @@
 
 A tiny pixel world in a glass jar, inspired by Animal Crossing and Stardew Valley. You fish in the pond, dig down through the soil, grow a garden, forage, and sell what you find to buy seeds and better tools.
 
-This is the first playable version of the plan in [docs/GAME-PLAN.md](docs/GAME-PLAN.md). It runs fully in the browser and saves on the device. Partner features (seeing each other, notes, gifts) come when the jar is connected to the Little Us accounts backend.
+It also carries over everything from the original Little Us app: 3,000 daily questions, 500 weekly missions, 306 question packs, mood check-ins, appreciation cards, weekly rituals, notes, dates, dreams, a scrapbook, a live hangout, five animals with all 43 care actions, 50 decorations and 10 discoveries. All of it lives in places inside the jar.
+
+**Playing together:**
+- **On claude.ai,** the jar is shared. Invite your partner from the page's Share menu, by email, as an **Editor**. You'll see each other walking around live, and you share the garden, decorations, animals, notes, answers and plans.
+- **Answers stay sealed.** Yours are private until you've both answered.
+- **Anywhere else,** the jar saves on the device only, for one person.
 
 ## Play it
 
@@ -28,8 +33,14 @@ Any static file server works. There is no build step.
 | Fruit tree | Shake once a day for fruit |
 | Glints on the ground | Forage, new spots every day |
 | Tent | Change your look |
-| Mailbox | Letters and tips |
-| Bunny | Pet it |
+| Bench | **Today**: the daily question (answer, later or skip), mood check-in, the weekly ritual |
+| Mailbox | Notes and appreciation cards between you, plus tips |
+| Notice board | This week's mission, which you both mark done, and a pinboard of what's coming up |
+| Calendar | Plan dates from 160 ideas or your own, both confirm, and add them to your phone's calendar |
+| Wishing well | Dreams with stages and steps, and a light you each leave |
+| Picnic blanket | Hangout: live chat, a shared drawing pad, a timer and conversation questions |
+| Animals | Care, play and explore (43 actions across five species) |
+| Tray | Bag, Today, Mail, Journal (moments, question packs, scrapbook, discoveries), Build (decorations and residents), More (settings, reminders, download your data) |
 
 **The rules:**
 - **Real time:** the jar follows the real clock, so mornings, nights and new days happen when they do for you.
@@ -54,10 +65,24 @@ Any static file server works. There is no build step.
 | `src/avatar.js` | The layered player avatar |
 | `src/scene.js` | Draws the jar, the mine, weather, night and the fishing minigame |
 | `src/ui.js` | Panels: bag, log, shop, crate, workbench, mailbox, wardrobe |
-| `src/main.js` | Game loop, tapping, walking, fishing and mining |
+| `src/main.js` | Game loop, tapping, walking, fishing, mining, building and your partner's live avatar |
+| `src/cloud.js` | Shared storage on claude.ai, with a device-only stand-in elsewhere |
+| `src/shared.js` | Live shared state: the jar, people, garden, sealed answers, discoveries, rain |
+| `src/content.js` | Loads `content/` and picks the day's question and the week's mission |
+| `src/together.js` | Today, check-ins, rituals, notice board, mailbox, calendar, dreams, journal |
+| `src/places.js` | Build mode, animal care and settings |
+| `src/hangout.js` | The live picnic hangout |
+| `src/animals.js` | Residents: needs, the 43 actions and wandering |
+| `src/sprites-more.js` | Placeholder art for the couple places, animals and 50 decorations |
+| `content/` | The question, mission, pack and date banks, and the other carried-over content |
 | `play.html` / `index.html` | The page (`play.html` is the published version, `index.html` the local one) |
 
 Run the tests with `npm test`.
+
+**Not carried over:**
+- **Voice and video calls:** pages on claude.ai can't make calls. The hangout keeps chat and drawing.
+- **Recording audio in the page:** voice notes are added as audio files in the scrapbook instead.
+- **Invite codes:** the Share menu takes their place.
 
 ## Art
 

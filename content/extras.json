@@ -1,0 +1,1247 @@
+{
+ "moods": [
+  {
+   "id": "sunny",
+   "label": "Sunny",
+   "description": "A little light today",
+   "color": "#e9c66d"
+  },
+  {
+   "id": "content",
+   "label": "Content",
+   "description": "Right here feels good",
+   "color": "#a5bd80"
+  },
+  {
+   "id": "quiet",
+   "label": "Quiet",
+   "description": "Taking things slowly",
+   "color": "#b9c7b1"
+  },
+  {
+   "id": "tender",
+   "label": "Tender",
+   "description": "Could use a little care",
+   "color": "#dbacaa"
+  },
+  {
+   "id": "low",
+   "label": "Low",
+   "description": "A heavier kind of day",
+   "color": "#aebbd1"
+  },
+  {
+   "id": "overwhelmed",
+   "label": "Full up",
+   "description": "A lot on my mind",
+   "color": "#b9acd0"
+  }
+ ],
+ "needs": [
+  {
+   "id": "listen",
+   "label": "Just listen",
+   "hint": "Hear me without trying to fix it."
+  },
+  {
+   "id": "affection",
+   "label": "A little affection",
+   "hint": "A hug, a kind word, a little closeness."
+  },
+  {
+   "id": "space",
+   "label": "Quiet space",
+   "hint": "A little room to recharge, still loved."
+  },
+  {
+   "id": "help",
+   "label": "Practical help",
+   "hint": "Take one small thing off my plate."
+  },
+  {
+   "id": "time",
+   "label": "Time together",
+   "hint": "A few unhurried minutes, just us."
+  },
+  {
+   "id": "reassurance",
+   "label": "Reassurance",
+   "hint": "Remind me we are on the same team."
+  }
+ ],
+ "appreciations": [
+  {
+   "id": "noticed",
+   "label": "I noticed",
+   "starter": "I noticed the way you…",
+   "color": "sage"
+  },
+  {
+   "id": "thank-you",
+   "label": "Thank you",
+   "starter": "Thank you for making…",
+   "color": "peach"
+  },
+  {
+   "id": "admire",
+   "label": "I admire",
+   "starter": "Something I admire about you is…",
+   "color": "lavender"
+  },
+  {
+   "id": "because",
+   "label": "Just because",
+   "starter": "A tiny reason I’m glad it’s you…",
+   "color": "butter"
+  }
+ ],
+ "starterPacks": [
+  {
+   "id": "everyday-us",
+   "title": "Everyday us",
+   "subtitle": "Find the lovely in your ordinary.",
+   "level": "Easy & warm",
+   "minutes": "3–5",
+   "color": "sage",
+   "icon": "leaf",
+   "questions": [
+    "Which unplanned minute from a recent outing do you remember better than the thing we went there to do?",
+    "When we are doing separate things in the same room, what makes it feel like time together?",
+    "Which part of my daily routine do you understand least from the outside?",
+    "What keeps interrupting time we meant to enjoy together, and what would an easy workaround look like?",
+    "Which ordinary evening would you like to replay with one detail changed?",
+    "On a morning when we wake up in different moods, what would a good first hour look like for each of us?",
+    "What did I quietly take care of recently that you only noticed afterward?",
+    "If we improved one ordinary evening instead of planning a big date, what would you move, add, or skip?"
+   ]
+  },
+  {
+   "id": "understood",
+   "title": "A little more understood",
+   "subtitle": "Make room for each other’s inner world.",
+   "level": "A little deeper",
+   "minutes": "5–8",
+   "color": "lavender",
+   "icon": "moon",
+   "questions": [
+    "Which current decision has more than one good option, and what makes choosing difficult?",
+    "When you are quiet, how can I tell the difference between wanting company and wanting to be left alone?",
+    "Think of a day that ran longer than expected: which offer of help would have landed well, and which would have added work?",
+    "Which part of something you care about gets flattened when you try to explain it quickly?",
+    "Which small disagreement have we handled in a way you would want us to repeat?",
+    "Which interest of yours would be easier to show me than explain, and what would we start with?",
+    "When a plan is uncertain, do you prefer more options, one next step, or some time before deciding?",
+    "What is a view you held a year ago that you would phrase differently now?"
+   ]
+  },
+  {
+   "id": "little-love",
+   "title": "Love in the little things",
+   "subtitle": "Notice what already makes you, you.",
+   "level": "Easy & warm",
+   "minutes": "3–5",
+   "color": "peach",
+   "icon": "heart",
+   "questions": [
+    "When have I made room for your preference even though it was not mine?",
+    "What is something I do before you ask that makes a specific part of your day work better?",
+    "Which detail from a very ordinary day with me would be hardest to explain to someone who was not there?",
+    "Which difference between us has become something you would miss if it disappeared?",
+    "When did you see me do something in my own way and think, 'that is very them'?",
+    "On a low-energy day, which kind of affection feels easy to receive and which takes effort?",
+    "Which compliment would mean more because it names effort rather than talent?",
+    "What have we gotten better at together that nobody else would think to congratulate us for?"
+   ]
+  },
+  {
+   "id": "future-roots",
+   "title": "Dreaming in the same direction",
+   "subtitle": "Little hopes. A future with room for both.",
+   "level": "A little deeper",
+   "minutes": "5–8",
+   "color": "butter",
+   "icon": "sun",
+   "questions": [
+    "Which thing we keep calling 'someday' would still excite you if we tried a small version this month?",
+    "If our future routines became busier, which ordinary shared habit would you protect first?",
+    "What would you want to learn about a place before agreeing to live there for a year?",
+    "Which part of our future would you like to keep flexible rather than map out now?",
+    "What could we repeat each year that would still work if our budget, location, or energy changed?",
+    "Which personal goal would benefit from me asking about the process instead of the result?",
+    "What about our current circumstances do you think future us might be surprised we managed?",
+    "Which future decision needs more real-world information before we form a strong opinion about it?"
+   ]
+  },
+  {
+   "id": "play-wonder",
+   "title": "A little ridiculous",
+   "subtitle": "Less overthinking. More giggling.",
+   "level": "Light & playful",
+   "minutes": "2–4",
+   "color": "blue",
+   "icon": "spark",
+   "questions": [
+    "Our terrarium resident writes one complaint about our decorating: what is it, and what change would settle it?",
+    "We have to run a two-person business using only skills we already have: who does what, and what goes wrong first?",
+    "Which everyday object would you nominate for a ridiculously specific world championship, and what are the rules?",
+    "If one of our harmless habits became a spectator sport, what would the commentator keep saying?",
+    "We can give our resident one completely impractical room: what is in it, and what does it never get used for?",
+    "We swap daily routines for a day: which moment would make each of us call for backup?",
+    "Which of our inside jokes would become most confusing if someone tried to explain it professionally?",
+    "A board game based on an ordinary day with us needs one unfairly powerful bonus card: what does it do?"
+   ]
+  },
+  {
+   "id": "same-team",
+   "title": "Back on the same team",
+   "subtitle": "Gentle conversations, when you both feel ready.",
+   "level": "Go gently",
+   "minutes": "8–12",
+   "color": "rose",
+   "icon": "bridge",
+   "questions": [
+    "In a recent small disagreement, what were we each trying to protect that may have sounded like something else?",
+    "How would you like a pause to end so it does not feel as though a difficult conversation has been abandoned?",
+    "When I get something wrong, which detail helps you tell a misunderstanding from not being taken seriously?",
+    "What is a sentence I could say that would show I understood your point before explaining mine?",
+    "Which repeated minor friction would be easier to solve by changing the setup rather than asking either of us to try harder?",
+    "After an apology, which small follow-through makes the words feel believable to you?",
+    "What is something you would like to be able to decline without having to defend the reason?",
+    "Which agreement should we make smaller so we can realistically keep it on a difficult week?"
+   ]
+  }
+ ],
+ "rituals": [
+  {
+   "id": "soft-landing",
+   "title": "Our soft landing",
+   "description": "Set the week down. Pick up each other.",
+   "minutes": 12,
+   "color": "sage",
+   "prompts": [
+    {
+     "id": "bright",
+     "label": "A little light",
+     "question": "Which moment from this week would you have wanted me to see?"
+    },
+    {
+     "id": "heavy",
+     "label": "Something to hold gently",
+     "question": "Which part of the week needed more energy than it looked like from the outside?"
+    },
+    {
+     "id": "thank",
+     "label": "Something I noticed",
+     "question": "Which effort did your partner make this week that you might normally leave unmentioned?"
+    },
+    {
+     "id": "hope",
+     "label": "A little room for next week",
+     "question": "Which single change would make our actual plans for next week work better for both people?"
+    }
+   ]
+  },
+  {
+   "id": "unwind",
+   "title": "A little exhale",
+   "description": "For a full week and a softer evening.",
+   "minutes": 8,
+   "color": "lavender",
+   "prompts": [
+    {
+     "id": "leave",
+     "label": "Leave it here",
+     "question": "Which unfinished thought can we acknowledge without trying to fix it tonight?"
+    },
+    {
+     "id": "care",
+     "label": "A little care",
+     "question": "What looks like rest from the outside but does not actually help you recharge?"
+    },
+    {
+     "id": "us",
+     "label": "A moment for us",
+     "question": "What would genuinely fit the time and energy we have left tonight?"
+    }
+   ]
+  },
+  {
+   "id": "date-night",
+   "title": "The two-of-us pause",
+   "description": "A small date with a little more meaning.",
+   "minutes": 10,
+   "color": "peach",
+   "prompts": [
+    {
+     "id": "close",
+     "label": "A little closer",
+     "question": "Which moment this week made you feel we were paying attention to the same thing?"
+    },
+    {
+     "id": "curious",
+     "label": "Still getting to know you",
+     "question": "What did you recently start reading, watching, or trying that you want to tell me about?"
+    },
+    {
+     "id": "more",
+     "label": "More of this",
+     "question": "Which part of this evening would you like to repeat without turning it into another obligation?"
+    }
+   ]
+  }
+ ],
+ "dreamStarters": [
+  {
+   "id": "dream-starter-0",
+   "title": "A weekend somewhere new",
+   "text": "A place we are curious about, with room for both our travel styles.",
+   "category": "Adventure"
+  },
+  {
+   "id": "dream-starter-1",
+   "title": "Make our space feel like home",
+   "text": "Small changes that make everyday life more comfortable.",
+   "category": "Home"
+  },
+  {
+   "id": "dream-starter-2",
+   "title": "Learn something side by side",
+   "text": "Choose a class, skill, or hobby we can explore at our own pace.",
+   "category": "Learning"
+  },
+  {
+   "id": "dream-starter-3",
+   "title": "Start a tradition with our friends",
+   "text": "An easy reason to spend time with the people we care about.",
+   "category": "Friends & family"
+  },
+  {
+   "id": "dream-starter-4",
+   "title": "Make a tiny creative project",
+   "text": "Something we can make together, just because we would enjoy it.",
+   "category": "Just for fun"
+  },
+  {
+   "id": "dream-starter-5",
+   "title": "Set aside a future fund",
+   "text": "A shared hope and a realistic first conversation about getting there.",
+   "category": "Our life"
+  },
+  {
+   "id": "dream-starter-6",
+   "title": "Grow a real little garden",
+   "text": "A windowsill, a pot, or a patch of ground we can care for.",
+   "category": "Home"
+  },
+  {
+   "id": "dream-starter-7",
+   "title": "A trip to see someone we miss",
+   "text": "Make room for the friends or family who live farther away.",
+   "category": "Friends & family"
+  },
+  {
+   "id": "dream-starter-8",
+   "title": "Try an unfamiliar adventure",
+   "text": "Something new that suits our energy, budget, and access needs.",
+   "category": "Adventure"
+  },
+  {
+   "id": "dream-starter-9",
+   "title": "Build a gentler everyday rhythm",
+   "text": "A life with room for rest, individual interests, and time together.",
+   "category": "Our life"
+  },
+  {
+   "id": "dream-starter-10",
+   "title": "Make a book of our memories",
+   "text": "Collect the ordinary little moments we want to remember.",
+   "category": "Just for fun"
+  },
+  {
+   "id": "dream-starter-11",
+   "title": "Support our separate ambitions",
+   "text": "A shared plan with space for both people to grow.",
+   "category": "Learning"
+  }
+ ],
+ "dreamCategories": [
+  "Adventure",
+  "Home",
+  "Learning",
+  "Our life",
+  "Friends & family",
+  "Just for fun"
+ ],
+ "dreamStates": [
+  "someday",
+  "next",
+  "doing",
+  "done",
+  "archived"
+ ],
+ "prompts": [
+  {
+   "kind": "appreciation",
+   "text": "What’s one small thing I do that makes you feel loved?"
+  },
+  {
+   "kind": "support",
+   "text": "What would make this week feel a little lighter for you?"
+  },
+  {
+   "kind": "memories",
+   "text": "What ordinary moment with me would you love to relive?"
+  },
+  {
+   "kind": "understanding",
+   "text": "What’s something you wish I understood better about your day?"
+  },
+  {
+   "kind": "future",
+   "text": "What’s a little dream you’d like us to make room for?"
+  },
+  {
+   "kind": "playful",
+   "text": "If our terrarium could have one ridiculous object, what would you choose?"
+  },
+  {
+   "kind": "appreciation",
+   "text": "What’s something I did recently that you quietly appreciated?"
+  },
+  {
+   "kind": "comfort",
+   "text": "When you’re overwhelmed, what kind of company helps most?"
+  },
+  {
+   "kind": "connection",
+   "text": "When did you feel closest to me this week?"
+  },
+  {
+   "kind": "memories",
+   "text": "What’s a tiny detail from our early days you still remember?"
+  },
+  {
+   "kind": "future",
+   "text": "What’s a new tradition you’d like us to start?"
+  },
+  {
+   "kind": "playful",
+   "text": "What would our little creature say about us as a couple?"
+  },
+  {
+   "kind": "understanding",
+   "text": "What’s a part of yourself you’ve been getting to know lately?"
+  },
+  {
+   "kind": "support",
+   "text": "What’s something you’d love a little encouragement with?"
+  },
+  {
+   "kind": "appreciation",
+   "text": "What makes you feel at home with me?"
+  },
+  {
+   "kind": "future",
+   "text": "What would a really lovely, ordinary day together look like?"
+  },
+  {
+   "kind": "connection",
+   "text": "What’s one thing we could do more slowly together?"
+  },
+  {
+   "kind": "memories",
+   "text": "What’s a small adventure you’re glad we shared?"
+  },
+  {
+   "kind": "comfort",
+   "text": "What helps you feel listened to?"
+  },
+  {
+   "kind": "playful",
+   "text": "Which of us would be the frog, and which would be the snail?"
+  },
+  {
+   "kind": "appreciation",
+   "text": "What quality in me have you grown to appreciate more over time?"
+  },
+  {
+   "kind": "understanding",
+   "text": "What does a peaceful evening look like to you right now?"
+  },
+  {
+   "kind": "future",
+   "text": "What place would you like us to explore together someday?"
+  },
+  {
+   "kind": "support",
+   "text": "Is there a responsibility you’d like us to approach more as a team?"
+  },
+  {
+   "kind": "connection",
+   "text": "What’s a question you’d like me to ask you more often?"
+  },
+  {
+   "kind": "memories",
+   "text": "What’s an inside joke that always makes you smile?"
+  },
+  {
+   "kind": "comfort",
+   "text": "What’s a small sign that you need a little extra care?"
+  },
+  {
+   "kind": "appreciation",
+   "text": "What’s something about us that you feel proud of?"
+  },
+  {
+   "kind": "playful",
+   "text": "What would you name a tiny café inside our terrarium?"
+  },
+  {
+   "kind": "future",
+   "text": "What’s one little thing you’re looking forward to with me?"
+  }
+ ],
+ "decorations": [
+  {
+   "type": "pine",
+   "name": "Pine tree",
+   "category": "Trees",
+   "price": 35
+  },
+  {
+   "type": "oak",
+   "name": "Little oak",
+   "category": "Trees",
+   "price": 40
+  },
+  {
+   "type": "birch",
+   "name": "Silver birch",
+   "category": "Trees",
+   "price": 35
+  },
+  {
+   "type": "willow",
+   "name": "Weeping willow",
+   "category": "Trees",
+   "price": 45
+  },
+  {
+   "type": "cherry",
+   "name": "Blossom tree",
+   "category": "Trees",
+   "price": 45
+  },
+  {
+   "type": "bush",
+   "name": "Berry bush",
+   "category": "Plants",
+   "price": 15
+  },
+  {
+   "type": "lavender",
+   "name": "Lavender",
+   "category": "Flowers",
+   "price": 15
+  },
+  {
+   "type": "sunflower",
+   "name": "Sunflowers",
+   "category": "Flowers",
+   "price": 20
+  },
+  {
+   "type": "pumpkin",
+   "name": "Pumpkin patch",
+   "category": "Plants",
+   "price": 20
+  },
+  {
+   "type": "reeds",
+   "name": "Pond reeds",
+   "category": "Plants",
+   "price": 15
+  },
+  {
+   "type": "pathstone",
+   "name": "Stepping stones",
+   "category": "Paths",
+   "price": 5
+  },
+  {
+   "type": "pathwood",
+   "name": "Wooden path",
+   "category": "Paths",
+   "price": 5
+  },
+  {
+   "type": "fence",
+   "name": "Woodland fence",
+   "category": "Furniture",
+   "price": 15
+  },
+  {
+   "type": "bridge",
+   "name": "Little bridge",
+   "category": "Furniture",
+   "price": 40
+  },
+  {
+   "type": "birdhouse",
+   "name": "Bird house",
+   "category": "Furniture",
+   "price": 25
+  },
+  {
+   "type": "hammock",
+   "name": "Hammock",
+   "category": "Furniture",
+   "price": 35
+  },
+  {
+   "type": "picnic",
+   "name": "Picnic blanket",
+   "category": "Furniture",
+   "price": 25
+  },
+  {
+   "type": "tent",
+   "name": "Canvas tent",
+   "category": "Homes",
+   "price": 40
+  },
+  {
+   "type": "cabin",
+   "name": "Tiny cabin",
+   "category": "Homes",
+   "price": 60
+  },
+  {
+   "type": "treehouse",
+   "name": "Tree house",
+   "category": "Homes",
+   "price": 65
+  },
+  {
+   "type": "campfire",
+   "name": "Campfire",
+   "category": "Lights",
+   "price": 25
+  },
+  {
+   "type": "windchime",
+   "name": "Wind chime",
+   "category": "Lights",
+   "price": 25
+  },
+  {
+   "type": "mailbox",
+   "name": "Forest mailbox",
+   "category": "Furniture",
+   "price": 20
+  },
+  {
+   "type": "signpost",
+   "name": "Trail sign",
+   "category": "Furniture",
+   "price": 15
+  },
+  {
+   "type": "waterbowl",
+   "name": "Water bowl",
+   "category": "Animal care",
+   "price": 10
+  },
+  {
+   "type": "foodbowl",
+   "name": "Food bowl",
+   "category": "Animal care",
+   "price": 10
+  },
+  {
+   "type": "petbed",
+   "name": "Moss bed",
+   "category": "Animal care",
+   "price": 20
+  },
+  {
+   "type": "tunnel",
+   "name": "Play tunnel",
+   "category": "Animal care",
+   "price": 25
+  },
+  {
+   "type": "butterflies",
+   "name": "Butterfly flowers",
+   "category": "Flowers",
+   "price": 20
+  },
+  {
+   "type": "crystal",
+   "name": "Forest crystal",
+   "category": "Treasures",
+   "price": 30
+  }
+ ],
+ "landmarks": [
+  {
+   "id": "hollow-log",
+   "name": "The hollow log",
+   "secret": "A tiny tenant",
+   "hint": "Something is rustling under the log.",
+   "description": "A sleepy ladybug has made a home in the soft wood.",
+   "action": "Lift the log",
+   "interaction": "lift"
+  },
+  {
+   "id": "mushroom-ring",
+   "name": "Mushroom grove",
+   "secret": "A woodland melody",
+   "hint": "Three little caps. Try tapping each one.",
+   "description": "The mushrooms answer with a soft glow. You found the grove’s little melody.",
+   "action": "Listen",
+   "interaction": "mushrooms"
+  },
+  {
+   "id": "moon-cave",
+   "name": "Moonstone cave",
+   "secret": "Behind the ivy",
+   "hint": "There is a cool breeze behind the ivy.",
+   "description": "A little cave opens into a quiet underground pool.",
+   "action": "Enter cave",
+   "interaction": "cave"
+  },
+  {
+   "id": "spring",
+   "name": "Willow pond",
+   "secret": "The pond’s secret",
+   "hint": "Trace a ripple across the water.",
+   "description": "A school of tiny silver fish follows the ripples.",
+   "action": "Make a ripple",
+   "interaction": "ripple"
+  },
+  {
+   "id": "seed-garden",
+   "name": "The seed garden",
+   "secret": "Something from a seed",
+   "hint": "Plant a seed, give it water, and come back in a minute.",
+   "description": "Your first little flower grew in the forest garden.",
+   "action": "Plant a seed",
+   "interaction": "garden"
+  },
+  {
+   "id": "firefly-grove",
+   "name": "Firefly grove",
+   "secret": "A pocket of starlight",
+   "hint": "Come back at night. Touch the lights gently.",
+   "description": "The fireflies gather around you, then float back into the trees.",
+   "action": "Watch the fireflies",
+   "interaction": "night"
+  },
+  {
+   "id": "old-well",
+   "name": "The wishing well",
+   "secret": "A wish between two",
+   "hint": "Each of you can leave a little light here.",
+   "description": "Two little lights, one shared wish. The well remembers you both.",
+   "action": "Leave a light",
+   "interaction": "together"
+  },
+  {
+   "id": "rain-pool",
+   "name": "Rainy hollow",
+   "secret": "After the rain",
+   "hint": "Try a little rain and look closely.",
+   "description": "The shallow hollow fills with water, and a tiny wild frog comes to visit.",
+   "action": "Look closer",
+   "interaction": "rain"
+  },
+  {
+   "id": "picnic-oak",
+   "name": "The old oak",
+   "secret": "A little place for us",
+   "hint": "There is a folded blanket beneath the oak.",
+   "description": "A quiet place to sit, leave a note, and come back to each other.",
+   "action": "Unfold the blanket",
+   "interaction": "picnic"
+  },
+  {
+   "id": "crystal-pool",
+   "name": "Crystal pool",
+   "secret": "Under the forest",
+   "hint": "A small crystal glimmers deep inside the cave.",
+   "description": "The underground water reflects a whole sky of little crystals.",
+   "action": "Touch the crystal",
+   "interaction": "crystal"
+  }
+ ],
+ "interactions": [
+  {
+   "id": "feed",
+   "label": "Snack",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "pet",
+   "label": "Pet",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle",
+    "marimo"
+   ]
+  },
+  {
+   "id": "brush",
+   "label": "Brush",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "treat",
+   "label": "Treat",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "drink",
+   "label": "Water",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "rest",
+   "label": "Rest",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle",
+    "marimo"
+   ]
+  },
+  {
+   "id": "sing",
+   "label": "Hum",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle",
+    "marimo"
+   ]
+  },
+  {
+   "id": "bathe",
+   "label": "Wash",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle",
+    "marimo"
+   ]
+  },
+  {
+   "id": "train",
+   "label": "Practice",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "highfive",
+   "label": "High five",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "calm",
+   "label": "Soothe",
+   "group": "care",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle",
+    "marimo"
+   ]
+  },
+  {
+   "id": "play",
+   "label": "Toy",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "fetch",
+   "label": "Fetch",
+   "group": "play",
+   "species": [
+    "bunny",
+    "frog",
+    "turtle"
+   ]
+  },
+  {
+   "id": "leaf",
+   "label": "Leaf chase",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "feather",
+   "label": "Feather",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "bubbles",
+   "label": "Bubbles",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle",
+    "marimo"
+   ]
+  },
+  {
+   "id": "hide",
+   "label": "Hide & seek",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "peekaboo",
+   "label": "Peekaboo",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle",
+    "marimo"
+   ]
+  },
+  {
+   "id": "trail",
+   "label": "Draw a trail",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "race",
+   "label": "Little race",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "gather",
+   "label": "Meet here",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "groupmeal",
+   "label": "Picnic",
+   "group": "play",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "call",
+   "label": "Call over",
+   "group": "explore",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "forage",
+   "label": "Forage",
+   "group": "explore",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "inspect",
+   "label": "Explore",
+   "group": "explore",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "friend",
+   "label": "Visit a friend",
+   "group": "explore",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "nap",
+   "label": "Find a bed",
+   "group": "explore",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "tunnel",
+   "label": "Try a tunnel",
+   "group": "explore",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "bask",
+   "label": "Sunbathe",
+   "group": "explore",
+   "species": [
+    "turtle",
+    "frog",
+    "bunny"
+   ]
+  },
+  {
+   "id": "dig",
+   "label": "Dig",
+   "group": "explore",
+   "species": [
+    "bunny"
+   ]
+  },
+  {
+   "id": "swim",
+   "label": "Swim",
+   "group": "explore",
+   "species": [
+    "frog",
+    "turtle"
+   ]
+  },
+  {
+   "id": "splash",
+   "label": "Splash",
+   "group": "play",
+   "species": [
+    "frog",
+    "turtle"
+   ]
+  },
+  {
+   "id": "croak",
+   "label": "Croak",
+   "group": "play",
+   "species": [
+    "frog"
+   ]
+  },
+  {
+   "id": "shell",
+   "label": "Shell peek",
+   "group": "play",
+   "species": [
+    "turtle",
+    "snail"
+   ]
+  },
+  {
+   "id": "cave",
+   "label": "Visit cave",
+   "group": "explore",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "return",
+   "label": "Back outside",
+   "group": "explore",
+   "species": [
+    "frog",
+    "snail",
+    "bunny",
+    "turtle"
+   ]
+  },
+  {
+   "id": "light",
+   "label": "Soft light",
+   "group": "care",
+   "species": [
+    "marimo"
+   ]
+  },
+  {
+   "id": "water",
+   "label": "Fresh water",
+   "group": "care",
+   "species": [
+    "marimo"
+   ]
+  },
+  {
+   "id": "roll",
+   "label": "Gentle roll",
+   "group": "play",
+   "species": [
+    "marimo"
+   ]
+  },
+  {
+   "id": "current",
+   "label": "Water current",
+   "group": "play",
+   "species": [
+    "marimo"
+   ]
+  },
+  {
+   "id": "pond",
+   "label": "Drift in pond",
+   "group": "explore",
+   "species": [
+    "marimo"
+   ]
+  },
+  {
+   "id": "bowl",
+   "label": "Move bowl",
+   "group": "explore",
+   "species": [
+    "marimo"
+   ]
+  },
+  {
+   "id": "shade",
+   "label": "Soft shade",
+   "group": "care",
+   "species": [
+    "marimo"
+   ]
+  }
+ ],
+ "species": {
+  "frog": {
+   "pace": 30,
+   "name": "Pip"
+  },
+  "snail": {
+   "pace": 7,
+   "name": "Miso"
+  },
+  "bunny": {
+   "pace": 42,
+   "name": "Mochi"
+  },
+  "turtle": {
+   "pace": 13,
+   "name": "Clover"
+  },
+  "marimo": {
+   "pace": 2,
+   "name": "Mori"
+  }
+ }
+}

@@ -34,17 +34,34 @@ export function toast(text, iconId) {
 
 let onClose = null;
 let opener = null;
+let refresher = null;
+let sheetKey = null;
 
-export function openSheet(title, html, bind, close) {
+// refresh: called again when shared data changes, to redraw the open panel.
+export function openSheet(title, html, bind, close, refresh) {
   const sheet = $('#sheet');
+  const body = $('#sheet-body');
+  const same = !sheet.hidden && refresh && sheetKey === title;
   if (!sheet.hidden && onClose) onClose();
-  opener = document.activeElement;
+  if (!same) opener = document.activeElement;
+  const scroll = same ? body.scrollTop : 0;
   $('#sheet-title').textContent = title;
-  $('#sheet-body').innerHTML = html;
+  body.innerHTML = html;
   sheet.hidden = false;
   onClose = close || null;
-  if (bind) bind($('#sheet-body'));
-  $('#sheet-close').focus({ preventScroll: true });
+  refresher = refresh || null;
+  sheetKey = title;
+  if (bind) bind(body);
+  body.scrollTop = scroll;
+  if (!same) $('#sheet-close').focus({ preventScroll: true });
+}
+
+// Redraw the open panel unless the person is typing in it.
+export function refreshSheet() {
+  if ($('#sheet').hidden || !refresher) return;
+  const a = document.activeElement;
+  if (a && a.closest && a.closest('#sheet') && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
+  refresher();
 }
 
 export function closeSheet() {
@@ -54,6 +71,8 @@ export function closeSheet() {
   $('#sheet-body').innerHTML = '';
   if (onClose) onClose();
   onClose = null;
+  refresher = null;
+  sheetKey = null;
   if (opener && opener.focus && document.contains(opener)) opener.focus({ preventScroll: true });
 }
 
