@@ -95,7 +95,7 @@ export function updateHud(g) {
   $('#clock').textContent = g.scene === 'mine'
     ? `${R.BAND_NAMES[R.bandOf(g.layer)]} layer ${g.layer} of 30`
     : g.scene === 'home'
-      ? `${g.room?.name || 'Home'} · ${when}`
+      ? `${g.room?.name || 'Home'} · tap Build to furnish`
       : `${cap(g.season)} ${dayOfSeason(g.today)} · ${weather} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`;
   const leave = $('#btn-leave');
   // Inside your home you leave through the door mat; in the cave there's also a button.

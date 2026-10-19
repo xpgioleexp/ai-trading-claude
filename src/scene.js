@@ -412,6 +412,8 @@ function drawHome(ctx, g) {
   px(ctx, door.x - 10, floorBottom - 3, 20, 6, '#2A2420');
   px(ctx, door.x - 8, door.y - 2, 16, 9, PAL.rose);
   px(ctx, door.x - 6, door.y, 12, 5, PAL.roseHi);
+  const bob = Math.round(Math.sin(g.t * 4) * 1.5);
+  for (let i = 0; i < 4; i++) px(ctx, door.x - 4 + i, door.y + 8 + i + bob, 8 - i * 2, 1, PAL.linenHi);
 
   // wall items
   for (const w of g.wallitems) {

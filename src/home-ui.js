@@ -19,12 +19,36 @@ export function roomsList() {
   return Object.entries(S.rooms).map(([id, r]) => ({ id, ...r })).sort((a, b) => (a.order || 0) - (b.order || 0));
 }
 
-// Every home starts with a living room.
+// Free pieces every home starts with, so the first room isn't bare.
+const STARTER = [
+  { type: 'single_bed', c: 3, r: 4 },
+  { type: 'rug_round', c: 7, r: 6 },
+  { type: 'armchair', c: 10, r: 5 },
+  { type: 'floor_lamp', c: 4, r: 7 },
+  { type: 'houseplant', c: 13, r: 4 },
+];
+
+// Every home starts with a furnished living room.
 export async function ensureFirstRoom() {
-  if (roomsList().length) return roomsList()[0].id;
-  const id = 'room-living';
-  await setDoc(`rooms/${id}`, { type: 'living', name: 'Living room', wallpaper: 'linen', floor: 'planks', order: 0, by: cloud.me, at: now() }).catch(() => {});
-  S.rooms[id] = { type: 'living', name: 'Living room', wallpaper: 'linen', floor: 'planks', order: 0 };
+  let id = roomsList()[0]?.id;
+  if (!id) {
+    id = 'room-living';
+    const room = { type: 'living', name: 'Living room', wallpaper: 'linen', floor: 'planks', order: 0, by: cloud.me, at: now() };
+    await setDoc(`rooms/${id}`, room).catch(() => {});
+    S.rooms[id] = room;
+  }
+  const room = S.rooms[id];
+  const empty = !Object.values(S.furniture).some(f => f.room === id);
+  if (!room.starter && empty) {
+    for (const piece of STARTER) {
+      const key = 'starter-' + piece.type;
+      const doc = { room: id, ...piece, by: cloud.me, at: now(), starter: true };
+      S.furniture[key] = doc;
+      setDoc(`furniture/${key}`, doc).catch(() => {});
+    }
+    S.rooms[id] = { ...room, starter: true };
+    updateDoc(`rooms/${id}`, { starter: true }).catch(() => {});
+  }
   return id;
 }
 
@@ -155,7 +179,7 @@ export function openFurnish(g, tab = 'furniture') {
     }));
     body.querySelectorAll('[data-return]').forEach(b => b.addEventListener('click', () => {
       const f = S.furniture[b.dataset.return];
-      const price = FURNITURE_BY_TYPE[f.type]?.price || 0;
+      const price = f.starter ? 0 : FURNITURE_BY_TYPE[f.type]?.price || 0;
       g.state.pebbles += price;
       g.save();
       deleteDoc(`furniture/${b.dataset.return}`);
