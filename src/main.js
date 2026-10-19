@@ -5,7 +5,7 @@ import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay, deviceTimeZone 
 import { COLS, MEADOW_COLS } from './world.js';
 import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
-import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W } from './scene.js';
+import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W, CAM_MIN, CAM_MAX } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
 import { DIRS } from './avatar.js';
 import * as UI from './ui.js';
@@ -280,7 +280,7 @@ function habitats() {
   bugTiles = {
     flower: open, ground: open,
     tree: near(OBJECTS.find(o => o.id === 'tree'), 2),
-    pond: [...near(OBJECTS.find(o => o.id === 'pond'), 1), ...near(OBJECTS.find(o => o.id === 'pond2'), 1)],
+    pond: ['pond', 'pond2', 'pond3', 'pond4'].flatMap(id => near(OBJECTS.find(o => o.id === id), 1)),
   };
   return bugTiles;
 }
@@ -519,7 +519,7 @@ function readOthers() {
     const prev = g.others.find(o => o.id === id);
     const o = prev || { id, x: pr.x, y: pr.y };
     Object.assign(o, {
-      tx: Math.max(0, Math.min(MEADOW_W, pr.x)), ty: Math.max(0, Math.min(H, pr.y)), dir: pr.dir | 0, frame: pr.frame | 0,
+      tx: Math.max(CAM_MIN, Math.min(MEADOW_W, pr.x)), ty: Math.max(0, Math.min(H, pr.y)), dir: pr.dir | 0, frame: pr.frame | 0,
       pose: ['walk', 'sit', 'cast', 'swing', 'crouch'].includes(pr.pose) ? pr.pose : 'walk',
       scene: ['mine', 'home', 'map'].includes(pr.scene) ? pr.scene : 'jar', layer: pr.layer | 0, look: cleanLook(pr.look),
       mapId: MAPS[pr.mapId] ? pr.mapId : null,
@@ -746,7 +746,7 @@ function useObject(o) {
       g.player.pose = 'sit';
       g.player.dir = DIRS.down;
       return ready() && T.openToday(g);
-    case 'pond': case 'pond2': return startFishing(o);
+    case 'pond': case 'pond2': case 'pond3': case 'pond4': return startFishing(o);
     case 'door': return ready() && openTravel(g);
     case 'cave':
       if (g.state.mine.deepest >= 11) return UI.openElevator(g, enterMine);
@@ -1160,7 +1160,7 @@ function leaveMine() {
 
 // Open floor in the mine. Rocks, walls, chests and the lake block the way.
 function mineOpen(c, r, flying) {
-  if (!inBounds(c, r, COLS) || g.mineWalls.has(c + ',' + r)) return false;
+  if (!inBounds(c, r, COLS, 0) || g.mineWalls.has(c + ',' + r)) return false;
   const p = g.mine?.pool;
   if (p && c >= p.c && c < p.c + p.w && r >= p.r && r < p.r + p.h) return false;
   if (g.mine?.chests.some(ch => ch.c === c && ch.r === r)) return false;
@@ -1508,11 +1508,10 @@ function updateCamera(dt) {
     g.camX = 0;
     return;
   }
-  const max = MEADOW_W - W;
   let target = g.camX;
   if (g.player.x - target < EDGE) target = g.player.x - EDGE;
   if (g.player.x - target > W - EDGE) target = g.player.x - (W - EDGE);
-  target = Math.max(0, Math.min(max, target));
+  target = Math.max(CAM_MIN, Math.min(CAM_MAX, target));
   // Arriving from far away (a new scene, a jump): snap instead of gliding.
   if (Math.abs(target - g.camX) > W / 2) g.camX = target;
   else g.camX += (target - g.camX) * Math.min(1, dt * 6);

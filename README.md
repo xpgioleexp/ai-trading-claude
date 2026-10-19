@@ -21,7 +21,9 @@ Any static file server works. There is no build step.
 
 ## What's in the jar
 
-**A wider meadow:** the meadow is twice as wide as the jar. Walk toward the glass on either side and the view slides with you; little arrows at the edges show there's more that way. The left half is the meadow you know. The east half has a lily pond you can fish in, an oak, a birch, a willow and a pine, the door to the other jars on the far wall, and lots of open room for your decorations, farm buildings and crafts. Your home, the mine and the other jars still fit on one screen.
+**A wider meadow:** the meadow is four screens wide, with the one you started on second from the left. Walk toward the glass on either side and the view slides with you; little arrows at the edges show there's more that way. **West woods:** a forest pool to fish in and six trees. **East meadow:** a lily pond, a reed pond, eight trees, and the door to the other jars on the far east wall. There's lots of open room for decorations, farm buildings and crafts. Your home, the mine and the other jars still fit on one screen.
+
+**For testing:** every jar on the shelf is open for now (`PREVIEW_ALL_JARS` in `src/travel.js`). Set it to `false` to make jars cost pebbles again.
 
 
 | Tap | What happens |
@@ -36,7 +38,7 @@ Any static file server works. There is no build step.
 | Fruit tree | Shake once a day for fruit |
 | Glints on the ground | Forage, new spots every day |
 | Door (far east wall) | The jar shelf: open and visit the other jars |
-| Lily pond (east meadow) | A second place to fish in the meadow |
+| Lily pond, reed pond, forest pool | More places to fish in the meadow |
 | Tent / your home | Go inside. **Build** inside furnishes the room you're in |
 | Bench | **Today**: the daily question (answer, later or skip), mood check-in, the weekly ritual |
 | Mailbox | Notes and appreciation cards between you, plus tips |

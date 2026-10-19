@@ -1,5 +1,5 @@
 // Draws the jar, its world and the mine onto the game canvas.
-import { COLS, MEADOW_COLS, ROWS, TILE, OBJECTS, BEDS } from './world.js';
+import { COLS, MEADOW_COLS, MEADOW_WEST, ROWS, TILE, OBJECTS, BEDS } from './world.js';
 import { EVENT_SPOT, SNOWMAN_SPOT, meteorAt } from './events.js';
 import { LIGHT_DECOR } from './outdoor-data.js';
 import { bedStage, bandOf, MINE_ENTRY } from './rules.js';
@@ -25,7 +25,11 @@ export const GX = 24;
 export const GY = 100;
 export const SOIL_TOP = GY + ROWS * TILE;
 // The meadow is wider than the screen; the view slides with you (see g.camX).
+export const MEADOW_LEFT = -MEADOW_WEST * TILE;
 export const MEADOW_W = GX * 2 + MEADOW_COLS * TILE;
+// How far the camera can slide either way.
+export const CAM_MIN = MEADOW_LEFT;
+export const CAM_MAX = MEADOW_W - W;
 const JAR = { x: 12, y: 40, w: 296, h: 332, r: 24 };
 
 export function tileCenter(c, r) {
@@ -77,37 +81,36 @@ export function drawScene(ctx, g) {
 
 // Little arrows at the glass when there's more meadow to that side.
 function drawEdgeHints(ctx, g) {
-  const max = MEADOW_W - W, cam = g.camX || 0;
+  const cam = g.camX || 0;
   const y = GY + (ROWS * TILE) / 2, pulse = Math.floor(g.t * 2) % 2;
   ctx.fillStyle = 'rgba(255,250,235,0.7)';
   const chevron = (x, dir) => { for (let i = 0; i < 5; i++) ctx.fillRect(x + dir * (i < 3 ? i : 4 - i), y - 4 + i * 2, 2, 2); };
-  if (cam > 2) chevron(18 - pulse, -1);
-  if (cam < max - 2) chevron(300 + pulse, 1);
+  if (cam > CAM_MIN + 2) chevron(18 - pulse, -1);
+  if (cam < CAM_MAX - 2) chevron(300 + pulse, 1);
 }
 
 // ---------- the forest jar ----------
 
 function drawJarWorld(ctx, g) {
   const { season } = g;
-  const WW = MEADOW_W, cam = Math.round(g.camX || 0);
-  px(ctx, 0, 0, WW, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
-  drawBackdrop(ctx, g, WW);
+  const X0 = MEADOW_LEFT, WW = MEADOW_W - MEADOW_LEFT, cam = Math.round(g.camX || 0);
+  px(ctx, X0, 0, WW, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  drawBackdrop(ctx, g, WW, X0);
 
   // Grass, including the strips beside the tile grid.
   const [base, dark] = [grassTile(season, 0), grassTile(season, 1)];
-  for (let x = 0; x < WW; x += TILE) {
+  for (let x = X0; x < X0 + WW; x += TILE) {
     for (let y = GY - 8; y < SOIL_TOP; y += TILE) ctx.drawImage((x + y) % 32 ? base : dark, x, y);
   }
   for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < MEADOW_COLS; c++) {
+    for (let c = -MEADOW_WEST; c < MEADOW_COLS; c++) {
       const v = hashString(c + ':' + r) % 4;
       ctx.drawImage(grassTile(season, v), GX + c * TILE, GY + r * TILE);
     }
   }
-  px(ctx, 0, GY - 9, WW, 2, shade(SEASON_EDGE[season], -0.2));
+  px(ctx, X0, GY - 9, WW, 2, shade(SEASON_EDGE[season], -0.2));
 
-  drawPond(ctx, g);
-  drawPond(ctx, g, 'pond2');
+  for (const id of ['pond', 'pond2', 'pond3', 'pond4']) drawPond(ctx, g, id);
   const cave = OBJECTS.find(o => o.id === 'cave');
   ctx.drawImage(caveSprite(), GX + cave.c * TILE, GY + cave.r * TILE);
   BEDS.forEach((b, i) => {
@@ -250,7 +253,7 @@ function drawJarWorld(ctx, g) {
   items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
   if (g.fishing) drawLine(ctx, g);
 
-  drawSoil(ctx, g, WW);
+  drawSoil(ctx, g, WW, X0);
   // Weather, the night sky and shooting stars stay put on screen.
   ctx.save();
   ctx.translate(cam, 0);
@@ -294,14 +297,14 @@ function drawEventSky(ctx, g) {
 
 const SEASON_EDGE = { spring: PAL.grass, summer: '#9DB86E', autumn: '#C2B070', winter: '#E6EDEE' };
 
-function drawBackdrop(ctx, g, width = W) {
+function drawBackdrop(ctx, g, width = W, x0 = 0) {
   // Small pines and hills behind the meadow, inside the glass.
   const winter = g.season === 'winter';
   const far = winter ? '#B9C7C9' : g.season === 'autumn' ? '#A88F5E' : '#8EA889';
   const near = winter ? '#8FA3A4' : g.season === 'autumn' ? '#8A6F45' : PAL.leaf;
-  for (let x = 6; x < width; x += 22) disc(ctx, x, GY - 2, 16, far);
+  for (let x = x0 + 6; x < x0 + width; x += 22) disc(ctx, x, GY - 2, 16, far);
   for (let i = 0; i < Math.ceil(width / 21) - 1; i++) {
-    const x = 18 + i * 21 + (hashString('pine' + i) % 9);
+    const x = x0 + 18 + i * 21 + (hashString('pine' + i) % 9);
     const h = 18 + (hashString('h' + i) % 14);
     for (let y = 0; y < h; y++) {
       const w = Math.floor((y / h) * 12) + 1;
@@ -409,16 +412,16 @@ function drawLine(ctx, g) {
   }
 }
 
-function drawSoil(ctx, g, width = W) {
+function drawSoil(ctx, g, width = W, x0 = 0) {
   const bands = [['#8A6A4A', 22], ['#7F7A70', 26], ['#5E6A7A', 40]];
   let y = SOIL_TOP;
-  px(ctx, 0, y, width, 3, PAL.leafShade);
+  px(ctx, x0, y, width, 3, PAL.leafShade);
   y += 3;
   bands.forEach(([color, h], i) => {
-    px(ctx, 0, y, width, h, color);
+    px(ctx, x0, y, width, h, color);
     for (let k = 0; k < Math.round(26 * width / W); k++) {
       const hx = hashString('soil' + i + ':' + k);
-      px(ctx, hx % width, y + ((hx >>> 9) % (h - 2)), 2, 1, shade(color, k % 2 ? -0.18 : 0.15));
+      px(ctx, x0 + hx % width, y + ((hx >>> 9) % (h - 2)), 2, 1, shade(color, k % 2 ? -0.18 : 0.15));
     }
     if (i === 2) {
       for (let k = 0; k < 7; k++) {

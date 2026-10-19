@@ -4,7 +4,10 @@
 // COLS is how many columns fit on screen (and the size of the mine and the
 // other jars). The meadow is wider: the view slides as you walk.
 export const COLS = 17;
-export const MEADOW_COLS = 34;
+// Columns run from -MEADOW_WEST (the west woods) to MEADOW_COLS - 1 (the east
+// wall), so the meadow you started with keeps its spot in the middle.
+export const MEADOW_WEST = 17;
+export const MEADOW_COLS = 51;
 export const ROWS = 12;
 export const TILE = 16;
 
@@ -29,7 +32,21 @@ export const OBJECTS = [
   { id: 'oak2', kind: 'tree', tree: 'birch', name: 'Birch', c: 30, r: 2, w: 1, h: 1 },
   { id: 'oak3', kind: 'tree', tree: 'willow', name: 'Willow', c: 29, r: 10, w: 1, h: 1 },
   { id: 'oak4', kind: 'tree', tree: 'pine', name: 'Pine', c: 21, r: 10, w: 1, h: 1 },
-  { id: 'door', name: 'Door to the other jars', c: 33, r: 3, w: 1, h: 1, walkable: true },
+  // The far east: more trees, and the door on the far wall.
+  { id: 'oak5', kind: 'tree', tree: 'oak', name: 'Oak', c: 37, r: 2, w: 1, h: 1 },
+  { id: 'oak6', kind: 'tree', tree: 'cherry', name: 'Cherry tree', c: 42, r: 8, w: 1, h: 1 },
+  { id: 'oak7', kind: 'tree', tree: 'pine', name: 'Pine', c: 47, r: 1, w: 1, h: 1 },
+  { id: 'oak8', kind: 'tree', tree: 'birch', name: 'Birch', c: 45, r: 10, w: 1, h: 1 },
+  { id: 'pond3', name: 'Reed pond', c: 39, r: 4, w: 3, h: 3 },
+  { id: 'door', name: 'Door to the other jars', c: 50, r: 3, w: 1, h: 1, walkable: true },
+  // The west woods, past the garden.
+  { id: 'west1', kind: 'tree', tree: 'pine', name: 'Pine', c: -3, r: 1, w: 1, h: 1 },
+  { id: 'west2', kind: 'tree', tree: 'oak', name: 'Old oak', c: -8, r: 3, w: 1, h: 1 },
+  { id: 'west3', kind: 'tree', tree: 'willow', name: 'Willow', c: -12, r: 8, w: 1, h: 1 },
+  { id: 'west4', kind: 'tree', tree: 'birch', name: 'Birch', c: -15, r: 2, w: 1, h: 1 },
+  { id: 'west5', kind: 'tree', tree: 'pine', name: 'Pine', c: -6, r: 10, w: 1, h: 1 },
+  { id: 'west6', kind: 'tree', tree: 'cherry', name: 'Cherry tree', c: -16, r: 10, w: 1, h: 1 },
+  { id: 'pond4', name: 'Forest pool', c: -11, r: 4, w: 4, h: 3 },
 ];
 
 // Garden beds, rows of three. The first six are open; the garden upgrades open the rest.
@@ -56,8 +73,8 @@ function buildBlocked() {
 
 export const BLOCKED = buildBlocked();
 
-export function inBounds(c, r, cols = MEADOW_COLS) {
-  return c >= 0 && r >= 0 && c < cols && r < ROWS;
+export function inBounds(c, r, cols = MEADOW_COLS, from = -MEADOW_WEST) {
+  return c >= from && r >= 0 && c < cols && r < ROWS;
 }
 
 export function isWalkable(c, r, extraBlocked) {
@@ -70,7 +87,7 @@ export function isWalkable(c, r, extraBlocked) {
 export function forageTiles() {
   const out = [];
   for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < MEADOW_COLS; c++) {
+    for (let c = -MEADOW_WEST; c < MEADOW_COLS; c++) {
       if (!isWalkable(c, r)) continue;
       if (OBJECTS.some(o => o.walkable && c >= o.c && c < o.c + o.w && r >= o.r && r < o.r + o.h)) continue;
       if (c === START_TILE.c && r === START_TILE.r) continue;
