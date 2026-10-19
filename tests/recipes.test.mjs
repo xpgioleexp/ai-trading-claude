@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import '../src/maps.js';
 import '../src/mine-data.js';
+import '../src/crafting.js';
+import '../src/events.js';
+import '../src/biomes.js';
 import { ITEMS } from '../src/data.js';
 import { RECIPES, TOOLS, STEPS, matchRecipe, otherToolFor, tagsOf, hintFor } from '../src/cooking.js';
 

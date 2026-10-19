@@ -15,6 +15,7 @@ import { rngFor } from './rng.js';
 import { MAPS, MAP_FISH_IDS, MAP_FORAGE_IDS } from './maps.js';
 import { furnitureStockHtml, bindFurnitureStock } from './visitors-ui.js';
 import { EVENT_ITEM_IDS, EVENTS } from './events.js';
+import { usePotion } from './biomes.js';
 import { PANTRY, FERTILIZERS, FERTILIZER_BY_ID, FARM_BUILDINGS, NEW_CROP_IDS, PRODUCE_IDS } from './farm-data.js';
 import { nextBedUpgrade, upgradeBeds, sprinklerCost, buySprinkler, costText } from './farm.js';
 import { TOOLS, TOOL_BY_ID, RECIPES } from './cooking.js';
@@ -150,8 +151,17 @@ export function openBag(g) {
       body.querySelector('#bag-detail').textContent = `${item.name} · ${catName(item.cat)} · Sells for ${item.price} pebbles${extra}`;
       const actions = body.querySelector('#bag-actions');
       const heal = healOf(item);
-      actions.innerHTML = (heal ? `<button class="btn" id="eat">Eat (+${heal} health)</button>` : '')
+      actions.innerHTML = (heal ? `<button class="btn" id="eat">${item.cat === 'potion' ? 'Drink' : 'Eat'} (+${heal} health)</button>` : '')
+        + (item.use ? `<button class="btn" id="use">Use: ${esc(item.text)}</button>` : '')
         + (partnerId() ? `<button class="btn ghost" id="give">Give 1 to your partner</button>` : '');
+      actions.querySelector('#use')?.addEventListener('click', () => {
+        const used = usePotion(s, item.id, g.today);
+        if (!used) return;
+        g.save();
+        if (used === 'garden') g.state.garden.forEach((b, i) => { if (b.crop) g.saveBed?.(i); });
+        toast(used === 'luck' ? 'You feel lucky! Five more bites today.' : 'The garden is watered.', item.id);
+        openBag(g);
+      });
       actions.querySelector('#eat')?.addEventListener('click', () => {
         const got = R.eat(s, item.id);
         if (!got) return toast('You\'re already at full health.');
@@ -175,7 +185,7 @@ export function openBag(g) {
 }
 
 function catName(cat) {
-  return { produce: 'Farm produce', pantry: 'Pantry', farm: 'Farm', artifact: 'Artifact', loot: 'Monster loot', fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', bug: 'Bug', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
+  return { potion: 'Tonic', produce: 'Farm produce', pantry: 'Pantry', farm: 'Farm', artifact: 'Artifact', loot: 'Monster loot', fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', bug: 'Bug', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
 }
 
 // ---------- collection log ----------

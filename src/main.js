@@ -23,6 +23,8 @@ import { openCrafting } from './crafting-ui.js';
 import { BUG_BY_ID, spawnBugs, timeBlock, alertRate, NOTICE_TILES, catchBug } from './bugs.js';
 import { MAPS, mapWalkable, mapObjectAt, mapOpenTiles, mapNear, mapCatch, mapWeather, mapDaily } from './maps.js';
 import { openTravel } from './travel.js';
+import './biomes.js';
+import { syncCritters, updateCritters, critterAt, openCritter, openJarShop, runSpot, digAt } from './jar-life.js';
 import { visitorOn, visitorSpot, merchantHere, MERCHANT_SPOT } from './visitors.js';
 import { openVisitor, openMerchant } from './visitors-ui.js';
 import {
@@ -100,6 +102,11 @@ function refreshClock() {
     const map = MAPS[g.mapId];
     g.season = map.season;
     g.weather = mapWeather(map, g.weather);
+    // Starlight isle is always night.
+    if (map.night) {
+      g.night = true;
+      g.part = 'night';
+    }
     if (g.state.daily) g.mapDaily = mapDaily(g.state, g.mapId, g.today, g.state.seed, DAILY_BITES);
   }
   syncBugs();
@@ -258,7 +265,7 @@ function habitats() {
       const open = mapOpenTiles(map);
       mapTiles[map.id] = {
         flower: open, ground: open,
-        tree: mapNear(map, ['palm', 'pine', 'hive', 'arch'], 2),
+        tree: mapNear(map, ['palm', 'pine', 'hive', 'arch', 'cactus', 'bigtree', 'bamboo', 'bigshroom', 'fern'], 2),
         pond: mapNear(map, ['water', 'water2'], 1),
       };
     }
@@ -921,6 +928,7 @@ function enterMap(id) {
   placePlayer(1, 5);
   g.player.dir = DIRS.right;
   refreshClock();
+  syncCritters(g);
   UI.updateHud(g);
 }
 
@@ -942,6 +950,10 @@ function tapMap(c, r, x, y) {
   const day = g.mapDaily;
   const bug = bugAt(x, y);
   if (bug) return sneakTo(bug);
+  const critter = critterAt(g, x, y);
+  if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => ready() && openCritter(g, critter));
+  const di = day.digs.findIndex((t, i) => t.c === c && t.r === r && !day.dug.includes(i));
+  if (di >= 0) return walkTo(c, r, () => digAt(g, di));
   const fi = day.forage.findIndex((f, i) => f.c === c && f.r === r && !day.picked.includes(i));
   if (fi >= 0) {
     walkTo(c, r, () => {
@@ -969,10 +981,12 @@ function useMapObject(map, o) {
   const day = g.mapDaily;
   if (o.id === 'door') return ready() && openTravel(g);
   if (o.id === 'water' || o.id === 'water2') return startFishing(o);
+  if (o.kind === 'shop') return openJarShop(g, map.id);
+  if (o.kind === 'spot') return ready() && runSpot(g, o);
   if (o.fruit) {
-    if (day.shook) return UI.toast(`Nothing more from the ${o.name.toLowerCase()} today.`);
+    if (day.shaken[o.id]) return UI.toast(`Nothing more from the ${o.name.toLowerCase()} today.`);
     if (!R.addItem(g.state, o.fruit, 1)) return UI.toast('Your bag is full.');
-    day.shook = true;
+    day.shaken[o.id] = true;
     if (o.id === 'palm') {
       R.addItem(g.state, 'wood', 2);
       UI.toast('+2 Wood', 'wood');
@@ -1449,7 +1463,11 @@ function frame(now) {
   }
   updatePlayer(dt);
   updateOthers(dt);
-  if (g.scene === 'map') updateBugs(dt);
+  if (g.scene === 'map') {
+    updateBugs(dt);
+    // Animals keep off the spots, stalls and paths of things you tap.
+    updateCritters(g, dt, (c, r) => walkable(c, r) && !mapObjectAt(MAPS[g.mapId], c, r));
+  }
   if (g.scene === 'jar') {
     const ctxRes = { night: g.night, player: { c: g.player.c, r: g.player.r }, blocked: g.decorBlocked };
     for (const a of g.residents) updateResident(a, dt, g.t, ctxRes);
@@ -1534,14 +1552,14 @@ function start(hotData = {}) {
     state: R.migrate(saved, seed, today),
     scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(), mine: null, mineWalls: new Set(), monsters: [], maxHp: 100,
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
-    residents: [], bugs: [], bugKey: '', visitors: [], visitorKey: '', events: [], eventsToday: [], eventKey: '', mushrooms: [], meteors: [], snowman: false, crouch, sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
+    residents: [], bugs: [], bugKey: '', visitors: [], visitorKey: '', critters: [], events: [], eventsToday: [], eventKey: '', mushrooms: [], meteors: [], snowman: false, crouch, sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     mapId: null, mapDaily: null, enterMap, leaveMap,
     roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
     openKitchen: () => ready() && openKitchen(g),
     openCrafting: () => openCrafting(g),
     openTools: () => UI.openWorkbench(g),
     fishing: null, action: null, effects: [], hold: false, t: 0, today,
-    debugHour: null, save, saveFarm, startPlacing, animalReacts, resetMine, enterMine,
+    debugHour: null, save, saveFarm, saveBed: saveSharedBed, startPlacing, animalReacts, resetMine, enterMine,
   };
   placePlayer(START_TILE.c, START_TILE.r);
   checkNewDay();

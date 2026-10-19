@@ -44,6 +44,15 @@ export const BUGS = [
 export const BUG_BY_ID = Object.fromEntries(BUGS.map(b => [b.id, b]));
 for (const b of BUGS) ITEMS[b.id] = { id: b.id, name: b.name, cat: 'bug', shape: 'bug', kind: b.kind, color: b.color, price: b.price };
 
+// Adds jar-only bugs (see biomes.js).
+export function addBugs(list) {
+  for (const b of list) {
+    BUGS.push(b);
+    BUG_BY_ID[b.id] = b;
+    ITEMS[b.id] = { id: b.id, name: b.name, cat: 'bug', shape: 'bug', kind: b.kind, color: b.color, price: b.price };
+  }
+}
+
 const RARITY = { common: 60, uncommon: 22, rare: 6 };
 export const BUGS_AT_ONCE = 4;
 

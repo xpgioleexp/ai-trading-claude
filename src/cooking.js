@@ -210,6 +210,17 @@ const R = [
   ['snow_cone', 'Snow cone', 'churn', ['#ice', '#berry'], '#C9E0F0'],
   ['lemon_sorbet', 'Lemon sorbet', 'churn', ['lemon', '#ice', '#sweet'], '#F5E8A0'],
   ['frozen_yogurt', 'Frozen berry yogurt', 'churn', ['milk', '#berry', '#sweet'], '#E8A0C0'],
+  // with things from the other jars
+  ['coffee', 'Coffee', 'kettle', ['coffee_bean'], '#5A3A2A'],
+  ['mocha', 'Mocha', 'kettle', ['coffee_bean', 'cocoa', 'milk'], '#6B4430'],
+  ['matcha_latte', 'Matcha latte', 'kettle', ['matcha', 'milk'], '#9DC76A'],
+  ['yuzu_tea', 'Yuzu tea', 'kettle', ['yuzu', 'honey'], '#F0DA4A'],
+  ['saffron_rice', 'Saffron rice', 'pot', ['rice', 'saffron'], '#F0B84A'],
+  ['date_cake', 'Sticky date cake', 'oven', ['dates', 'flour', '#sweet'], '#8A5A3A'],
+  ['passion_smoothie', 'Passion fruit smoothie', 'blender', ['passion_fruit', 'banana'], '#E8A04A'],
+  ['salt_fish', 'Salt-grilled fish', 'grill', ['#fish', 'sea_salt'], '#D9C9A0'],
+  ['bamboo_stir_fry', 'Bamboo shoot stir-fry', 'pan', ['bamboo_shoot', '#greens', 'oil'], '#C9C27A'],
+  ['cactus_sorbet', 'Cactus fruit sorbet', 'churn', ['cactus_fruit', '#ice'], '#D9466A'],
 ];
 export const RECIPES = R.map(([id, name, tool, needs, color]) => ({ id, name, tool, needs, color }));
 

@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { RECIPES, matchRecipe, tagsOf, isIngredient, starsFor, hintFor, dishPrice } from '../src/cooking.js';
 import '../src/maps.js';
 import '../src/mine-data.js';
+import '../src/crafting.js';
+import '../src/events.js';
+import '../src/biomes.js';
 import { ITEMS } from '../src/data.js';
 
 test('fish, crops, forage and fruit are ingredients; stone and seeds are not', () => {

@@ -11,7 +11,8 @@ import {
 import { avatarSprite, DIRS } from './avatar.js';
 import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR, bugSprite, visitorSprite, merchantSprite, merchantRugSprite, requestMarkSprite, eventStandSprite } from './sprites-more.js';
 import { BUG_BY_ID } from './bugs.js';
-import { doorSprite, palmSprite, hiveSprite, pineSprite, snowmanSprite, archSprite } from './sprites-more.js';
+import { doorSprite, palmSprite, hiveSprite, pineSprite, snowmanSprite, archSprite, critterSprite, jarStallSprite, jarThingSprite } from './sprites-more.js';
+import { SHOPS } from './biomes.js';
 import { MAPS } from './maps.js';
 import { hashString } from './rng.js';
 import { houseSprite, wallpaperTile, floorTile, furnitureSprite, wallItemSprite, sleeperSprite } from './home-art.js';
@@ -469,6 +470,11 @@ const WATER = {
   pool: ['#79AAA4', '#507F83', '#B7D4BD'],
   ice: ['#B9D9E2', '#93B8C4', '#F2FAFF'],
   pond: ['#79AAA4', '#507F83', '#B7D4BD'],
+  oasis: ['#5FB5B0', '#3F8F8A', '#B7E8E0'],
+  falls: ['#5FA8B5', '#3F8095', '#DCF2F6'],
+  glow: ['#3F7A6A', '#2A5A4A', '#9FF0C0'],
+  moon: ['#3A3A6A', '#2A2A50', '#DCE6F2'],
+  spring: ['#8FC9C0', '#6FA9A0', '#F2FAFF'],
 };
 
 function drawMapWorld(ctx, g) {
@@ -480,8 +486,9 @@ function drawMapWorld(ctx, g) {
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) ctx.drawImage(grassTile(ground, hashString(map.id + c + ':' + r) % 4), GX + c * TILE, GY + r * TILE);
   // water
   for (const o of map.objects) {
-    if (!WATER[o.kind]) continue;
-    const [base, deep, hi] = WATER[o.kind];
+    const kind = o.spot === 'hot_spring' ? 'spring' : o.kind;
+    if (!WATER[kind]) continue;
+    const [base, deep, hi] = WATER[kind];
     const x = GX + o.c * TILE, y = GY + o.r * TILE, w = o.w * TILE, h = o.h * TILE;
     if (o.kind === 'sea') {
       px(ctx, 0, y, W, SOIL_TOP - y, base);
@@ -503,6 +510,17 @@ function drawMapWorld(ctx, g) {
     const p = tileCenter(f.c, f.r);
     ctx.drawImage(itemIcon(f.id), p.x - 8, p.y - 10);
   });
+  // Treasure marks in the desert, and flat spots drawn on the ground.
+  daily?.digs?.forEach((t, i) => {
+    if (daily.dug.includes(i)) return;
+    ctx.drawImage(jarThingSprite('dig'), GX + t.c * TILE + 2, GY + t.r * TILE + 4);
+  });
+  for (const o of map.objects) {
+    const flat = { fairy_ring: 'ring', sunset: 'dune', rink: 'rink' }[o.spot];
+    if (!flat) continue;
+    const img = jarThingSprite(flat);
+    ctx.drawImage(img, GX + (o.c + o.w / 2) * TILE - img.width / 2, GY + (o.r + o.h) * TILE - img.height - (flat === 'ring' ? 4 : 0));
+  }
   const items = [];
   const at = (o, img) => {
     const x = GX + (o.c + o.w / 2) * TILE - img.width / 2;
@@ -511,11 +529,47 @@ function drawMapWorld(ctx, g) {
   };
   for (const o of map.objects) {
     if (o.id === 'door') at(o, doorSprite());
-    if (o.id === 'palm') at(o, palmSprite(!daily?.shook));
-    if (o.id === 'hive') at(o, hiveSprite(!daily?.shook));
+    if (o.id === 'palm') at(o, palmSprite(!daily?.shaken?.[o.id]));
+    if (o.id === 'hive') at(o, hiveSprite(!daily?.shaken?.[o.id]));
     if (o.kind === 'pine') at(o, pineSprite());
     if (o.id === 'snowman') at(o, snowmanSprite());
     if (o.id === 'arch') at(o, archSprite());
+    if (o.kind === 'palm' && o.fruit) at(o, palmSprite(!daily?.shaken?.[o.id]));
+    if (['cactus', 'bigtree'].includes(o.kind)) at(o, jarThingSprite(o.kind, o.fruit && !daily?.shaken?.[o.id] ? 1 : 0));
+    if (['fern', 'bigshroom', 'bamboo', 'lantern', 'cloud'].includes(o.kind)) at(o, jarThingSprite(o.kind));
+    if (o.kind === 'shop') {
+      const shop = SHOPS[map.id];
+      at(o, jarStallSprite(shop.color));
+      const keeper = critterSprite(shop.shape, shop.color, shop.accent, Math.floor(g.t * 1.5) % 2);
+      const kx = GX + (o.c + o.w / 2) * TILE - 8, ky = GY + o.r * TILE + 2;
+      items.push({ y: GY + (o.r + o.h) * TILE - 1, draw: () => ctx.drawImage(keeper, kx, ky - keeper.height + 6) });
+    }
+    if (o.kind === 'spot') {
+      const st = daily ? (g.state.daily.spots?.[o.id] ?? 0) : 0;
+      const thing = { sandcastle: ['sandcastle', typeof st === 'number' ? st : 0], bottle: st ? null : ['bottle'], igloo: ['igloo'], swing: ['swing'], bouquet: ['bouquet'],
+        vine: ['vine'], bounce: null, steamer: ['steamer', Math.floor(g.t * 2)], telescope: ['telescope'], star_bench: ['star_bench'] }[o.spot];
+      if (o.spot === 'bounce') at(o, jarThingSprite('bigshroom'));
+      else if (thing) at(o, jarThingSprite(thing[0], thing[1] || 0));
+    }
+  }
+  // The waterfall pours into its pool.
+  const falls = map.objects.find(o => o.spot === 'waterfall');
+  if (falls) {
+    const x = GX + falls.c * TILE, y = GY - 20;
+    px(ctx, x, y, falls.w * TILE, (falls.r + 2) * TILE + 20, '#9FD3E0');
+    for (let i = 0; i < 6; i++) px(ctx, x + 4 + i * 7, y + ((g.t * 60 + i * 13) % ((falls.r + 2) * TILE + 16)), 2, 6, '#F2FAFF');
+  }
+  for (const a of g.critters || []) {
+    const img = critterSprite(a.def.shape, a.def.color, a.def.accent, Math.floor(g.t * 2 + a.c) % 2);
+    items.push({ y: a.y, draw: () => {
+      ctx.save();
+      if (a.flip) {
+        ctx.translate(Math.round(a.x), 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, -8, Math.round(a.y - img.height + 2));
+      } else ctx.drawImage(img, Math.round(a.x) - 8, Math.round(a.y - img.height + 2));
+      ctx.restore();
+    } });
   }
   for (const b of g.bugs) {
     const def = BUG_BY_ID[b.id];
@@ -529,9 +583,32 @@ function drawMapWorld(ctx, g) {
   for (const o of g.others) if (o.scene === 'map' && o.mapId === g.mapId) items.push({ y: o.y, draw: () => drawAvatarAt(ctx, o, o.look, false, g.t) });
   items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
   if (g.fishing) drawLine(ctx, g);
-  px(ctx, 0, SOIL_TOP, W, H - SOIL_TOP, map.id === 'beach' ? '#C9B07A' : map.id === 'snow' ? '#8E9AA0' : '#8A6A4A');
+  px(ctx, 0, SOIL_TOP, W, H - SOIL_TOP, map.soil || (map.id === 'beach' ? '#C9B07A' : map.id === 'snow' ? '#8E9AA0' : '#8A6A4A'));
+  // Steam over the hot spring.
+  for (const o of map.objects) {
+    if (o.spot !== 'hot_spring') continue;
+    for (let i = 0; i < 6; i++) {
+      const sx = GX + o.c * TILE + 8 + i * 12, sy = GY + o.r * TILE + 10 - ((g.t * 10 + i * 9) % 30);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(sx + Math.sin(g.t + i) * 3, sy, 5, 5);
+    }
+  }
   drawWeather(ctx, g);
   if (g.night) drawNight(ctx, g);
+  if (map.night) {
+    for (let i = 0; i < 40; i++) {
+      const hx = hashString('star' + i);
+      if ((Math.floor(g.t * 2) + i) % 7) px(ctx, 20 + hx % 280, 20 + (hx >>> 8) % 70, 1, 1, '#FFFFFF');
+    }
+  }
+  if (map.dim) {
+    ctx.fillStyle = 'rgba(40,60,50,0.25)';
+    ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 12; i++) {
+      const hx = hashString('spore' + i);
+      px(ctx, (hx % 300 + g.t * 4 * ((i % 3) + 1)) % W, GY + (hx >>> 9) % 180 - Math.sin(g.t + i) * 6, 2, 2, 'rgba(180,255,200,0.8)');
+    }
+  }
 }
 
 // ---------- inside your home ----------

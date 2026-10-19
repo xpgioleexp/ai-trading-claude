@@ -22,6 +22,10 @@ export const SEASON_GROUND = {
   winter: ['#E6EDEE', '#C5D3D8', '#F7FAFA'],
   sand: ['#E9D7A8', '#D5C08A', '#F5E8C4'],
   blossom: ['#B9CC86', '#9DB86E', '#E4B4A3'],
+  dune: ['#E3C28A', '#CFA86E', '#F0D9A8'],
+  jungle: ['#5E9A4A', '#4A7F3A', '#7FB55A'],
+  moss: ['#5E7A5A', '#4A634A', '#7F9A6E'],
+  cloud: ['#4A4670', '#3E3A62', '#6A66A0'],
 };
 
 // ---------- helpers ----------

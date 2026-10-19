@@ -566,3 +566,165 @@ export function eventStandSprite() {
     for (let x = 3; x < 21; x += 4) px(ctx, x, 12, 2, 2, ['#E8C25A', '#79AAA4', '#E07A9B'][x % 3]);
   });
 }
+
+// ---------- the biome jars ----------
+
+// The animals who live in the jars, and the shopkeepers. 16 x 18, two frames.
+export function critterSprite(shape, color, accent, frame) {
+  return sprite(`critter_${shape}_${color}_${accent || ''}_${frame}`, 16, 18, ctx => {
+    const up = frame ? 1 : 0;
+    const d = shade(color, -0.25), l = shade(color, 0.3), eye = PAL.inkDeep;
+    const e = (x, y) => px(ctx, x, y - up, 1, 1, eye);
+    switch (shape) {
+      case 'crab':
+        disc(ctx, 8, 12, 5, d); disc(ctx, 8, 11.5, 4.5, color);
+        px(ctx, 1, 8 - up, 3, 3, d); px(ctx, 12, 8 - up, 3, 3, d);
+        px(ctx, 6, 7, 1, 2, d); px(ctx, 9, 7, 1, 2, d); e(6, 7); e(9, 7);
+        for (const x of [3, 5, 10, 12]) px(ctx, x, 15, 1, 2, d);
+        break;
+      case 'bird': case 'penguin': case 'crane': case 'owl':
+        disc(ctx, 8, 11 - up, 5, color);
+        if (shape === 'penguin') px(ctx, 6, 9 - up, 4, 6, '#F2F4F6');
+        disc(ctx, 8, 5 - up, 3.5, color);
+        e(7, 4); if (shape === 'owl') { disc(ctx, 6.5, 5 - up, 1.6, PAL.linenHi); disc(ctx, 9.5, 5 - up, 1.6, PAL.linenHi); e(6, 5); e(9, 5); }
+        px(ctx, 10, 5 - up, shape === 'crane' ? 4 : 3, 1, accent || '#E8A03A');
+        if (shape === 'crane') { px(ctx, 7, 1 - up, 3, 2, accent || '#C9333C'); px(ctx, 7, 15, 1, 3, PAL.ink); px(ctx, 9, 15, 1, 3, PAL.ink); }
+        else { px(ctx, 6, 15, 2, 2, '#E8A03A'); px(ctx, 9, 15, 2, 2, '#E8A03A'); }
+        px(ctx, 3, 10 - up, 2, 4, d);
+        break;
+      case 'bee': case 'moth':
+        disc(ctx, 8, 10 - up, 4, color);
+        if (shape === 'bee') { px(ctx, 5, 9 - up, 7, 1, PAL.inkDeep); px(ctx, 5, 11 - up, 7, 1, PAL.inkDeep); }
+        px(ctx, 2, 4 - up * 2, 5, 5, shape === 'bee' ? 'rgba(255,255,255,0.8)' : l); px(ctx, 9, 4 - up * 2, 5, 5, shape === 'bee' ? 'rgba(255,255,255,0.8)' : l);
+        e(10, 9); px(ctx, 10, 5, 1, 2, d);
+        break;
+      case 'shroom':
+        disc(ctx, 8, 6 - up, 6, color); px(ctx, 4, 4 - up, 2, 2, PAL.linenHi); px(ctx, 10, 3 - up, 2, 2, PAL.linenHi);
+        px(ctx, 5, 9 - up, 6, 7, '#F2EDE4'); e(6, 12); e(9, 12);
+        px(ctx, 5, 16, 2, 2, '#E9DFC0'); px(ctx, 9, 16, 2, 2, '#E9DFC0');
+        break;
+      case 'snail':
+        px(ctx, 1, 13, 14, 3, '#D9C9A0'); disc(ctx, 7, 9, 5, color); disc(ctx, 7, 9, 2.5, d);
+        px(ctx, 12, 8 - up, 1, 5, '#D9C9A0'); e(12, 7);
+        break;
+      default: {
+        // four-legged and upright animals: fox, deer, camel, sloth, capybara, monkey, bunny, otter, bear, lizard, toad
+        const low = ['capybara', 'lizard', 'toad', 'otter'].includes(shape);
+        const by = low ? 12 : 11;
+        disc(ctx, 8, by - up, low ? 5 : 4.5, color);
+        disc(ctx, low ? 12 : 8, low ? 9 - up : 5 - up, 3.5, color);
+        const hx = low ? 12 : 8, hy = low ? 9 : 5;
+        if (shape === 'fox') { px(ctx, 5, 0 - up, 2, 3, color); px(ctx, 10, 0 - up, 2, 3, color); px(ctx, 12, 12, 3, 3, l); }
+        if (shape === 'bunny') { px(ctx, 6, -1 - up, 2, 4, color); px(ctx, 9, -1 - up, 2, 4, color); }
+        if (shape === 'deer') { px(ctx, 5, 0 - up, 1, 3, PAL.woodShade); px(ctx, 10, 0 - up, 1, 3, PAL.woodShade); }
+        if (shape === 'camel') { disc(ctx, 7, 7 - up, 3, d); px(ctx, 5, 14, 1, 4, d); px(ctx, 10, 14, 1, 4, d); }
+        if (shape === 'bear' || shape === 'monkey') { disc(ctx, 5, 2 - up, 1.5, d); disc(ctx, 11, 2 - up, 1.5, d); }
+        if (shape === 'monkey') px(ctx, 6, 4 - up, 4, 3, accent || '#E9C9B0');
+        if (shape === 'sloth') { px(ctx, 6, 4 - up, 4, 2, l); px(ctx, 6, 4 - up, 1, 1, PAL.inkDeep); px(ctx, 9, 4 - up, 1, 1, PAL.inkDeep); }
+        if (shape === 'lizard') px(ctx, 1, 13, 4, 1, color);
+        if (shape !== 'sloth') { e(hx - 1, hy - 1); e(hx + 1, hy - 1); }
+        px(ctx, 5, 15, 2, 2, d); px(ctx, 9, 15, 2, 2, d);
+      }
+    }
+  });
+}
+
+// A little market stall in the jar's colours, 32 x 22.
+export function jarStallSprite(color) {
+  return sprite('jar_stall_' + color, 32, 22, ctx => {
+    px(ctx, 2, 6, 2, 16, PAL.woodShade); px(ctx, 28, 6, 2, 16, PAL.woodShade);
+    for (let x = 0; x < 32; x += 4) px(ctx, x, 2, 4, 6, x % 8 ? PAL.linenHi : color);
+    px(ctx, 0, 8, 32, 1, PAL.woodShade);
+    px(ctx, 1, 14, 30, 8, PAL.wood); px(ctx, 1, 14, 30, 1, PAL.woodHi);
+  });
+}
+
+// Everything else in the jars, by kind. Sizes vary; feet sit on the bottom row.
+export function jarThingSprite(kind, state = 0) {
+  const sizes = { cactus: [14, 22], bigtree: [36, 44], fern: [16, 14], bigshroom: [20, 26], bamboo: [10, 30], lantern: [12, 20], cloud: [32, 14],
+    sandcastle: [16, 16], bottle: [10, 8], igloo: [18, 14], swing: [16, 24], bouquet: [16, 14], steamer: [14, 12], telescope: [14, 18], star_bench: [28, 12],
+    vine: [10, 30], dig: [12, 8], ring: [44, 40], dune: [30, 10], rink: [46, 12] };
+  const [w, h] = sizes[kind] || [16, 16];
+  return sprite(`jar_${kind}_${state}`, w, h, c => {
+    switch (kind) {
+      case 'cactus':
+        px(c, 5, 3, 4, 19, '#5F9A4A'); px(c, 1, 9, 3, 6, '#5F9A4A'); px(c, 10, 6, 3, 7, '#5F9A4A'); px(c, 1, 14, 4, 2, '#5F9A4A'); px(c, 9, 12, 4, 2, '#5F9A4A');
+        if (state) disc(c, 7, 3, 2, '#D9466A');
+        break;
+      case 'bigtree':
+        px(c, 14, 20, 8, 24, PAL.woodShade); px(c, 16, 20, 4, 24, PAL.wood);
+        disc(c, 18, 14, 16, '#3F6F3A'); disc(c, 18, 12, 13, '#4F8A4A');
+        if (state) for (const [x, y] of [[10, 12], [24, 9], [18, 18], [27, 16]]) px(c, x, y, 3, 3, '#7A3A6A');
+        break;
+      case 'fern':
+        for (let i = 0; i < 5; i++) px(c, 2 + i * 3, 4 + Math.abs(2 - i) * 2, 2, 10 - Math.abs(2 - i) * 2, i % 2 ? '#4F8A4A' : '#6FAF5B');
+        break;
+      case 'bigshroom':
+        px(c, 7, 12, 6, 14, '#F2EDE4'); disc(c, 10, 9, 10, '#C9483A'); px(c, 1, 9, 18, 3, '#C9483A');
+        for (const [x, y] of [[5, 5], [12, 3], [15, 8], [8, 9]]) px(c, x, y, 2, 2, PAL.linenHi);
+        break;
+      case 'bamboo':
+        for (const x of [1, 6]) { px(c, x, 0, 3, 30, '#8DBA5C'); for (let y = 4; y < 30; y += 7) px(c, x, y, 3, 1, '#5E8A4A'); }
+        px(c, 3, 6, 4, 2, '#6FAF5B');
+        break;
+      case 'lantern':
+        px(c, 4, 12, 4, 8, '#9A958A'); px(c, 1, 9, 10, 3, '#8A8378'); px(c, 3, 4, 6, 5, '#9A958A'); px(c, 5, 5, 2, 3, '#F2C46A'); px(c, 2, 2, 8, 2, '#8A8378');
+        break;
+      case 'cloud':
+        disc(c, 8, 8, 6, '#E9E6F2'); disc(c, 16, 6, 7, '#F2F0F8'); disc(c, 25, 8, 6, '#E9E6F2'); px(c, 4, 9, 26, 5, '#E9E6F2');
+        break;
+      case 'sandcastle':
+        if (state >= 1) px(c, 1, 10, 14, 6, '#D5C08A');
+        if (state >= 2) { px(c, 2, 5, 4, 5, '#E3CC94'); px(c, 10, 5, 4, 5, '#E3CC94'); px(c, 6, 7, 4, 3, '#E3CC94'); }
+        if (state >= 3) { px(c, 6, 1, 4, 6, '#E9D7A8'); px(c, 8, 0, 1, 2, PAL.woodShade); px(c, 9, 0, 3, 2, '#D9533C'); }
+        if (!state) { px(c, 4, 12, 8, 3, '#D5C08A'); px(c, 6, 11, 1, 1, PAL.woodShade); }
+        break;
+      case 'bottle':
+        px(c, 1, 3, 7, 4, '#9FD3C0'); px(c, 8, 4, 2, 2, '#B88D60'); px(c, 3, 4, 3, 2, PAL.linenHi);
+        break;
+      case 'igloo':
+        disc(c, 9, 13, 9, '#F2FAFF'); px(c, 0, 13, 18, 1, '#C5D3D8'); px(c, 6, 8, 6, 6, '#3A4652');
+        for (let y = 6; y < 13; y += 3) px(c, 1, y, 16, 1, '#DCE6EA');
+        break;
+      case 'swing':
+        px(c, 1, 0, 14, 2, '#6FAF5B'); for (const x of [2, 6, 11]) px(c, x, 0, 2, 2, '#E07A9B');
+        px(c, 3, 2, 1, 16, PAL.woodShade); px(c, 12, 2, 1, 16, PAL.woodShade); px(c, 2, 18, 12, 2, PAL.wood);
+        break;
+      case 'bouquet':
+        px(c, 1, 6, 14, 2, PAL.wood); px(c, 2, 8, 2, 6, PAL.woodShade); px(c, 12, 8, 2, 6, PAL.woodShade);
+        px(c, 6, 2, 4, 4, '#E07A9B'); px(c, 5, 3, 1, 2, '#F0DA4A'); px(c, 10, 3, 1, 2, '#B9C9F2');
+        break;
+      case 'steamer':
+        disc(c, 7, 9, 6, '#8A8378'); disc(c, 7, 8, 4, '#5A5550');
+        if (state % 2) { px(c, 4, 0, 2, 4, 'rgba(255,255,255,0.7)'); px(c, 8, 1, 2, 3, 'rgba(255,255,255,0.6)'); }
+        break;
+      case 'telescope':
+        px(c, 6, 10, 1, 8, PAL.woodShade); px(c, 3, 17, 8, 1, PAL.woodShade); px(c, 3, 12, 1, 6, PAL.woodShade); px(c, 10, 12, 1, 6, PAL.woodShade);
+        for (let i = 0; i < 9; i++) px(c, 2 + i, 9 - Math.floor(i * 0.8), 3, 3, i > 6 ? '#3F5A7A' : '#B5853A');
+        break;
+      case 'star_bench':
+        px(c, 1, 3, 26, 3, PAL.wood); px(c, 1, 7, 26, 2, PAL.wood); px(c, 3, 9, 2, 3, PAL.woodShade); px(c, 23, 9, 2, 3, PAL.woodShade);
+        break;
+      case 'vine':
+        for (let y = 0; y < 26; y++) px(c, 4 + Math.round(Math.sin(y / 4) * 2), y, 2, 1, '#4F8A4A');
+        px(c, 1, 8, 3, 2, '#6FAF5B'); px(c, 6, 16, 3, 2, '#6FAF5B'); px(c, 2, 26, 6, 3, PAL.wood);
+        break;
+      case 'dig':
+        px(c, 1, 1, 2, 2, '#8A5A3A'); px(c, 9, 1, 2, 2, '#8A5A3A'); px(c, 3, 3, 2, 2, '#8A5A3A'); px(c, 7, 3, 2, 2, '#8A5A3A'); px(c, 5, 4, 2, 1, '#8A5A3A');
+        px(c, 3, 5, 2, 2, '#8A5A3A'); px(c, 7, 5, 2, 2, '#8A5A3A'); px(c, 1, 7, 2, 1, '#8A5A3A'); px(c, 9, 7, 2, 1, '#8A5A3A');
+        break;
+      case 'ring':
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2, x = 22 + Math.cos(a) * 18, y = 20 + Math.sin(a) * 16;
+          disc(c, x, y, 2.4, i % 2 ? '#E9C9D9' : '#D9533C'); px(c, x - 0.5, y + 1, 1, 2, PAL.linenHi);
+        }
+        break;
+      case 'dune':
+        for (let x = 0; x < 30; x++) px(c, x, 10 - Math.round(Math.sin((x / 30) * Math.PI) * 7), 1, 10, x % 5 ? '#E9C994' : '#D9B47A');
+        break;
+      case 'rink':
+        px(c, 1, 2, 44, 9, '#C9E3EC'); px(c, 3, 3, 40, 1, '#F2FAFF'); px(c, 12, 6, 10, 1, '#F2FAFF'); px(c, 28, 8, 8, 1, '#F2FAFF');
+        break;
+    }
+  });
+}

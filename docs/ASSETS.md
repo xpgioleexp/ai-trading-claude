@@ -152,6 +152,19 @@ New item icons: every ore, gem, fossil, artifact, geode, cave fish, grotto plant
 
 The locked garden beds are drawn faded, with a small sign, in `drawJarWorld`. New item icons: every new crop and seed, egg, milk, shiitake, the 5 fruits, flour, sugar, butter, cheese, oil, the 3 fertilizers and all 142 dishes in `src/cooking.js`.
 
+### Biome jars
+
+| Name | Size | What it is |
+|---|---|---|
+| `ground_<dune, jungle, moss, cloud>_<0-3>` | 16 × 16 | Ground for the desert, rainforest, mushroom glade and Starlight isle |
+| `critter_<shape>_…_<frame>` | 16 × 18 | The 16 jar animals and 8 shopkeepers, two frames each. See `CRITTERS` and `SHOPS` in `src/biomes.js` for who's who |
+| `jar_stall_<colour>` | 32 × 22 | Each jar's market stall |
+| `jar_<kind>_<state>` | varies | Cactus, giant tree, fern, giant mushroom, bamboo, stone lantern, cloud, sandcastle (stages 0–3), bottle, igloo, flower swing, bouquet table, steam vent, telescope, stargazing bench, jungle vine, dig mark, fairy ring, sunset dune, ice rink |
+| `furniture_<surfboard, snow_globe, trellis, brass_lantern, hammock, spore_lamp, paper_screen, star_lamp>` | 16 × 16 (hammock and paper screen 32 × 16) | One unique piece from each jar shop |
+| `furniture_plush_<animal>` | 16 × 16 | A plush of each jar animal |
+
+The waterfall, hot spring steam, starry sky and glade mist are drawn in code in `drawMapWorld`.
+
 ### Visitors and the merchant
 
 | Name | Size | What it is |

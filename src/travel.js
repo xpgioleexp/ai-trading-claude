@@ -4,6 +4,7 @@ import { cloud, setDoc, now } from './cloud.js';
 import { S } from './shared.js';
 import { openSheet, closeSheet, toast, esc } from './ui.js';
 import { MAPS, MAP_ORDER } from './maps.js';
+import { crittersIn, SHOPS } from './biomes.js';
 import { nameOf } from './together.js';
 
 export function jarUnlocked(id) {
@@ -19,7 +20,9 @@ export function openTravel(g) {
       const m = MAPS[id];
       const open = jarUnlocked(id);
       const by = S.jars[id]?.by;
-      return `<li><span class="name">${esc(m.name)}<small>${esc(m.blurb)}${open && by ? ` Opened by ${esc(nameOf(by))}.` : ''}</small></span>
+      const who = crittersIn(id).map(c => `${c.name} the ${c.species}`).join(' and ');
+      const shop = SHOPS[id];
+      return `<li><span class="name">${esc(m.name)}<small>${esc(m.blurb)}${who ? ` Lives here: ${esc(who)}.` : ''}${shop ? ` Shop: ${esc(shop.keeper)}'s ${esc(shop.title.toLowerCase())}.` : ''}${open && by ? ` Opened by ${esc(nameOf(by))}.` : ''}</small></span>
         ${here === id ? '<span class="detail small">You are here</span>'
           : open ? `<button class="btn small" data-go="${id}">Go</button>`
             : `<button class="btn small" data-unlock="${id}" ${g.state.pebbles < m.price ? 'disabled' : ''}>Open · ${m.price}</button>`}</li>`;

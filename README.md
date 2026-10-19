@@ -118,6 +118,49 @@ Any static file server works. There is no build step.
 - **Friendship:** after three deliveries from either of you, a visitor gives each of you a thank-you piece of special furniture.
 - **Shared:** you both see the same merchant, visitor, request and stock.
 
+**Other jars:** the door on the right of the meadow opens the jar shelf. You open new jars with pebbles, once for both of you, and travel between them. Each jar keeps to a few things done well: two animals who live there, one shopkeeper with a small stock, and two special spots, plus its own fish, bugs and forage.
+
+| Jar | Price | Lives here | Shop | Special spots |
+|---|---|---|---|---|
+| Beach | 300 | Pinch the crab, Sky the seagull | Coral the otter's shell shack | Build a sandcastle in three steps · a message in a bottle on the tideline each day |
+| Snow | 500 | Pebble the penguin, Frost the arctic fox | Bjorn the polar bear's cocoa cabin | Ice rink · igloo to warm up |
+| Flower | 700 | Bumble the bumblebee, Fawn the deer | Mrs. Moss the snail's bloom stall | Flower swing · bouquet table (any 3 flowers make a bouquet) |
+| Desert oasis | 900 | Sahara the fennec fox, Humphrey the camel | Kasim the gecko's caravan | 3 treasure marks to dig each day · a sunset dune (best 5–8 pm) |
+| Rainforest | 1,200 | Tico the toucan, Mo the sloth | Kiki the monkey's fruit stand | Vine swing · waterfall |
+| Mushroom glade | 1,500 | Puff the mushroom sprite, Luna the luna moth | Bramble the toad's apothecary | Bouncy mushroom · fairy ring for a daily wish |
+| Hot springs | 1,800 | Mochi the capybara, Yuki the snow monkey | Grandma Tsuru the crane's tea house | Hot spring · steam vent that turns eggs into onsen eggs |
+| Starlight isle | 2,500 | Comet the star bunny, Nova the moon moth | Orion the owl's night market | Telescope (12 constellations, one a night) · stargazing bench |
+
+- **Animals:** tap one to pet it, play with it or give it a treat, once each a day. Treats it loves count most.
+  - **Friendship:** goes up to 5 hearts, and both of your visits count toward it.
+  - **At 3 hearts:** it gives you a little present each day.
+  - **At 5 hearts:** you each get a plush of it for your home.
+- **Shops:** each sells one piece of furniture you can't get anywhere else, plus a few goods from that jar. Examples are sea salt, saffron, coffee beans, matcha, moon pies and gifts.
+  - **The apothecary's tonics:** a healing tonic, a lucky brew (5 extra fishing bites today) and a garden tonic (waters every bed). Use them from the Bag.
+- **Spots:** most reward you once a day. Soaking spots (igloo, waterfall, hot spring) restore your health.
+- **Doing things together:** when you do something with your partner standing next to you (skating, soaking, the swing, the sunset, the telescope and more), you both get extra. It's kept in the journal as a moment together.
+- **Fish:** each jar has 3 of its own, and the first three jars have more.
+- **Bugs:** 2 found only in that jar.
+- **Weather and time:** each jar has its own weather. The rainforest rains, the glade is misty, and Starlight isle is always night.
+- **Recipes:** the new ingredients go into 10 new recipes, including coffee, mocha, matcha latte, yuzu tea, saffron rice and sticky date cake.
+
+**Seasonal events:** each season is one week (Monday to Sunday), and events fall on set days of it. A striped event stand appears in the meadow on event days. Tap it for what's on and what's coming up, and the top bar shows the event's name.
+- **Lantern nights (spring, Saturday and Sunday, from 6pm):** paper lanterns float up through the night. Let yours go with a wish. When you both do, you see each other's wish and each get 20 pebbles.
+- **Fishing festival (summer, Saturday):** 10 extra bites at the pond. Your best catch is scored by size against the biggest of its kind, plus a bonus for rarer fish. Enter it once at the stand for pebbles, plus a fishing trophy the first time. You see each other's entries, and the higher one gets a 🏆.
+- **Meteor showers (summer Wednesday night, autumn Sunday night):** tap shooting stars to catch up to 3 star fragments a night.
+- **Mushroom season (autumn, Monday to Friday):** 5 extra mushroom spots a day, including puffballs and the rare glowcap and truffle. Fill a basket of 10 for a mushroom lamp.
+- **Snow days (winter, Tuesday and Friday):** deep snow all day. Roll the four parts of a snowman (you can each roll some), and it stands in the meadow until tomorrow. Everyone who helped gets 40 pebbles.
+- **Clear skies:** lantern and meteor nights are always clear.
+- **Testing:** `#debug` has a **Next event** button that jumps to the next event, at night if it's a night event.
+
+**Shops and visitors:**
+- **Rotating furniture:** the beetle shop has four new pieces every morning: two special pieces you can't get from the catalogue, and two catalogue pieces at 20% off. One of each per day. They go in your bag; place them from **Build** inside your home.
+- **Traveling merchant:** stops by two days a week on a rug in the meadow. Sells seeds from other seasons (they grow in any season), one merchant-only piece (telescope, aquarium or lucky cat) and two hard-to-find goods, one of each. They also pay double for one thing that day.
+- **Visitors:** a different animal visits each day of the week, from eight: Pip, Maple, Bram, Lulu, Juniper, Otis, Fern and Dot. Tap them to chat.
+- **Delivery requests:** each visitor asks for something from this season, such as forage, fish, crops, minerals, bugs or materials, and pays pebbles. A **!** shows while it's open. Either of you can deliver it, and it's only open that day.
+- **Friendship:** after three deliveries from either of you, a visitor gives each of you a thank-you piece of special furniture.
+- **Shared:** you both see the same merchant, visitor, request and stock.
+
 **Other jars:**
 - **The door:** on the right of the meadow. It opens the jar shelf, where you open new terrariums with pebbles and travel between them. Opening a jar opens it for both of you.
 - **Beach jar (300 pebbles):** always summer. Sea and tide-pool fishing, shells, sea glass, starfish and coral, and a palm tree with coconuts (plus 2 wood).
@@ -187,6 +230,8 @@ Any static file server works. There is no build step.
 | `src/mine-data.js` | The mine's zones, rocks, ores, gems, fossils, artifacts, geodes, cave fish, grotto plants and monsters |
 | `src/farm-data.js` | New crops, farm buildings, fruit trees, fertilizers, pantry staples and garden upgrades |
 | `src/farm.js` | Farm rules: collecting from buildings and trees, opening beds, the sprinkler |
+| `src/biomes.js` | The jars' animals, shopkeepers and special spots, the five newer jars, and their rules |
+| `src/jar-life.js` | Panels for the animals, jar shops and spots, and the animals wandering |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |

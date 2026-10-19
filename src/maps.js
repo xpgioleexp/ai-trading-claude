@@ -50,6 +50,22 @@ ITEMS.honey = { id: 'honey', name: 'Honey', cat: 'forage', shape: 'bottle', colo
 export const MAP_FISH_IDS = Object.values(MAP_FISH).flat().map(f => f[0]);
 export const MAP_FORAGE_IDS = [...Object.values(MAP_FORAGE).flat().map(f => f[0]), 'coconut', 'honey'];
 
+// Adds another jar (see biomes.js): its layout, fish and forage.
+export function addMap(map, fish, forage) {
+  MAPS[map.id] = map;
+  if (!MAP_ORDER.includes(map.id)) MAP_ORDER.push(map.id);
+  MAP_FISH[map.id] = fish;
+  MAP_FORAGE[map.id] = forage;
+  for (const [id, name, color, rarity, size, price, difficulty] of fish) {
+    ITEMS[id] = { id, name, cat: 'fish', shape: 'fish', color, rarity, size, price, difficulty, map: map.id };
+    MAP_FISH_IDS.push(id);
+  }
+  for (const [id, name, shape, color, price, rare, tags] of forage) {
+    ITEMS[id] = { id, name, cat: 'forage', shape, color, price, rare: !!rare, map: map.id, ...(tags ? { tags } : {}) };
+    MAP_FORAGE_IDS.push(id);
+  }
+}
+
 // Layouts on the same 17 x 12 grid as the meadow. Water and trees block walking.
 export const MAPS = {
   beach: {
@@ -140,9 +156,24 @@ export function mapWeather(map, homeWeather) {
   return homeWeather === 'snow' ? 'rain' : homeWeather;
 }
 
-// Each jar keeps its own daily forage, fruit and fishing bites.
+// Places to dig today (the desert's treasure marks), the same for both of you.
+export function digSpots(seed, day, mapId) {
+  const map = MAPS[mapId];
+  if (!map.digs) return [];
+  const rand = rngFor(seed, 'digs', mapId, day);
+  const forage = new Set(mapForageSpots(seed, day, mapId).map(f => f.c + ',' + f.r));
+  return shuffle(rand, mapOpenTiles(map).filter(t => !forage.has(t.c + ',' + t.r))).slice(0, map.digs);
+}
+
+// Each jar keeps its own daily forage, fruit, digging and fishing bites.
 export function mapDaily(state, mapId, day, seed, bites) {
   state.daily.maps = state.daily.maps || {};
-  if (!state.daily.maps[mapId]) state.daily.maps[mapId] = { forage: mapForageSpots(seed, day, mapId), picked: [], shook: false, bites };
-  return state.daily.maps[mapId];
+  if (!state.daily.maps[mapId]) {
+    state.daily.maps[mapId] = { forage: mapForageSpots(seed, day, mapId), picked: [], shaken: {}, digs: digSpots(seed, day, mapId), dug: [], bites };
+  }
+  const d = state.daily.maps[mapId];
+  d.shaken = d.shaken || (d.shook ? { palm: true, hive: true } : {});
+  d.digs = d.digs || [];
+  d.dug = d.dug || [];
+  return d;
 }

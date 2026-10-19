@@ -286,7 +286,48 @@ function drawFurniture(ctx, type, w, h) {
       px(ctx, 6, 8, 4, 8, PAL.linenHi); disc(ctx, 8, 6, 6, '#D9533C');
       for (const [x, y] of [[5, 4], [10, 3], [8, 7]]) px(ctx, x, y, 2, 2, PAL.linenHi);
       return;
+    case 'surfboard':
+      disc(ctx, 8, 4, 3.5, '#5FA8C9'); px(ctx, 5, 4, 7, 11, '#5FA8C9'); px(ctx, 7, 1, 2, 14, '#F2EDE4'); px(ctx, 4, 15, 8, 1, woodD);
+      return;
+    case 'snow_globe':
+      px(ctx, 3, 12, 10, 4, woodD); disc(ctx, 8, 7, 5.5, '#C9E3EC'); px(ctx, 6, 8, 4, 3, '#F2FAFF'); px(ctx, 7, 6, 2, 2, '#4F8A4A');
+      px(ctx, 5, 4, 1, 1, '#FFFFFF'); px(ctx, 10, 6, 1, 1, '#FFFFFF');
+      return;
+    case 'trellis':
+      for (let x = 2; x < 15; x += 4) px(ctx, x, 1, 1, 15, wood);
+      for (let y = 3; y < 15; y += 4) px(ctx, 1, y, 14, 1, wood);
+      for (const [x, y] of [[3, 2], [9, 5], [5, 9], [12, 11], [2, 13]]) px(ctx, x, y, 2, 2, PAL.rose);
+      return;
+    case 'brass_lantern':
+      px(ctx, 7, 0, 2, 2, '#B5853A'); px(ctx, 4, 2, 8, 2, '#D9A53A'); px(ctx, 5, 4, 6, 9, '#B5853A'); px(ctx, 6, 5, 4, 7, '#F2C46A');
+      px(ctx, 4, 13, 8, 2, '#D9A53A');
+      return;
+    case 'hammock':
+      px(ctx, 1, 2, 2, 14, woodD); px(ctx, W - 3, 2, 2, 14, woodD);
+      for (let x = 3; x < W - 3; x++) px(ctx, x, 6 + Math.round(Math.sin(((x - 3) / (W - 6)) * Math.PI) * 4), 1, 3, x % 4 < 2 ? '#E07A7A' : '#F2EDE4');
+      return;
+    case 'spore_lamp':
+      px(ctx, 7, 7, 2, 9, '#F2EDE4'); disc(ctx, 8, 6, 6, '#7FD0B0'); disc(ctx, 8, 6, 3.5, '#B9F0D0');
+      return;
+    case 'paper_screen':
+      px(ctx, 1, 1, W - 2, H - 2, woodD);
+      for (let i = 0; i < 3; i++) px(ctx, 2 + i * ((W - 4) / 3), 2, (W - 4) / 3 - 1, H - 4, '#F5EED8');
+      px(ctx, 2, H / 2, W - 4, 1, woodD);
+      return;
+    case 'star_lamp':
+      px(ctx, 7, 9, 2, 6, woodD); px(ctx, 4, 15, 8, 1, woodD);
+      for (const [x, y, w, h] of [[7, 0, 2, 9], [4, 3, 8, 2], [3, 4, 10, 1], [5, 6, 6, 2]]) px(ctx, x, y, w, h, '#F2E48A');
+      return;
     default:
+      if (type.startsWith('plush_')) {
+        const def = FURNITURE_BY_TYPE[type]?.plush;
+        const c = def?.color || PAL.rose;
+        disc(ctx, 8, 11, 5, c); disc(ctx, 8, 5, 4, c);
+        px(ctx, 4, 1, 2, 3, c); px(ctx, 10, 1, 2, 3, c);
+        px(ctx, 6, 4, 1, 1, PAL.inkDeep); px(ctx, 9, 4, 1, 1, PAL.inkDeep); px(ctx, 7, 6, 2, 1, PAL.rose);
+        px(ctx, 6, 13, 4, 1, shade(c, -0.3));
+        return;
+      }
       px(ctx, 2, 4, 12, 12, PAL.rose);
   }
 }
