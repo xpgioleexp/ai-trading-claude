@@ -5,6 +5,8 @@ import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay, deviceTimeZone 
 import { COLS, MEADOW_COLS, ROWS, TILE } from './world.js';
 import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles, PONDS } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
+import { weatherNow } from './weather.js';
+import { weatherHere, syncWeather, weatherSpotAt, useWeatherSpot, updateWeather, tapLeaf, partnerClose } from './weather-life.js';
 import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W, CAM_MIN, CAMY_MIN, CAMY_MAX, camBounds, setHeight, roomOffset, BASE_H } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
 import { DIRS } from './avatar.js';
@@ -88,8 +90,10 @@ function refreshClock() {
   const hour = g.debugHour ?? g.date.getHours();
   g.today = dayNumber(g.date, S.world?.timeZone) + (g.state.dayOffset || 0);
   g.season = seasonOf(g.today);
-  g.weather = rainingNow() ? (g.season === 'winter' ? 'snow' : 'rain') : weatherOf(g.state.seed, g.today);
   g.hour = hour;
+  const wx = weatherNow(g.state.seed, g.today, hour);
+  g.wx = { ...wx, frost: wx.frost && g.season === 'winter' };
+  g.weather = rainingNow() ? (g.season === 'winter' ? 'snow' : 'rain') : g.wx.kind;
   g.night = isNightHour(hour);
   g.part = partOfDay(hour);
   g.unreadMail = g.state.mailRead !== g.today || (C.ready && T.unreadNotes(g) > 0);
@@ -106,6 +110,7 @@ function refreshClock() {
     const map = MAPS[g.mapId];
     g.season = map.season;
     g.weather = mapWeather(map, g.weather);
+    g.wx = weatherHere(g, g.weather, mapWeather);
     // Starlight isle is always night.
     if (map.night) {
       g.night = true;
@@ -116,6 +121,50 @@ function refreshClock() {
   syncBugs();
   syncVisitors();
   syncEvents();
+  syncWeatherSpots();
+}
+
+// Puddles, fallen branches and the rest keep off forage, visitors and decorations.
+function syncWeatherSpots() {
+  if (!g.state.daily || (g.scene !== 'jar' && g.scene !== 'map')) return;
+  const forage = g.scene === 'map' ? g.mapDaily?.forage || [] : g.state.daily.forage;
+  const taken = new Set([...forage.map(f => f.c + ',' + f.r), ...g.decorBlocked, ...g.visitors.map(v => v.c + ',' + v.r),
+    ...g.mushrooms.map(m => m.c + ',' + m.r), EVENT_SPOT.c + ',' + EVENT_SPOT.r, ...(g.mapDaily?.digs || []).map(t => t.c + ',' + t.r)]);
+  syncWeather(g, habitats().tree, taken);
+}
+
+const WX_FIND_TEXT = {
+  branch: 'The storm knocked this branch down.',
+  lightning_glass: 'Lightning struck here and turned the sand to glass!',
+  rainbow_shard: `You found the pot at the end of the rainbow!`,
+  frost_flower: 'A frost flower, picked before it melts.',
+};
+
+// Picking up something the weather left. Returns true if there was something here.
+function tapWeather(c, r) {
+  const spot = weatherSpotAt(g, c, r);
+  if (!spot) return false;
+  const pick = () => {
+    const got = useWeatherSpot(g, spot);
+    if (!got) return UI.toast('Your bag is full.');
+    save();
+    got.forEach(id => gained(id));
+    if (spot.type === 'pot') UI.toast(`${WX_FIND_TEXT.rainbow_shard} +100 pebbles.`, 'rainbow_shard');
+    else if (WX_FIND_TEXT[got[0]] && spot.type !== 'branch') UI.toast(WX_FIND_TEXT[got[0]], got[0]);
+    if (got.includes('birds_nest')) UI.toast('There was an empty bird nest in the branches.', 'birds_nest');
+  };
+  if (walkable(c, r)) walkTo(c, r, pick);
+  else walkNextTo([{ c, r }], pick);
+  return true;
+}
+
+function onSplash(find) {
+  if (find) {
+    save();
+    gained(find);
+  }
+  // Splashing together.
+  if (partnerClose(g)) g.effects.push({ kind: 'heart', x: g.player.x, y: g.player.y - 30, t0: g.t });
 }
 
 // ---------- seasonal events ----------
@@ -641,6 +690,7 @@ function tapJar(c, r, x, y) {
   if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => ready() && openCritter(g, critter));
   if (eventStandAt(x, y)) return walkNextTo([EVENT_SPOT], () => ready() && openEventStand(g));
   if (tapMushroom(c, r)) return;
+  if (tapWeather(c, r)) return;
   // Animals
   const a = residentAt(x, y);
   if (a) {
@@ -1005,6 +1055,7 @@ function tapMap(c, r, x, y) {
   if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => ready() && openCritter(g, critter));
   const di = day.digs.findIndex((t, i) => t.c === c && t.r === r && !day.dug.includes(i));
   if (di >= 0) return walkTo(c, r, () => digAt(g, di));
+  if (tapWeather(c, r)) return;
   const fi = day.forage.findIndex((f, i) => f.c === c && f.r === r && !day.picked.includes(i));
   if (fi >= 0) {
     walkTo(c, r, () => {
@@ -1428,6 +1479,15 @@ function onPointerDown(e) {
   }
   const screen = canvasPoint(e);
   if (g.scene === 'jar' && g.meteors.length && tapMeteor(screen.x, screen.y)) return;
+  if ((g.scene === 'jar' || g.scene === 'map') && g.gusts?.length) {
+    const leaf = tapLeaf(g, screen.x, screen.y);
+    if (leaf) {
+      save();
+      gained(leaf);
+      if (leaf === 'golden_leaf') UI.toast('A golden leaf! They only blow by now and then.', leaf);
+      return;
+    }
+  }
   // In the meadow the view may have slid: turn the tap into a spot in the world.
   const moved = g.scene === 'jar' || g.scene === 'map';
   const x = screen.x + (moved ? Math.round(g.camX) : 0), y = screen.y + (moved ? Math.round(g.camY) : -roomOffset());
@@ -1539,6 +1599,7 @@ function frame(now) {
     updateBugs(dt);
   }
   updateMeteors();
+  updateWeather(g, dt, { splash: onSplash });
   updateMonsters(dt);
   updateFishing(dt);
   updateAction(dt);
@@ -1700,6 +1761,33 @@ function start(hotData = {}) {
         UI.toast(`Test: ${e.name}`);
         return;
       }
+    });
+    // Jump to the next day with each kind of weather in turn, at an hour you can see it.
+    const WX_TESTS = [
+      ['Thunderstorm', d => (weatherOf(g.state.seed, d) === 'storm' ? 13 : null)],
+      ['Rainbow after rain', d => { const w = weatherNow(g.state.seed, d, 12); return w.base === 'rain' && w.clearAt != null ? w.clearAt : null; }],
+      ['Windy', d => (weatherOf(g.state.seed, d) === 'wind' ? 13 : null)],
+      ['Heatwave', d => (weatherOf(g.state.seed, d) === 'heat' ? 13 : null)],
+      ['Sunshower', d => weatherNow(g.state.seed, d, 12).showerAt ?? null],
+      ['Blizzard', d => (weatherOf(g.state.seed, d) === 'blizzard' ? 13 : null)],
+      ['Frosty morning', d => (weatherNow(g.state.seed, d, 7).frost ? 7 : null)],
+      ['Puddles after rain', d => (['rain', 'storm'].includes(weatherOf(g.state.seed, d - 1)) && weatherOf(g.state.seed, d) === 'sun' ? 9 : null)],
+    ];
+    let wxTest = 0;
+    tools.querySelector('[data-debug="weather"]')?.addEventListener('click', () => {
+      const [name, hourOn] = WX_TESTS[wxTest++ % WX_TESTS.length];
+      for (let d = g.today + 1; d < g.today + 800; d++) {
+        const h = hourOn(d);
+        if (h == null) continue;
+        g.state.dayOffset = (g.state.dayOffset || 0) + (d - g.today);
+        g.debugHour = h;
+        checkNewDay();
+        refreshClock();
+        UI.updateHud(g);
+        UI.toast(`Test: ${name}`);
+        return;
+      }
+      UI.toast(`No ${name.toLowerCase()} coming up.`);
     });
     tools.querySelector('[data-debug="pebbles"]').addEventListener('click', () => {
       g.state.pebbles += 500;

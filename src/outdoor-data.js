@@ -5,6 +5,7 @@ import { ITEMS } from './data.js';
 import { CRAFTS, CRAFT_BY_ID, CATEGORIES } from './crafting.js';
 import { FURNITURE_BY_TYPE } from './home.js';
 import './furniture-data.js';
+import './weather.js'; // registers branches, leaves and the other weather finds
 
 // [type, name, group, form, colour, accent, needs]
 // light: glows at night. sit: you can sit on it. flat: you can walk over it.
@@ -71,6 +72,17 @@ const OUTDOOR = [
   ['jack_lantern', 'Pumpkin lantern', 'Fun', 'jack', '#E0873A', '#F2C46A', { pumpkin: 1 }, { light: true }],
   ['wishing_stone', 'Wishing stone', 'Fun', 'wishstone', '#7D8796', '#F2E48A', { stone: 3, star_fragment: 1 }, { light: true }],
   ['snow_bunny', 'Snow bunny', 'Fun', 'snowbunny', '#F2FAFF', '#E07A9B', { snow_crystal: 1 }],
+  // made from what the weather leaves behind (see weather.js)
+  ['branch_fence', 'Branch fence', 'Fences', 'rope', '#6A4A30', '#8A6A4A', { branch: 3 }],
+  ['twig_arch', 'Twig arch', 'Fun', 'arch', '#7A5A3A', '#6FAF5B', { branch: 4, gust_leaf: 2 }],
+  ['storm_lantern', 'Storm lantern', 'Lights', 'lanternpost', '#4F5F8A', '#C9E8F2', { branch: 2, lightning_glass: 1 }, { light: true }],
+  ['rainbow_arch', 'Rainbow arch', 'Fun', 'heartarch', '#8DC76A', '#E8707A', { rainbow_shard: 1, wood: 3 }],
+  ['leaf_pile', 'Leaf pile', 'Seats', 'hay', '#D0603A', '#E0873A', { gust_leaf: 6 }, { sit: true }],
+  ['golden_tree', 'Golden leaf lamp', 'Lights', 'smalllight', '#B88D60', '#E8C25A', { golden_leaf: 1, branch: 1 }, { light: true }],
+  ['frost_lamp', 'Frost lamp', 'Lights', 'crystal', '#DCEFF6', '#FFFFFF', { frost_flower: 2, quartz: 1 }, { light: true }],
+  ['pebble_path', 'Shiny pebble path', 'Paths', 'path', '#9FB7C2', '#DCEFF6', { shiny_pebble: 3 }],
+  ['nest_box', 'Bird nest box', 'Garden', 'feeder', '#B88D60', '#9C7046', { birds_nest: 1, branch: 2 }],
+  ['weathervane', 'Weathervane', 'Fun', 'flag', '#5A5A60', '#E8C25A', { iron_ore: 1, branch: 2 }],
 ];
 
 export const OUTDOOR_BY_TYPE = {};

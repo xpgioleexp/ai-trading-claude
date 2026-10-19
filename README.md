@@ -284,6 +284,17 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 - **Mine:** 60 layers in 6 zones that each look different: Soil, Stone, Crystal, Frost, Ember and Starfall. Every layer is a small cave with walls and rocks. One plain rock per layer hides the ladder down. Rocks come back every day, and the elevator in the cave takes you to the top of any zone you've reached.
 - **Collection log:** tracks every fish, find and crop you've collected, plus your biggest catch of each fish.
 
+**Weather you can feel:** every day has its weather, the same for both of you. The phone's **Weather** app shows today, what's happening right now, tomorrow's forecast and the weather-only fish and bugs. Jars with their own weather (rainforest, glade, hot springs, desert, starlight isle, snow) keep it; the others get the meadow's.
+- **Thunderstorms (spring to autumn) and blizzards (winter):** the jar goes dark, the rain comes down sideways and lightning flashes. The wind knocks 4 to 7 branches off the trees (some have an empty bird nest in them). Lightning leaves one piece of lightning glass where it struck. People stay indoors, and the birds and butterflies shelter. Storms water the garden like rain. The thunderfin and the storm beetle only come out in storms.
+- **Rain and puddles:** puddles appear on rainy days and stay until 11 the next morning. Walk through one to splash (with a heart if your partner is close). Some hide a shiny pebble.
+- **Rainbows:** half the rainy days and every storm clear up in the afternoon, and a rainbow comes out for two hours. Find the pot at the rainbow's end for a rainbow shard and 100 pebbles.
+- **Sunshowers (spring and summer):** a short shower while the sun shines, then a rainbow.
+- **Windy days:** leaves blow across the jar all day. Tap the glinting ones to catch them, up to 12 a day; one in twelve is a golden leaf. The kite moth and the breeze minnow only come out when it's windy.
+- **Heatwaves (summer):** heat shimmer and a warm sky. Everyone moves slowly, and the golden carp and heat cicada come out.
+- **Frosty mornings (winter, clear days, 5 to 10am):** frost glints on the grass and frost flowers grow, to pick before they melt.
+- **Crafts from the weather:** branch fence, twig arch, storm lantern, rainbow arch, leaf pile, golden leaf lamp, frost lamp, shiny pebble path, bird nest box and weathervane.
+- **Testing:** with `#debug` on the address, the **Next weather** button jumps to each kind of weather in turn.
+
 ## Code
 
 | File | What it does |
@@ -292,6 +303,8 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 | `src/rules.js` | Game rules (bag, garden, fishing, mine layers, monsters and health, shop, crate, upgrades, new day). No drawing code, so it's tested and can move to the server later |
 | `src/world.js` | The jar's layout: tile grid and where each object sits |
 | `src/clock.js` | Day numbers, seasons, weather, time of day |
+| `src/weather.js` | Weather rules: storms, wind, heatwaves, puddles, rainbows, sunshowers, frost, and what you find |
+| `src/weather-life.js` | The weather in the meadow and jars: today's spots, leaves on the wind, lightning, splashing |
 | `src/rng.js` | Seeded randomness, so a day's forage, weather and mine layers are the same on every device |
 | `src/path.js` | Walking routes on the tile grid |
 | `src/sprites.js` | Placeholder pixel art drawn in code, and loading of real PNG art |

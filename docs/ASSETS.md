@@ -202,6 +202,19 @@ Special furniture uses the same `furniture_<type>` names as the rest: canopy_bed
 
 Lanterns in the sky and shooting stars are drawn as light effects in `src/scene.js` (`drawEventSky`). The snowman reuses `snowman`. New item icons: puffball, glowcap, truffle, star_fragment. New furniture: `furniture_fish_trophy` and `furniture_mushroom_lamp` (16 × 16).
 
+### Weather
+
+| Name | Size | What it is |
+|---|---|---|
+| `wx_puddle` | 16 × 16 | A puddle on the grass (drawn flat; ripples are added in code when it rains) |
+| `wx_branch` | 16 × 16 | A fallen branch with a few leaves; `wx_branch_nest` has a little nest in it |
+| `wx_strike` | 16 × 16 | Scorched ground with a glinting piece of lightning glass |
+| `wx_pot` | 16 × 24 | The pot at the end of the rainbow, with a bit of rainbow coming down into it |
+| `wx_frost_flower` | 16 × 16 | A pale blue frost flower |
+| `wx_leaf_<season>` | 4 × 4 | Leaves on the wind: spring petals, summer green, autumn orange, winter flakes. `wx_leaf_catch` (8 × 6) is the bigger glinting one you can catch |
+
+The rainbow, lightning bolts, the storm and heat tints, rain, snow and frost glints are drawn as effects in `src/scene.js` (`drawWeather`, `drawStormFlash`, `drawWeatherGround`). New item icons: branch, birds_nest, lightning_glass, rainbow_shard, shiny_pebble, gust_leaf, golden_leaf, frost_flower, and the fish thunderfin, golden_carp, breeze_minnow, and bugs kite_moth, storm_beetle, heat_cicada. The weather crafts reuse existing outdoor forms.
+
 ### Avatar (16 × 24)
 The avatar is built in layers so every hair, outfit and skin option lines up. Production avatar art should come as separate layers:
 

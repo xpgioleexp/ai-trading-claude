@@ -160,7 +160,8 @@ export function mapCatch(rand, mapId, hour) {
 
 export function mapWeather(map, homeWeather) {
   if (map.weather) return map.weather;
-  return homeWeather === 'snow' ? 'rain' : homeWeather;
+  // Jars without their own weather get home's, but it doesn't snow there.
+  return { snow: 'rain', blizzard: 'storm' }[homeWeather] || homeWeather;
 }
 
 // Places to dig today (the desert's treasure marks), the same for both of you.

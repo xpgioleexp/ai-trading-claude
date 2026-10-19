@@ -2,7 +2,7 @@
 // Pure rules; the jar draws the bugs and handles sneaking up on them.
 import { ITEMS } from './data.js';
 import { rngFor, pickWeighted, shuffle } from './rng.js';
-import { isNightHour } from './clock.js';
+import { isNightHour, weatherMatches } from './clock.js';
 import { addItem } from './rules.js';
 
 // where: flower (open grass), ground, tree, pond. skittish: 0 calm .. 1 very jumpy.
@@ -61,7 +61,7 @@ export function bugAvailable(bug, season, hour, weather, mapId = null) {
   if (bug.seasons && !bug.seasons.includes(season)) return false;
   if (bug.time === 'night' && !isNightHour(hour)) return false;
   if (bug.time === 'day' && isNightHour(hour)) return false;
-  if (bug.weather === 'rain' && weather !== 'rain') return false;
+  if (!weatherMatches(bug.weather, weather)) return false;
   return true;
 }
 

@@ -98,6 +98,7 @@ export function updateCritters(g, dt, walkable, onEvent) {
   if (g.critterKey !== jar + '|' + g.today) syncCritters(g);
   const env = {
     t: g.t, dt, hour: g.hour, night: g.night, walkable, actors: g.critters,
+    storm: g.weather === 'storm' || g.weather === 'blizzard', heat: g.weather === 'heat',
     player: { c: g.player.c, r: g.player.r, x: g.player.x, y: g.player.y, moving: g.player.path.length > 0, sneaking: !!g.player.slow },
     anchors: { trees: g.critterTrees || [], water: [] },
     friend: def => pointsFor(S.critters, def.id) >= POINTS_PER_HEART || !!g.state.daily?.critters?.[def.id]?.pet,

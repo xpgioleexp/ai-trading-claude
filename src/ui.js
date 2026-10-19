@@ -9,6 +9,7 @@ import * as R from './rules.js';
 import { iconURL, monsterSprite } from './sprites.js';
 import { avatarSprite } from './avatar.js';
 import { dayOfSeason } from './clock.js';
+import { WEATHER_NAMES } from './weather.js';
 import { S, partnerId } from './shared.js';
 import { cloud, setDoc, newId, now } from './cloud.js';
 import { rngFor } from './rng.js';
@@ -113,7 +114,8 @@ export function updateHud(g) {
   $('#pebbles').textContent = g.state.pebbles.toLocaleString();
   const h = g.date.getHours(), m = g.date.getMinutes();
   const time = `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
-  const weather = { sun: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[g.weather];
+  const wx = g.wx || {};
+  const weather = wx.rainbow ? 'Rainbow' : wx.sunshower ? 'Sunshower' : wx.frost ? 'Frosty' : WEATHER_NAMES[g.weather] || 'Clear';
   const when = `${cap(g.season)} ${dayOfSeason(g.today)} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`;
   $('#clock').textContent = g.scene === 'mine'
     ? `${R.BAND_NAMES[R.bandOf(g.layer)]} · layer ${g.layer} of ${MINE_LAYERS}${g.mine && R.ROOM_NAMES[g.mine.kind] ? ` · ${R.ROOM_NAMES[g.mine.kind]}` : ''} · ♥ ${g.state.hp ?? 100}/${R.maxHp(g.state)}`

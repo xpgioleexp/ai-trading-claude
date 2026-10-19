@@ -44,13 +44,24 @@ export function dateOfDay(day) {
 export function weatherOf(seed, day) {
   const roll = rngFor(seed, 'weather', day)();
   const season = seasonOf(day);
+  if (roll < 0.06) return season === 'winter' ? 'blizzard' : 'storm';
   if (roll < 0.25) return season === 'winter' ? 'snow' : 'rain';
   if (roll < 0.35) return 'fog';
+  if (roll < 0.47) return 'wind';
+  if (roll < 0.57 && season === 'summer') return 'heat';
   return 'sun';
 }
 
+// Rain, snow, storms and blizzards all water the garden.
 export function isWet(weather) {
-  return weather === 'rain' || weather === 'snow';
+  return weather === 'rain' || weather === 'snow' || weather === 'storm' || weather === 'blizzard';
+}
+
+// For fish and bugs that only come out in some weather: rain ones come out in storms too.
+export function weatherMatches(want, weather) {
+  if (!want) return true;
+  if (want === 'rain') return weather === 'rain' || weather === 'storm';
+  return want === weather;
 }
 
 export function isNightHour(hour) {

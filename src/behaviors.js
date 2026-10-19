@@ -83,15 +83,19 @@ function walk(a, env, dt, speed) {
   return moveToward(a, p.x, p.y, speed, dt);
 }
 
+export const shelters = def => !!def.person || ['flyer', 'flitter', 'orbit'].includes(def.behavior);
+
 export function updateActor(a, env) {
   const { t, dt } = env;
   const def = a.def;
   const events = [];
-  const out = isOut(def, env.hour, env.night);
+  // In storms people stay indoors and the birds and butterflies take shelter.
+  const out = isOut(def, env.hour, env.night) && !(env.storm && shelters(def));
   a.hidden = !out;
   if (!out) return events;
   const B = BEHAVIORS[def.behavior] || BEHAVIORS.wander;
-  B(a, env, dt, t, events);
+  // Everyone takes it slow in a heatwave.
+  B(a, env, env.heat ? dt * 0.6 : dt, t, events);
   return events;
 }
 

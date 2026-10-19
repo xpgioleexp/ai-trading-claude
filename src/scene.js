@@ -15,6 +15,7 @@ import { BUG_BY_ID } from './bugs.js';
 import { doorSprite, palmSprite, hiveSprite, pineSprite, snowmanSprite, archSprite, critterSprite, jarStallSprite, jarThingSprite } from './sprites-more.js';
 import { SHOPS } from './biomes.js';
 import { MAPS } from './maps.js';
+import { wxDaily, isStormy } from './weather.js';
 import { hashString } from './rng.js';
 import { houseSprite, wallpaperTile, floorTile, furnitureSprite, wallItemSprite, sleeperSprite } from './home-art.js';
 import { ROOM, DOOR, WALL_SLOTS, FURNITURE_BY_TYPE } from './home.js';
@@ -84,6 +85,14 @@ function jarPath(ctx) {
 }
 
 const SKY = { morning: '#E6E4CC', day: '#D9E8E1', evening: '#EBCDB4', night: '#36425C' };
+
+function skyColor(g) {
+  const sky = SKY[g.part];
+  if (g.weather === 'fog') return shade(sky, 0.3);
+  if (isStormy(g.weather)) return shade(sky, -0.35);
+  if (g.weather === 'heat' && !g.night) return '#EFE0B8';
+  return sky;
+}
 
 export function drawScene(ctx, g) {
   ctx.clearRect(0, 0, W, H);
@@ -174,7 +183,7 @@ function drawJarWorld(ctx, g) {
   const X0 = MEADOW_LEFT, WW = MEADOW_W - MEADOW_LEFT, cam = Math.round(g.camX || 0), camY = Math.round(g.camY || 0);
   // North rows sit above row 0, so the sky and hills move up; the soil moves down.
   const NT = MEADOW_NORTH * TILE, ST = MEADOW_SOUTH * TILE;
-  px(ctx, X0, -NT, WW, H + NT + ST, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  px(ctx, X0, -NT, WW, H + NT + ST, skyColor(g));
   ctx.save();
   ctx.translate(0, -NT);
   drawBackdrop(ctx, g, WW, X0);
@@ -194,6 +203,7 @@ function drawJarWorld(ctx, g) {
   px(ctx, X0, GY - 9 - NT, WW, 2, shade(SEASON_EDGE[season], -0.2));
 
   for (const id of PONDS) drawPond(ctx, g, id);
+  drawWeatherGround(ctx, g);
   const cave = OBJECTS.find(o => o.id === 'cave');
   ctx.drawImage(caveSprite(), GX + cave.c * TILE, GY + cave.r * TILE);
   BEDS.forEach((b, i) => {
@@ -347,6 +357,10 @@ function drawJarWorld(ctx, g) {
   drawWeather(ctx, g);
   ctx.restore();
   if (g.night) drawNight(ctx, g);
+  ctx.save();
+  ctx.translate(cam, camY);
+  drawStormFlash(ctx, g);
+  ctx.restore();
   ctx.save();
   ctx.translate(cam, camY);
   drawEventSky(ctx, g);
@@ -533,21 +547,32 @@ function drawSoil(ctx, g, width = W, x0 = 0) {
 }
 
 function drawWeather(ctx, g) {
-  const w = g.weather;
-  if (w === 'rain' || w === 'snow') {
-    // a little cloud under the lid
-    for (const [cx, cy, r] of [[130, 56, 10], [146, 52, 12], [164, 55, 11], [180, 58, 8], [112, 60, 7]]) {
-      disc(ctx, cx, cy, r, w === 'rain' ? '#AEB6B8' : '#E3E8EA');
+  const w = g.weather, wx = g.wx || {};
+  const storm = w === 'storm', blizzard = w === 'blizzard';
+  // Storms darken the whole jar.
+  if (storm || blizzard) {
+    ctx.fillStyle = storm ? 'rgba(30,40,60,0.28)' : 'rgba(200,215,225,0.22)';
+    ctx.fillRect(0, 0, W, H);
+  }
+  if (wx.rainbow) drawRainbow(ctx, g);
+  if (w === 'rain' || w === 'snow' || storm || blizzard) {
+    // a little cloud under the lid (none in a sunshower)
+    if (!wx.sunshower) {
+      for (const [cx, cy, r] of [[130, 56, 10], [146, 52, 12], [164, 55, 11], [180, 58, 8], [112, 60, 7], ...(storm || blizzard ? [[90, 58, 9], [200, 56, 11], [220, 60, 8]] : [])]) {
+        disc(ctx, cx, cy, r, storm ? '#7E8790' : w === 'rain' ? '#AEB6B8' : '#E3E8EA');
+      }
     }
-    const n = w === 'rain' ? 46 : 34;
+    const wet = w === 'rain' || storm;
+    const n = storm ? 90 : blizzard ? 80 : wet ? 46 : 34;
     for (let i = 0; i < n; i++) {
       const hx = hashString('drop' + i);
-      const speed = w === 'rain' ? 140 : 18;
-      const floor = GY + (hx % (ROWS * TILE));
+      const speed = storm ? 220 : blizzard ? 70 : wet ? 140 : 18;
+      const floor = GY + (hx % (H - GY - 20));
       const span = floor - 50;
       const yy = 50 + ((g.t * speed + (hx >>> 7) % span) % span);
-      const xx = 20 + ((hx >>> 3) % 280) + (w === 'snow' ? Math.sin(g.t + i) * 4 : 0);
-      if (w === 'rain') px(ctx, xx, yy, 1, 4, 'rgba(183,212,189,0.8)');
+      const slant = storm ? (yy - 50) * 0.25 : blizzard ? (yy - 50) * 0.6 : 0;
+      const xx = (20 + ((hx >>> 3) % 300) + slant + (w === 'snow' ? Math.sin(g.t + i) * 4 : 0)) % W;
+      if (wet) px(ctx, xx, yy, 1, storm ? 6 : 4, 'rgba(183,212,189,0.8)');
       else px(ctx, xx, yy, 2, 2, 'rgba(255,255,255,0.9)');
     }
   }
@@ -555,6 +580,127 @@ function drawWeather(ctx, g) {
     for (let i = 0; i < 4; i++) {
       ctx.fillStyle = 'rgba(243,240,232,0.22)';
       ctx.fillRect(((g.t * (6 + i * 3)) % 400) - 120, 110 + i * 34, 220, 14);
+    }
+  }
+  if (w === 'heat' && !g.night) {
+    // Heat shimmer rising off the ground.
+    ctx.fillStyle = 'rgba(255,240,200,0.18)';
+    for (let i = 0; i < 7; i++) {
+      const y = 120 + i * 40 + Math.sin(g.t * 2 + i) * 4;
+      for (let x = 0; x < W; x += 8) ctx.fillRect(x, y + Math.round(Math.sin(g.t * 3 + x / 20 + i) * 2), 6, 1);
+    }
+  }
+  drawGusts(ctx, g);
+}
+
+// Leaves on the wind (see weather-life.js). The ones you can catch are bigger and glint.
+const LEAF_COLORS = {
+  spring: ['#F2C4C8', '#E8A0B0', '#F7E0E3'], summer: ['#6FAF5B', '#4F8A4A', '#9DC76A'],
+  autumn: ['#D0603A', '#E0873A', '#C9A25A'], winter: ['#F2FAFF', '#DCEFF6', '#FFFFFF'],
+};
+function drawGusts(ctx, g) {
+  const cols = LEAF_COLORS[g.season] || LEAF_COLORS.autumn;
+  for (const l of g.gusts || []) {
+    const x = Math.round(l.x), y = Math.round(l.y), flip = Math.floor(g.t * 6 + l.phase) % 2;
+    if (l.catchable) {
+      px(ctx, x - 3, y - 2, 7, flip ? 4 : 3, '#E8B83A');
+      px(ctx, x - 2, y - 1, 5, 2, cols[0]);
+      if (Math.floor(g.t * 4) % 2) px(ctx, x + 3, y - 4, 2, 2, '#FFFFFF');
+    } else px(ctx, x, y, flip ? 3 : 2, 2, cols[l.hue]);
+  }
+}
+
+// A soft rainbow arc in the sky after the rain.
+function drawRainbow(ctx, g) {
+  const colors = ['#E8707A', '#F0A55A', '#F0DA6A', '#8DC76A', '#6FA9D9', '#9C82C9'];
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = 3;
+  colors.forEach((c, i) => {
+    ctx.strokeStyle = c;
+    ctx.beginPath();
+    ctx.arc(200, 260, 170 - i * 3, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+// Lightning: a bolt and a flash of light, then darkness again.
+function drawStormFlash(ctx, g) {
+  if (g.flashAt == null || g.weather !== 'storm') return;
+  const age = g.t - g.flashAt;
+  if (age > 0.45) return;
+  if (age < 0.18 && g.bolt) {
+    let x = g.bolt.x, y = 46;
+    ctx.fillStyle = '#FFF8D8';
+    for (let k = 0; k < 9; k++) {
+      const nx = x + ((hashString('bolt' + g.bolt.seed + k) % 15) - 7);
+      for (let s = 0; s < 10; s++) ctx.fillRect(Math.round(x + (nx - x) * s / 10), y + s, 2, 1);
+      x = nx; y += 10;
+    }
+  }
+  ctx.fillStyle = `rgba(255,255,240,${(0.45 * (1 - age / 0.45)).toFixed(2)})`;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// Puddles, fallen branches, lightning glass, the rainbow's pot and frost flowers.
+function drawWeatherGround(ctx, g) {
+  const s = g.wxSpots;
+  if (!s || !g.state.daily) return;
+  const d = wxDaily(g.state, g.scene === 'map' ? g.mapId : 'meadow');
+  const raining = g.weather === 'rain' || g.weather === 'storm';
+  for (const t of s.puddles) {
+    const x = GX + t.c * TILE, y = GY + t.r * TILE;
+    ctx.fillStyle = 'rgba(70,100,110,0.35)';
+    ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(160,200,215,0.55)';
+    ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 6.5, 3, 0, 0, Math.PI * 2); ctx.fill();
+    px(ctx, x + 4, y + 9, 3, 1, 'rgba(255,255,255,0.7)');
+    if (raining) {
+      const ring = (g.t * 2 + t.c * 0.37 + t.r * 0.21) % 1;
+      ctx.strokeStyle = `rgba(255,255,255,${(0.6 * (1 - ring)).toFixed(2)})`;
+      ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 1 + ring * 5, 0.5 + ring * 2, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  s.branches.forEach((t, i) => {
+    if (d.branches.includes(i)) return;
+    const x = GX + t.c * TILE, y = GY + t.r * TILE;
+    px(ctx, x + 2, y + 10, 12, 2, '#6A4A30');
+    px(ctx, x + 5, y + 7, 2, 3, '#6A4A30'); px(ctx, x + 10, y + 12, 2, 2, '#6A4A30');
+    px(ctx, x + 3, y + 6, 3, 2, '#5E8A4A'); px(ctx, x + 11, y + 8, 3, 2, '#4F7A3A');
+    if (t.nest) px(ctx, x + 7, y + 8, 4, 2, '#B88D60');
+  });
+  if (s.strike && !d.strike) {
+    const x = GX + s.strike.c * TILE, y = GY + s.strike.r * TILE;
+    ctx.fillStyle = 'rgba(40,30,25,0.45)';
+    ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 7, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+    px(ctx, x + 6, y + 6, 4, 5, '#C9E8F2'); px(ctx, x + 7, y + 4, 2, 2, '#E9F7FB');
+    if (Math.floor(g.t * 3) % 2) px(ctx, x + 10, y + 4, 2, 2, '#FFFFFF');
+  }
+  if (s.pot && !d.rainbow) {
+    const x = GX + s.pot.c * TILE, y = GY + s.pot.r * TILE;
+    ['#E8707A', '#F0DA6A', '#8DC76A', '#6FA9D9'].forEach((c, i) => px(ctx, x + 7 + i, y - 10 + i * 4, 2, 6, c));
+    px(ctx, x + 3, y + 7, 10, 7, '#3A3A40'); px(ctx, x + 2, y + 6, 12, 2, '#5A5A60');
+    px(ctx, x + 5, y + 4, 6, 3, '#E8C25A');
+    if (Math.floor(g.t * 3) % 2) px(ctx, x + 12, y + 3, 2, 2, '#FFFFFF');
+  }
+  s.frost.forEach((t, i) => {
+    if (d.frost.includes(i)) return;
+    const x = GX + t.c * TILE, y = GY + t.r * TILE;
+    px(ctx, x + 7, y + 8, 2, 6, '#5F8A9A');
+    for (const [dx, dy] of [[0, -3], [3, 0], [0, 3], [-3, 0]]) px(ctx, x + 7 + dx, y + 5 + dy, 2, 2, '#7FB3C9');
+    px(ctx, x + 7, y + 5, 2, 2, '#FFFFFF');
+    if (Math.floor(g.t * 2 + i) % 3 === 0) px(ctx, x + 12, y + 2, 1, 1, '#FFFFFF');
+  });
+  if (g.wx?.frost) {
+    // Frost glints on the grass you can see.
+    const cx = Math.round(g.camX || 0), cy = Math.round(g.camY || 0);
+    for (let i = 0; i < 60; i++) {
+      const hx = hashString('frost' + i);
+      if ((Math.floor(g.t * 1.5) + i) % 5 === 0) continue;
+      const fx = cx + 20 + hx % 280, fy = cy + GY + (hx >>> 9) % (H - GY - 40);
+      px(ctx, fx, fy, 1, 1, '#8FC3D9');
+      px(ctx, fx - 1, fy + 1, 3, 1, 'rgba(143,195,217,0.6)');
     }
   }
 }
@@ -607,7 +753,7 @@ function drawMapWorld(ctx, g) {
   // Wide jars are drawn in world space; drawScene slides them by the camera.
   const X0 = -(map.west || 0) * TILE, WW = GX * 2 + (map.cols || COLS) * TILE - X0, cam = Math.round(g.camX || 0), camY = Math.round(g.camY || 0);
   const NT = (map.north || 0) * TILE, ST = (map.south || 0) * TILE;
-  px(ctx, X0, -NT, WW, H + NT + ST, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  px(ctx, X0, -NT, WW, H + NT + ST, skyColor(g));
   ctx.save();
   ctx.translate(0, -NT);
   drawBackdrop(ctx, g, WW, X0);
@@ -634,6 +780,7 @@ function drawMapWorld(ctx, g) {
       px(ctx, rx, y + 6 + ((i * 11) % Math.max(8, h - 12)), 6, 1, hi);
     }
   }
+  drawWeatherGround(ctx, g);
   // forage
   const daily = g.mapDaily;
   daily?.forage.forEach((f, i) => {
@@ -720,6 +867,10 @@ function drawMapWorld(ctx, g) {
   drawWeather(ctx, g);
   ctx.restore();
   if (g.night) drawNight(ctx, g);
+  ctx.save();
+  ctx.translate(cam, camY);
+  drawStormFlash(ctx, g);
+  ctx.restore();
   ctx.save();
   ctx.translate(cam, camY);
   if (map.night) {
@@ -963,6 +1114,10 @@ function drawEffects(ctx, g) {
     if (e.kind === 'heart') ctx.drawImage(heartSprite(), Math.round(e.x) - 3, Math.round(y));
     if (e.kind === 'note') ctx.drawImage(noteSprite(), Math.round(e.x + Math.sin(age * 6) * 3) - 3, Math.round(y));
     if (e.kind === 'bubble') ctx.drawImage(bubbleSprite(), Math.round(e.x + Math.sin(age * 4 + e.x) * 4) - 3, Math.round(y));
+    if (e.kind === 'splash') {
+      const t = age;
+      if (t < 0.5) px(ctx, Math.round(e.x + e.vx * t), Math.round(e.y - 30 * t + 70 * t * t), 2, 2, 'rgba(183,224,236,0.9)');
+    }
     if (e.kind === 'sparkle' && Math.floor(age * 8) % 2 === 0) ctx.drawImage(sparkleSprite(), Math.round(e.x) - 3, Math.round(e.y) - 3);
     if (e.kind === 'item') {
       ctx.globalAlpha = Math.max(0, 1 - age / 1.2);

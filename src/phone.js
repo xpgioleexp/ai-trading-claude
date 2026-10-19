@@ -6,7 +6,7 @@ import { C } from './content.js';
 import * as UI from './ui.js';
 import * as T from './together.js';
 import * as R from './rules.js';
-import { ITEMS, TOOL_TIERS } from './data.js';
+import { ITEMS, TOOL_TIERS, FISH } from './data.js';
 import { openBuild, openMore, openAnimal } from './places.js';
 import { openFurnish, openHome } from './home-ui.js';
 import { openKitchen } from './kitchen.js';
@@ -19,6 +19,8 @@ import { MAPS, MAP_ORDER } from './maps.js';
 import { visitorOn, requestFor, heartsFor, merchantHere, VISITORS } from './visitors.js';
 import { CRITTERS, heartsOf, pointsFor, MAX_HEARTS } from './biomes.js';
 import { MONSTERS, SWORD_DAMAGE } from './mine-data.js';
+import { WEATHER_NAMES, WEATHER_TEXT, forecast, LEAVES_PER_DAY } from './weather.js';
+import { BUGS } from './bugs.js';
 
 const $ = sel => document.querySelector(sel);
 const esc = UI.esc;
@@ -61,6 +63,8 @@ const APPS = [
     badge: g => (g.eventsToday || []).length > 0 },
   { id: 'friends', name: 'Friends', icon: '🐾', color: '#C99A6A', text: 'Your animals, visitors and jar friends', needs: 'ready', open: g => openFriends(g),
     badge: g => S.ready && !S.deliveries?.[String(g.today)] },
+  { id: 'weather', name: 'Weather', icon: '🌦️', color: '#6F97C9', text: 'Today\'s weather, tomorrow\'s forecast, and what the weather brings', open: g => openWeather(g),
+    badge: g => !!(g.wx?.rainbow || ['storm', 'blizzard'].includes(g.wx?.base)) },
   { id: 'mine', name: 'Mine', icon: '⛏️', color: '#5A4440', text: 'How deep you\'ve been, bosses and health', open: g => openMine(g) },
   { id: 'settings', name: 'Settings', icon: '⚙️', color: '#7A7A80', text: 'Your partner, the jar, reminders, rain and downloads', needs: 'ready', open: g => openMore(g) },
 ];
@@ -153,6 +157,34 @@ export function openFriends(g) {
 }
 
 // ---------- Mine ----------
+
+export function openWeather(g) {
+  const wx = g.wx || {};
+  const now = [
+    wx.rainbow && 'A rainbow is out! Find the pot at its end for a rainbow shard and pebbles.',
+    wx.sunshower && 'A sunshower: rain while the sun shines. A rainbow comes next.',
+    wx.puddles && 'Puddles on the ground. Walk through them to splash; some hide a shiny pebble.',
+    wx.frost && 'A frosty morning. Frost flowers grow until 10.',
+    wx.clearAt != null && g.hour < wx.clearAt && `It clears up around ${wx.clearAt}:00.`,
+  ].filter(Boolean);
+  const tomorrow = forecast(g.state.seed, g.today);
+  const caught = id => (g.state.log.fish?.[id] || g.state.log.bugs?.[id]) ? 'Caught' : 'Not yet';
+  const special = [...FISH.filter(f => f.weather), ...BUGS.filter(b => b.weather && !b.map)];
+  UI.openSheet('Weather', `
+    <div class="tools">
+      <div><span class="label">Today</span><strong>${esc(WEATHER_NAMES[wx.base] || WEATHER_NAMES[g.weather] || 'Clear')}</strong></div>
+      <div><span class="label">Right now</span><strong>${esc(WEATHER_NAMES[g.weather] || 'Clear')}</strong></div>
+      <div><span class="label">Tomorrow</span><strong>${esc(WEATHER_NAMES[tomorrow])}</strong></div>
+      <div><span class="label">Leaves caught</span><strong>${g.state.daily?.leaves || 0} / ${LEAVES_PER_DAY}</strong></div>
+    </div>
+    <p class="detail">${esc(WEATHER_TEXT[wx.base] || WEATHER_TEXT[g.weather] || '')}</p>
+    ${now.length ? `<ul class="list">${now.map(t => `<li><span class="name">${esc(t)}</span></li>`).join('')}</ul>` : ''}
+    <h3>Tomorrow</h3>
+    <p class="detail">${esc(WEATHER_TEXT[tomorrow])}</p>
+    <h3>Only in some weather</h3>
+    <ul class="list">${special.map(x => `<li><span class="name">${esc(x.name)}<small>${esc(WEATHER_NAMES[x.weather] || x.weather)}${x.weather === 'rain' ? ' or storms' : ''} · ${caught(x.id)}</small></span></li>`).join('')}</ul>
+    <p class="detail small">Storms knock branches off the trees and lightning leaves glass where it strikes. Windy days blow leaves past to catch. Each jar with its own weather keeps it.</p>`);
+}
 
 export function openMine(g) {
   const s = g.state;

@@ -5,7 +5,7 @@ import {
   BAG_SLOTS, STACK, DAILY_BITES, MINE_LAYERS, START_PEBBLES, UPGRADE_COST, PICK_POWER, TOOL_TIERS,
 } from './data.js';
 import { rngFor, randInt, pickWeighted, shuffle } from './rng.js';
-import { seasonOf, weatherOf, isWet, isNightHour } from './clock.js';
+import { seasonOf, weatherOf, isWet, isNightHour, weatherMatches } from './clock.js';
 import { BEDS, COLS, ROWS, forageTiles } from './world.js';
 import {
   BANDS, ROCKS, ROCK_TABLE, FOSSILS_BY_BAND, ARTIFACTS_BY_BAND, GEODE_CONTENTS, GROTTO_BY_BAND, CAVE_FISH_IDS, CAVE_BITES,
@@ -191,7 +191,7 @@ export function fishAvailable(fish, season, hour, weather) {
   if (fish.seasons && !fish.seasons.includes(season)) return false;
   if (fish.time === 'night' && !isNightHour(hour)) return false;
   if (fish.time === 'day' && isNightHour(hour)) return false;
-  if (fish.weather === 'rain' && weather !== 'rain') return false;
+  if (!weatherMatches(fish.weather, weather)) return false;
   return true;
 }
 
