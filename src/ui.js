@@ -13,6 +13,7 @@ import { S, partnerId } from './shared.js';
 import { cloud, setDoc, newId, now } from './cloud.js';
 import { rngFor } from './rng.js';
 import { MAPS, MAP_FISH_IDS, MAP_FORAGE_IDS } from './maps.js';
+import { furnitureStockHtml, bindFurnitureStock } from './visitors-ui.js';
 
 const $ = s => document.querySelector(s);
 
@@ -214,7 +215,9 @@ export function openShop(g) {
   openSheet('Beetle shop', `
     <p class="detail">“Fresh ${cap(g.season)} seeds today. Plant them in your garden beds and water them every day.”</p>
     <ul class="list">${rows}</ul>
+    ${furnitureStockHtml(g)}
     <p class="detail">You have <strong>${s.pebbles}</strong> pebbles.</p>`, body => {
+    bindFurnitureStock(g, body, () => openShop(g));
     body.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', () => {
       if (R.buy(s, b.dataset.id, +b.dataset.price)) {
         g.save();

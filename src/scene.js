@@ -7,7 +7,7 @@ import {
   ladderUpSprite, bunnySprite, heartSprite,
 } from './sprites.js';
 import { avatarSprite, DIRS } from './avatar.js';
-import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR, bugSprite } from './sprites-more.js';
+import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR, bugSprite, visitorSprite, merchantSprite, merchantRugSprite, requestMarkSprite } from './sprites-more.js';
 import { BUG_BY_ID } from './bugs.js';
 import { doorSprite, palmSprite, hiveSprite, pineSprite, snowmanSprite, archSprite } from './sprites-more.js';
 import { MAPS } from './maps.js';
@@ -91,6 +91,9 @@ function drawJarWorld(ctx, g) {
   for (const d of g.decor) {
     if (FLAT_DECOR.has(d.type)) ctx.drawImage(decorSprite(d.type, g.season), GX + d.c * TILE, GY + d.r * TILE);
   }
+  for (const v of g.visitors || []) {
+    if (v.kind === 'merchant') ctx.drawImage(merchantRugSprite(), GX + v.c * TILE + 4, GY + v.r * TILE + 2);
+  }
 
   // Forage on the ground, with a small glint.
   g.state.daily.forage.forEach((f, i) => {
@@ -169,6 +172,15 @@ function drawJarWorld(ctx, g) {
       }
       ctx.drawImage(bugSprite(def.kind, def.color, flap), bx - 5, by - 6);
       if (b.alert > 0.4) px(ctx, bx, by - 12, 2, 4 + Math.round(b.alert * 2), b.alert > 0.75 ? '#D9533C' : '#E8C25A');
+    } });
+  }
+  for (const v of g.visitors || []) {
+    const frame = Math.floor(g.t * 1.2 + v.phase) % 2;
+    const img = v.kind === 'merchant' ? merchantSprite(frame) : visitorSprite(v.def.species, v.def.color, frame);
+    const x = Math.round(v.x - img.width / 2), y = Math.round(v.y - img.height + 1);
+    items.push({ y: v.y, draw: () => {
+      ctx.drawImage(img, x, y);
+      if (v.ask) ctx.drawImage(requestMarkSprite(), x + img.width - 4, y - 8 - (Math.floor(g.t * 2) % 2));
     } });
   }
   for (const o of g.others) {

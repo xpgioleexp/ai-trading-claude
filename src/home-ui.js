@@ -54,7 +54,7 @@ export async function ensureFirstRoom() {
 }
 
 const icons = new Map();
-function pic(key, src, w = 48, h = 48) {
+export function pic(key, src, w = 48, h = 48) {
   if (!icons.has(key)) {
     const c = makeCanvas(w, h);
     const x = c.getContext('2d');
@@ -135,9 +135,9 @@ export function openFurnish(g, tab = 'furniture') {
     .map(([id, label]) => `<button class="tab ${id === tab ? 'on' : ''}" data-tab="${id}" aria-pressed="${id === tab}">${label}</button>`).join('');
   let inner = '';
   if (tab === 'furniture') {
-    const cats = [...new Set(FURNITURE.map(f => f.category))];
+    const cats = [...new Set(FURNITURE.filter(f => !f.special).map(f => f.category))];
     const made = g.state.bag.filter(slot => ITEMS[slot.id]?.furniture && FURNITURE_BY_TYPE[ITEMS[slot.id].furniture]);
-    inner = `${made.length ? `<h3>Made by you</h3><div class="decor-grid">${made.map(slot => `
+    inner = `${made.length ? `<h3>In your bag</h3><div class="decor-grid">${made.map(slot => `
         <button class="decor" data-place-made="${slot.id}"><img src="${pic('f-' + ITEMS[slot.id].furniture, furnitureSprite(ITEMS[slot.id].furniture))}" alt="" width="48" height="48"><span>${esc(ITEMS[slot.id].name)}</span><small>${slot.n} in bag</small></button>`).join('')}</div>` : ''}
       <p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. Pick a piece, then tap the floor twice to place it.</p>
       ${cats.map(cat => `<h3>${esc(cat)}</h3><div class="decor-grid">${FURNITURE.filter(f => f.category === cat).map(f => `

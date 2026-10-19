@@ -46,7 +46,7 @@ Any static file server works. There is no build step.
 **Building your home:**
 - **Upgrade the house:** tent → cabin → cottage → cottage with a loft. Upgrades cost pebbles, plus stone and ore from the cave. Each level allows more rooms (1, 2, 4, then 6).
 - **Add rooms:** living room, our bedroom (one, from the cabin on), kitchen, study, bathroom, sunroom and loft.
-- **Furnish:** 31 pieces. Tap twice to place, then move or return them later; returning gives back the full price.
+- **Furnish:** 31 pieces in the catalogue, plus 12 special pieces from shops and visitors. Tap twice to place, then move or return them later; returning gives back the full price.
 - **Decorate:** 10 things for the six spots on the back wall, 8 wallpapers and 6 floors, chosen per room.
 - **Furniture you can use:** beds (sleep), wardrobe and dresser (change your look), seats (sit), desk (calendar), bookshelf (journal), chest (bag), record player and piano (music).
 - **Saying goodnight:** in the shared bedroom you can each get into the double bed and say goodnight. When you both do on the same day, you each get 15 pebbles, and it's kept in the journal.
@@ -72,6 +72,14 @@ Any static file server works. There is no build step.
 - **Spawns:** four are out at a time. They change every two hours, and both of you see the same ones.
 - **Sneaking:** tap a bug to creep up on it slowly, then swing the net when you reach it. A bug gets nervous when you move near it. A yellow mark means careful and red means about to go. Walk normally nearby and it flies off to somewhere else.
 - **Collecting:** caught bugs go in the bag (sell them in the crate) and in the **Bugs** tab of the collection log.
+
+**Shops and visitors:**
+- **Rotating furniture:** the beetle shop has four new pieces every morning: two special pieces you can't get from the catalogue, and two catalogue pieces at 20% off. One of each per day. They go in your bag; place them from **Build** inside your home.
+- **Traveling merchant:** stops by two days a week on a rug in the meadow. Sells seeds from other seasons (they grow in any season), one merchant-only piece (telescope, aquarium or lucky cat) and two hard-to-find goods, one of each. They also pay double for one thing that day.
+- **Visitors:** a different animal visits each day of the week, from eight: Pip, Maple, Bram, Lulu, Juniper, Otis, Fern and Dot. Tap them to chat.
+- **Delivery requests:** each visitor asks for something from this season, such as forage, fish, crops, minerals, bugs or materials, and pays pebbles. A **!** shows while it's open. Either of you can deliver it, and it's only open that day.
+- **Friendship:** after three deliveries from either of you, a visitor gives each of you a thank-you piece of special furniture.
+- **Shared:** you both see the same merchant, visitor, request and stock.
 
 **Other jars:**
 - **The door:** on the right of the meadow. It opens the jar shelf, where you open new terrariums with pebbles and travel between them. Opening a jar opens it for both of you.
@@ -118,6 +126,8 @@ Any static file server works. There is no build step.
 | `src/crafting-ui.js` | The crafting panel |
 | `src/maps.js` | The other jars: layouts, their fish, forage and daily state |
 | `src/travel.js` | The jar shelf: opening and travelling between jars |
+| `src/visitors.js` | The traveling merchant, visitors, delivery requests and the rotating furniture stock |
+| `src/visitors-ui.js` | Their panels |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |

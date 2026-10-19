@@ -131,6 +131,17 @@ The door in the meadow leads to three more jars, each with its own ground and pi
 
 Item icons for the jars: sardine, mackerel, flounder, sea_bream, pufferfish, octopus, clownfish, bluefin_tuna, ice_smelt, arctic_char, snow_trout, glacier_pike, petal_minnow, rose_koi, blossom_carp, seashell, sea_glass, starfish, coral, icicle, frost_lily, rose, lily, lavender_sprig, coconut, honey. The jar bugs are hermit_crab, sand_beetle, ice_beetle, rose_chafer and orchid_mantis.
 
+### Visitors and the merchant
+
+| Name | Size | What it is |
+|---|---|---|
+| `visitor_<species>_<0-1>` | 16 × 20 | A visitor, two idle frames. Species: hedgehog, fox, bear, duck, deer, owl, frog, mouse |
+| `request_mark` | 7 × 9 | The **!** bubble over a visitor with a request |
+| `merchant_<0-1>` | 20 × 26 | The traveling merchant, two idle frames |
+| `merchant_rug` | 32 × 16 | The rug the merchant's goods sit on, flat on the ground |
+
+Special furniture uses the same `furniture_<type>` names as the rest: canopy_bed (32 × 32), rocking_chair, tall_clock (16 × 24), globe, tea_table, paper_lantern, bonsai, jukebox (16 × 18), star_rug (32 × 32, flat), telescope, aquarium (32 × 16), lucky_cat.
+
 ### Avatar (16 × 24)
 The avatar is built in layers so every hair, outfit and skin option lines up. Production avatar art should come as separate layers:
 

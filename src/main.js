@@ -23,6 +23,8 @@ import { openCrafting } from './crafting-ui.js';
 import { BUG_BY_ID, spawnBugs, timeBlock, alertRate, NOTICE_TILES, catchBug } from './bugs.js';
 import { MAPS, mapWalkable, mapObjectAt, mapOpenTiles, mapNear, mapCatch, mapWeather, mapDaily } from './maps.js';
 import { openTravel } from './travel.js';
+import { visitorOn, visitorSpot, merchantHere, MERCHANT_SPOT } from './visitors.js';
+import { openVisitor, openMerchant } from './visitors-ui.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -88,6 +90,54 @@ function refreshClock() {
     if (g.state.daily) g.mapDaily = mapDaily(g.state, g.mapId, g.today, g.state.seed, DAILY_BITES);
   }
   syncBugs();
+  syncVisitors();
+}
+
+// ---------- visitors ----------
+
+// Today's visitor and, on two days a week, the traveling merchant. They stand
+// in the meadow without blocking the way.
+function syncVisitors() {
+  if (!g.state.daily) return;
+  const key = [g.state.seed, g.today].join('|');
+  if (key !== g.visitorKey) {
+    g.visitorKey = key;
+    const seed = g.state.seed;
+    const list = [];
+    const taken = new Set([...g.state.daily.forage.map(f => f.c + ',' + f.r), ...g.decorBlocked]);
+    if (merchantHere(seed, g.today)) {
+      for (const d of [0, 1]) taken.add(MERCHANT_SPOT.c + d + ',' + MERCHANT_SPOT.r);
+      list.push({ kind: 'merchant', c: MERCHANT_SPOT.c, r: MERCHANT_SPOT.r });
+    }
+    const def = visitorOn(seed, g.today);
+    const spot = visitorSpot(seed, g.today, taken);
+    list.push({ kind: 'visitor', def, c: spot.c, r: spot.r });
+    for (const v of list) {
+      const p = tileCenter(v.c, v.r);
+      Object.assign(v, { x: p.x, y: p.y + FEET, phase: Math.random() * 6 });
+    }
+    g.visitors = list;
+    const names = list.map(v => (v.kind === 'merchant' ? 'the traveling merchant' : `${v.def.name} the ${v.def.species}`));
+    if (g.visitorToast !== g.today) {
+      g.visitorToast = g.today;
+      const day = g.today;
+      setTimeout(() => g.today === day && g.scene === 'jar' && UI.toast(`Visiting the meadow today: ${names.join(' and ')}.`), 1500);
+    }
+  }
+  const open = !S.deliveries[String(g.today)];
+  for (const v of g.visitors) v.ask = v.kind === 'visitor' && open;
+}
+
+function visitorAt(x, y) {
+  return g.visitors.find(v => Math.hypot(x - v.x, y - (v.y - 9)) < 12);
+}
+
+function talkTo(v) {
+  walkNextTo([{ c: v.c, r: v.r }], () => {
+    if (!ready()) return;
+    if (v.kind === 'merchant') openMerchant(g);
+    else openVisitor(g, v.def);
+  });
 }
 
 // ---------- bugs ----------
@@ -421,6 +471,8 @@ function tapJar(c, r, x, y) {
   if (g.build) return placeTap(c, r);
   const bug = bugAt(x, y);
   if (bug) return sneakTo(bug);
+  const visitor = visitorAt(x, y);
+  if (visitor) return talkTo(visitor);
   // Animals
   const a = residentAt(x, y);
   if (a) {
@@ -1163,7 +1215,7 @@ function start(hotData = {}) {
     state: R.migrate(saved, seed, today),
     scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(),
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
-    residents: [], bugs: [], bugKey: '', sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
+    residents: [], bugs: [], bugKey: '', visitors: [], visitorKey: '', sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     mapId: null, mapDaily: null, enterMap, leaveMap,
     roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
     openKitchen: () => ready() && openKitchen(g),

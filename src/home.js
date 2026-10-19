@@ -62,6 +62,20 @@ export const FURNITURE = [
   { type: 'rug_round', name: 'Round rug', category: 'Rugs', price: 40, w: 2, h: 2, flat: true },
   { type: 'rug_long', name: 'Long rug', category: 'Rugs', price: 45, w: 3, h: 1, flat: true },
   { type: 'rug_heart', name: 'Heart rug', category: 'Rugs', price: 50, w: 2, h: 2, flat: true },
+  // Special pieces: not in the catalogue. They come from the beetle shop's
+  // rotating stock, the traveling merchant (merchant: true) or visitors' thank-you gifts.
+  { type: 'canopy_bed', name: 'Canopy bed', category: 'Special', price: 260, w: 2, h: 2, use: 'sleep', special: true },
+  { type: 'rocking_chair', name: 'Rocking chair', category: 'Special', price: 140, w: 1, h: 1, use: 'sit', special: true },
+  { type: 'tall_clock', name: 'Grandfather clock', category: 'Special', price: 120, w: 1, h: 1, special: true },
+  { type: 'globe', name: 'Old globe', category: 'Special', price: 90, w: 1, h: 1, special: true },
+  { type: 'tea_table', name: 'Tea table', category: 'Special', price: 80, w: 1, h: 1, special: true },
+  { type: 'paper_lantern', name: 'Paper lantern', category: 'Special', price: 70, w: 1, h: 1, special: true },
+  { type: 'bonsai', name: 'Bonsai', category: 'Special', price: 110, w: 1, h: 1, special: true },
+  { type: 'jukebox', name: 'Jukebox', category: 'Special', price: 220, w: 1, h: 1, use: 'music', special: true },
+  { type: 'star_rug', name: 'Star rug', category: 'Special', price: 120, w: 2, h: 2, flat: true, special: true },
+  { type: 'telescope', name: 'Telescope', category: 'Special', price: 180, w: 1, h: 1, special: true, merchant: true },
+  { type: 'aquarium', name: 'Aquarium', category: 'Special', price: 240, w: 2, h: 1, special: true, merchant: true },
+  { type: 'lucky_cat', name: 'Lucky cat', category: 'Special', price: 160, w: 1, h: 1, special: true, merchant: true },
 ];
 export const FURNITURE_BY_TYPE = Object.fromEntries(FURNITURE.map(f => [f.type, f]));
 

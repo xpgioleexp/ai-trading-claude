@@ -441,3 +441,71 @@ export function archSprite() {
     for (const [x, y] of [[4, 12], [27, 16], [8, 3], [16, 1], [24, 3], [3, 22], [28, 26]]) disc(ctx, x, y, 1.8, '#D9506E');
   });
 }
+
+// ---------- visitors and the merchant ----------
+
+// An upright little animal visitor, 16 x 20. frame 1 bobs up a pixel.
+export function visitorSprite(species, color, frame) {
+  return sprite(`visitor_${species}_${frame}`, 16, 20, ctx => {
+    const up = frame ? 1 : 0;
+    const d = shade(color, -0.25), l = shade(color, 0.3);
+    // ears / head shapes by species
+    if (species === 'fox') { px(ctx, 4, 1 - up, 2, 3, color); px(ctx, 10, 1 - up, 2, 3, color); px(ctx, 12, 13, 3, 3, l); }
+    if (species === 'bear' || species === 'mouse') { disc(ctx, 4.5, 3.5 - up, species === 'mouse' ? 2.5 : 2, color); disc(ctx, 11.5, 3.5 - up, species === 'mouse' ? 2.5 : 2, color); }
+    if (species === 'deer') { px(ctx, 3, 0 - up, 1, 3, PAL.woodShade); px(ctx, 12, 0 - up, 1, 3, PAL.woodShade); px(ctx, 2, 1 - up, 2, 1, PAL.woodShade); px(ctx, 12, 1 - up, 2, 1, PAL.woodShade); }
+    if (species === 'owl') { px(ctx, 4, 2 - up, 2, 2, d); px(ctx, 10, 2 - up, 2, 2, d); }
+    if (species === 'hedgehog') for (let x = 2; x < 14; x += 2) px(ctx, x, 2 - up + (x % 4 ? 1 : 0), 2, 3, d);
+    disc(ctx, 8, 7 - up, 5, color);
+    if (species === 'duck') px(ctx, 6, 8 - up, 4, 2, '#E8A03A');
+    else if (species === 'owl') { disc(ctx, 6, 6 - up, 1.8, PAL.linenHi); disc(ctx, 10, 6 - up, 1.8, PAL.linenHi); px(ctx, 7, 8 - up, 2, 1, '#E8A03A'); }
+    else px(ctx, 6, 8 - up, 4, 2, l);
+    px(ctx, 6, 6 - up, 1, 1, PAL.inkDeep);
+    px(ctx, 9, 6 - up, 1, 1, PAL.inkDeep);
+    // body
+    px(ctx, 4, 11 - up, 8, 6, color);
+    px(ctx, 6, 12 - up, 4, 4, l);
+    px(ctx, 4, 17, 3, 2, d);
+    px(ctx, 9, 17, 3, 2, d);
+  });
+}
+
+// A request bubble above a visitor.
+export function requestMarkSprite() {
+  return sprite('request_mark', 7, 9, ctx => {
+    px(ctx, 0, 0, 7, 7, PAL.linenHi);
+    px(ctx, 3, 1, 1, 3, '#D9533C');
+    px(ctx, 3, 5, 1, 1, '#D9533C');
+    px(ctx, 2, 7, 3, 1, PAL.linenHi);
+    px(ctx, 3, 8, 1, 1, PAL.linenHi);
+  });
+}
+
+// The traveling merchant in a hooded cloak with a big pack, 20 x 26.
+export function merchantSprite(frame) {
+  return sprite('merchant_' + frame, 20, 26, ctx => {
+    const up = frame ? 1 : 0;
+    px(ctx, 11, 6 - up, 8, 12, PAL.woodShade);
+    px(ctx, 12, 7 - up, 6, 10, PAL.wood);
+    px(ctx, 13, 3 - up, 4, 3, '#C9483A');
+    disc(ctx, 8, 7 - up, 5, '#5E4A7A');
+    disc(ctx, 8, 8 - up, 3, '#E8B994');
+    px(ctx, 7, 8 - up, 1, 1, PAL.inkDeep);
+    px(ctx, 9, 8 - up, 1, 1, PAL.inkDeep);
+    for (let y = 12; y < 24; y++) px(ctx, 8 - Math.floor((y - 10) / 3), y - up, 2 + Math.floor((y - 10) / 3) * 2, 1, '#5E4A7A');
+    px(ctx, 5, 24, 3, 2, PAL.inkDeep);
+    px(ctx, 9, 24, 3, 2, PAL.inkDeep);
+  });
+}
+
+// The rug the merchant lays goods out on, 32 x 16, drawn flat on the ground.
+export function merchantRugSprite() {
+  return sprite('merchant_rug', 32, 16, ctx => {
+    px(ctx, 1, 3, 30, 11, '#B5324A');
+    px(ctx, 3, 5, 26, 7, '#D9A53A');
+    px(ctx, 5, 6, 22, 5, '#B5324A');
+    for (let x = 1; x < 31; x += 3) { px(ctx, x, 2, 1, 1, '#D9A53A'); px(ctx, x, 14, 1, 1, '#D9A53A'); }
+    disc(ctx, 9, 8, 2, '#A9E0E8');
+    px(ctx, 15, 6, 4, 4, PAL.linenHi);
+    disc(ctx, 24, 8, 2, '#E8C25A');
+  });
+}

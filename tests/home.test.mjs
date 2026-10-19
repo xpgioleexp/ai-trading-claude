@@ -34,7 +34,7 @@ test('the shared bedroom comes with the cabin and there is only one', () => {
 });
 
 test('furniture must fit on the floor, keep the door clear and not overlap', () => {
-  assert.equal(FURNITURE.length, 31);
+  assert.equal(FURNITURE.filter(f => !f.special).length, 31);
   const bed = { id: 'b', type: 'double_bed', c: 3, r: 4 };
   assert.ok(canPlace('double_bed', 3, 4, []));
   assert.equal(canPlace('double_bed', ROOM.c1, 4, []), false, 'hangs off the side');
