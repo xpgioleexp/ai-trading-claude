@@ -6,6 +6,7 @@ import {
 } from './data.js';
 import { rngFor, randInt, pickWeighted, shuffle } from './rng.js';
 import { seasonOf, weatherOf, isWet, isNightHour, weatherMatches } from './clock.js';
+import { pickPart } from './fossils.js';
 import { BEDS, COLS, ROWS, forageTiles } from './world.js';
 import {
   BANDS, ROCKS, ROCK_TABLE, FOSSILS_BY_BAND, ARTIFACTS_BY_BAND, GEODE_CONTENTS, GROTTO_BY_BAND, CAVE_FISH_IDS, CAVE_BITES,
@@ -379,7 +380,11 @@ export function rockDrops(seed, day, layer, rock) {
   const rand = rngFor(seed, 'drop', day, layer, rock.id);
   const band = bandOf(layer);
   const def = ROCKS[rock.kind];
-  if (def.drop === 'fossil') return [{ id: FOSSILS_BY_BAND[band][Math.floor(rand() * FOSSILS_BY_BAND[band].length)], n: 1 }];
+  if (def.drop === 'fossil') {
+    // Fossil rocks sometimes hold a piece of a skeleton for the museum.
+    if (rand() < 0.4) return [{ id: pickPart(rand, 'mine'), n: 1 }];
+    return [{ id: FOSSILS_BY_BAND[band][Math.floor(rand() * FOSSILS_BY_BAND[band].length)], n: 1 }];
+  }
   if (def.drop === 'artifact') return [{ id: ARTIFACTS_BY_BAND[band][Math.floor(rand() * ARTIFACTS_BY_BAND[band].length)], n: 1 }];
   const drops = [{ id: def.drop, n: def.n ? randInt(rand, def.n[0], def.n[1]) : 1 }];
   if (def.style === 'plain' && rand() < 0.1) {

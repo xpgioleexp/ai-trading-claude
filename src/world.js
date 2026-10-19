@@ -53,6 +53,7 @@ export const OBJECTS = [
   { id: 'west6', kind: 'tree', tree: 'cherry', name: 'Cherry tree', c: -16, r: 10, w: 1, h: 1 },
   { id: 'pond4', name: 'Forest pool', c: -11, r: 4, w: 4, h: 3 },
   // The north hills, above the tent (negative rows).
+  { id: 'museum', name: 'Museum', c: 4, r: -5, w: 3, h: 2 },
   { id: 'north1', kind: 'tree', tree: 'pine', name: 'Pine', c: 2, r: -7, w: 1, h: 1 },
   { id: 'north2', kind: 'tree', tree: 'birch', name: 'Birch', c: 9, r: -5, w: 1, h: 1 },
   { id: 'north3', kind: 'tree', tree: 'oak', name: 'Old oak', c: 15, r: -7, w: 1, h: 1 },

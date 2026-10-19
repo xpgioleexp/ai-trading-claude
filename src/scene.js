@@ -16,6 +16,8 @@ import { doorSprite, palmSprite, hiveSprite, pineSprite, snowmanSprite, archSpri
 import { SHOPS } from './biomes.js';
 import { MAPS } from './maps.js';
 import { wxDaily, isStormy } from './weather.js';
+import { sitesDug } from './fossils.js';
+import { museumSprite, digSiteSprite } from './museum-art.js';
 import { hashString } from './rng.js';
 import { houseSprite, wallpaperTile, floorTile, furnitureSprite, wallItemSprite, sleeperSprite } from './home-art.js';
 import { ROOM, DOOR, WALL_SLOTS, FURNITURE_BY_TYPE } from './home.js';
@@ -204,6 +206,7 @@ function drawJarWorld(ctx, g) {
 
   for (const id of PONDS) drawPond(ctx, g, id);
   drawWeatherGround(ctx, g);
+  drawDigSites(ctx, g);
   const cave = OBJECTS.find(o => o.id === 'cave');
   ctx.drawImage(caveSprite(), GX + cave.c * TILE, GY + cave.r * TILE);
   BEDS.forEach((b, i) => {
@@ -249,6 +252,7 @@ function drawJarWorld(ctx, g) {
   };
   for (const o of OBJECTS) {
     if (o.id === 'tent') at(o, houseSprite(g.houseLevel || 0, g.night), 0, 2);
+    if (o.id === 'museum') at(o, museumSprite(), 0, 2);
     if (o.id === 'mailbox') at(o, mailboxSprite(g.unreadMail), 0, -2);
     if (o.id === 'crate') at(o, crateSprite(g.state.crate.length > 0), 0, -1);
     if (o.id === 'workbench') at(o, workbenchSprite(), 0, -2);
@@ -643,6 +647,13 @@ function drawStormFlash(ctx, g) {
   ctx.fillRect(0, 0, W, H);
 }
 
+// Cracks in the ground where a fossil or relic is buried (see fossils.js).
+function drawDigSites(ctx, g) {
+  if (!g.fossilSites || !g.state.daily) return;
+  const dug = sitesDug(g.state, g.scene === 'map' ? g.mapId : 'meadow');
+  for (const t of g.fossilSites) if (!dug.includes(t.i)) ctx.drawImage(digSiteSprite(), GX + t.c * TILE, GY + t.r * TILE);
+}
+
 // Puddles, fallen branches, lightning glass, the rainbow's pot and frost flowers.
 function drawWeatherGround(ctx, g) {
   const s = g.wxSpots;
@@ -657,7 +668,8 @@ function drawWeatherGround(ctx, g) {
     ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 6.5, 3, 0, 0, Math.PI * 2); ctx.fill();
     px(ctx, x + 4, y + 9, 3, 1, 'rgba(255,255,255,0.7)');
     if (raining) {
-      const ring = (g.t * 2 + t.c * 0.37 + t.r * 0.21) % 1;
+      // Puddles can sit on negative rows and columns; keep the ripple between 0 and 1.
+      const ring = (((g.t * 2 + t.c * 0.37 + t.r * 0.21) % 1) + 1) % 1;
       ctx.strokeStyle = `rgba(255,255,255,${(0.6 * (1 - ring)).toFixed(2)})`;
       ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 1 + ring * 5, 0.5 + ring * 2, 0, 0, Math.PI * 2); ctx.stroke();
     }
@@ -781,6 +793,7 @@ function drawMapWorld(ctx, g) {
     }
   }
   drawWeatherGround(ctx, g);
+  drawDigSites(ctx, g);
   // forage
   const daily = g.mapDaily;
   daily?.forage.forEach((f, i) => {

@@ -30,7 +30,7 @@ const dayInWeek = day => (day + 3) % 7;
 // catalogue at a discount.
 export function furnitureStock(seed, day) {
   const rand = rngFor(seed, 'furniture-stock', day);
-  const specials = shuffle(rand, SPECIALS.filter(f => !f.merchant && !f.event)).slice(0, 2);
+  const specials = shuffle(rand, SPECIALS.filter(f => !f.merchant && !f.event && !f.museum)).slice(0, 2);
   const regular = shuffle(rand, FURNITURE.filter(f => !f.special)).slice(0, 2);
   return [
     ...specials.map(f => ({ type: f.type, price: f.price, special: true })),

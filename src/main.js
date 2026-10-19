@@ -6,6 +6,9 @@ import { COLS, MEADOW_COLS, ROWS, TILE } from './world.js';
 import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles, PONDS } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
 import { weatherNow } from './weather.js';
+import { digSites, sitesDug, makeExcavation, pickFind } from './fossils.js';
+import { missingFossils } from './museum.js';
+import { openMuseum, openExcavation } from './museum-ui.js';
 import { weatherHere, syncWeather, weatherSpotAt, useWeatherSpot, updateWeather, tapLeaf, partnerClose } from './weather-life.js';
 import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W, CAM_MIN, CAMY_MIN, CAMY_MAX, camBounds, setHeight, roomOffset, BASE_H } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
@@ -13,6 +16,7 @@ import { DIRS } from './avatar.js';
 import * as UI from './ui.js';
 import { C, loadContent, weekOf } from './content.js';
 import { cloud, connect, setDoc, privatePath } from './cloud.js';
+import { rngFor } from './rng.js';
 import { S, startShared, onShared, partnerId, saveBed, shareLook, rainingNow, sayGoodnight, goodnightsOn } from './shared.js';
 import { adopted, makeResident, updateResident, startMotion, adopt } from './animals.js';
 import { FLAT_DECOR } from './sprites-more.js';
@@ -131,6 +135,45 @@ function syncWeatherSpots() {
   const taken = new Set([...forage.map(f => f.c + ',' + f.r), ...g.decorBlocked, ...g.visitors.map(v => v.c + ',' + v.r),
     ...g.mushrooms.map(m => m.c + ',' + m.r), EVENT_SPOT.c + ',' + EVENT_SPOT.r, ...(g.mapDaily?.digs || []).map(t => t.c + ',' + t.r)]);
   syncWeather(g, habitats().tree, taken);
+  syncFossilSites(taken);
+}
+
+// ---------- fossil dig sites ----------
+
+function syncFossilSites(taken) {
+  const place = g.scene === 'map' ? g.mapId : 'meadow';
+  const key = [g.state.seed, g.today, place].join('|');
+  if (key === g.fossilKey) return;
+  g.fossilKey = key;
+  const s = g.wxSpots || {};
+  const clear = new Set([...taken, ...[...(s.puddles || []), ...(s.branches || []), ...(s.frost || []), s.strike, s.pot].filter(Boolean).map(t => t.c + ',' + t.r)]);
+  const tiles = g.scene === 'map' ? mapOpenTiles(MAPS[g.mapId]) : forageTiles();
+  g.fossilSites = digSites(g.state.seed, g.today, place, tiles, clear).map((t, i) => ({ ...t, i }));
+}
+
+const digs = new Map();
+function tapFossil(c, r) {
+  const place = g.scene === 'map' ? g.mapId : 'meadow';
+  const site = (g.fossilSites || []).find(t => t.c === c && t.r === r && !sitesDug(g.state, place).includes(t.i));
+  if (!site) return false;
+  walkTo(c, r, () => {
+    crouch();
+    if (!g.state.digKit) return UI.toast('Something is buried here! You need a dig kit. The museum in the north of the meadow sells them.');
+    const key = [place, g.today, site.i].join(':');
+    if (!digs.has(key)) {
+      const me = cloud.me || 'me';
+      const find = pickFind(rngFor(g.state.seed, 'fossil-find', place, g.today, site.i, me), place, missingFossils(S.museum));
+      digs.set(key, makeExcavation(rngFor(g.state.seed, 'excavate', place, g.today, site.i, me), find, g.state.digKit));
+    }
+    const ex = digs.get(key);
+    openExcavation(g, ex, () => {
+      sitesDug(g.state, place).push(site.i);
+      digs.delete(key);
+      save();
+      gained(ex.part);
+    });
+  });
+  return true;
 }
 
 const WX_FIND_TEXT = {
@@ -691,6 +734,7 @@ function tapJar(c, r, x, y) {
   if (eventStandAt(x, y)) return walkNextTo([EVENT_SPOT], () => ready() && openEventStand(g));
   if (tapMushroom(c, r)) return;
   if (tapWeather(c, r)) return;
+  if (tapFossil(c, r)) return;
   // Animals
   const a = residentAt(x, y);
   if (a) {
@@ -811,6 +855,7 @@ function ready() {
 function useObject(o) {
   switch (o.id) {
     case 'tent': return ready() && enterHome();
+    case 'museum': return ready() && openMuseum(g);
     case 'mailbox': return ready() && T.openMailbox(g, UI.letters(g));
     case 'crate': return UI.openCrate(g);
     case 'workbench': return openCrafting(g);
@@ -1056,6 +1101,7 @@ function tapMap(c, r, x, y) {
   const di = day.digs.findIndex((t, i) => t.c === c && t.r === r && !day.dug.includes(i));
   if (di >= 0) return walkTo(c, r, () => digAt(g, di));
   if (tapWeather(c, r)) return;
+  if (tapFossil(c, r)) return;
   const fi = day.forage.findIndex((f, i) => f.c === c && f.r === r && !day.picked.includes(i));
   if (fi >= 0) {
     walkTo(c, r, () => {

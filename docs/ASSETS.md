@@ -202,6 +202,15 @@ Special furniture uses the same `furniture_<type>` names as the rest: canopy_bed
 
 Lanterns in the sky and shooting stars are drawn as light effects in `src/scene.js` (`drawEventSky`). The snowman reuses `snowman`. New item icons: puffball, glowcap, truffle, star_fragment. New furniture: `furniture_fish_trophy` and `furniture_mushroom_lamp` (16 × 16).
 
+### Museum and fossils
+
+| Name | Size | What it is |
+|---|---|---|
+| `museum` | 48 × 44 | The museum building in the north hills of the meadow |
+| `dig_site` | 16 × 16 | A crack in the ground with a bit of bone poking out |
+
+Skeletons are drawn in code from each animal's body plan (`src/museum-art.js`), one piece at a time, so missing pieces show faintly. Plans: theropod, raptor, sauropod, horned, plated, armored, duckbill, dome, flyer, bird, marine, fish, shark, mammal, turtle, croc, snake, bug. Real art could be one 64 × 40 image per piece per animal (`skeleton_<animal>_<piece>`) layered on a stand. New item icons: every fossil piece (`fossil_<animal>_<piece>`, or `fossil_<animal>` for one-piece fossils; 375 in all, see `src/fossils.js`) and 32 relics. They all use the generic fossil and item shapes for now. New furniture (special, from museum milestones): fish_model, grand_aquarium, bug_case, butterfly_cabinet, gem_display, crystal_cluster, mini_skeleton, trex_skull_display, artifact_pedestal, ancient_vase.
+
 ### Weather
 
 | Name | Size | What it is |

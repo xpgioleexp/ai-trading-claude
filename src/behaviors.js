@@ -203,8 +203,10 @@ const BEHAVIORS = {
     if (!env.friend(a.def)) return BEHAVIORS.wander(a, env, dt, t);
     if (!walk(a, env, dt, 55)) return;
     if (dist(a, env.player) <= 2) { a.pose = null; return; }
-    const n = stepToward(a, env.player, env);
-    if (n) { a.flip = n.c < a.c ? true : n.c > a.c ? false : a.flip; a.c = n.c; a.r = n.r; }
+    // Goes around ponds and buildings instead of getting stuck behind them.
+    const path = env.route ? env.route({ c: a.c, r: a.r }, env.player, true) : null;
+    const n = path?.length ? path[0] : stepToward(a, env.player, env);
+    if (n && env.walkable(n.c, n.r)) { a.flip = n.c < a.c ? true : n.c > a.c ? false : a.flip; a.c = n.c; a.r = n.r; }
   },
   lazy(a, env, dt, t) {
     // Sleeps, wakes up, shuffles a tile, sleeps again.

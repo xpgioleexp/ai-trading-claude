@@ -21,6 +21,8 @@ import { CRITTERS, heartsOf, pointsFor, MAX_HEARTS } from './biomes.js';
 import { MONSTERS, SWORD_DAMAGE } from './mine-data.js';
 import { WEATHER_NAMES, WEATHER_TEXT, forecast, LEAVES_PER_DAY } from './weather.js';
 import { BUGS } from './bugs.js';
+import { openMuseum } from './museum-ui.js';
+import { readyToMount } from './museum.js';
 
 const $ = sel => document.querySelector(sel);
 const esc = UI.esc;
@@ -65,6 +67,8 @@ const APPS = [
     badge: g => S.ready && !S.deliveries?.[String(g.today)] },
   { id: 'weather', name: 'Weather', icon: '🌦️', color: '#6F97C9', text: 'Today\'s weather, tomorrow\'s forecast, and what the weather brings', open: g => openWeather(g),
     badge: g => !!(g.wx?.rainbow || ['storm', 'blizzard'].includes(g.wx?.base)) },
+  { id: 'museum', name: 'Museum', icon: '🦴', color: '#B9A07A', text: 'Fish, bugs, gems, fossils and artifacts on display, and skeletons to piece together', needs: 'ready',
+    open: g => openMuseum(g, 'fossils', false), badge: () => readyToMount(S.museum).length > 0 },
   { id: 'mine', name: 'Mine', icon: '⛏️', color: '#5A4440', text: 'How deep you\'ve been, bosses and health', open: g => openMine(g) },
   { id: 'settings', name: 'Settings', icon: '⚙️', color: '#7A7A80', text: 'Your partner, the jar, reminders, rain and downloads', needs: 'ready', open: g => openMore(g) },
 ];

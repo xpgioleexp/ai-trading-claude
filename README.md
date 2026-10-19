@@ -295,6 +295,14 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 - **Crafts from the weather:** branch fence, twig arch, storm lantern, rainbow arch, leaf pile, golden leaf lamp, frost lamp, shiny pebble path, bird nest box and weathervane.
 - **Testing:** with `#debug` on the address, the **Next weather** button jumps to each kind of weather in turn.
 
+**The museum:** a white building in the north hills of the meadow, run by Hazel the curator. Give it one of everything: fish, bugs, minerals and gems, fossils and artifacts (551 spots in all). The collection is shared, so either of you can fill a spot, and each spot shows who gave it. Tap the museum to give things; the phone's **Museum** app lets you look around from anywhere.
+- **Wings:** Aquarium, Insect hall, Minerals and gems, Fossil hall and Artifacts. When a wing is a quarter, half, three quarters and all the way full, you each collect a thank-you: pebbles, plus a piece of museum furniture at half (a fish model, bug case, gem display, little dino skeleton, artifact pedestal) and at full (a grand aquarium, butterfly cabinet, giant crystal cluster, T. rex skull display, ancient vase).
+- **Fossils:** 132 prehistoric animals and plants in seven eras (dinosaurs, ancient seas, the ice age, ancient jungles, first life, ancient plants and amber), 375 pieces in all. 97 of them come in 2 to 5 pieces (a T. rex has a skull, ribcage, tail, legs and arms); the rest are found whole. Each one is found in particular places: dinosaurs in the desert and meadow, sea reptiles at the beach, mammoths in the snow, amber in the rainforest, and so on.
+- **Digging:** three cracks appear in the meadow and two in every jar each day. Buy a **dig kit** (150 pebbles) at the museum, then tap a crack to dig. It's a little excavation game: brush the dirt away one layer at a time, or use the hammer to clear more at once, but the hammer cracks the fossil if it hits bare bone. A perfect dig earns 25 pebbles, a good one 10. The **expert dig kit** (1500 pebbles) gives more energy and shows where the fossil lies. A third of the time you dig up a piece the museum is still missing. Fossil rocks in the mine hold pieces too.
+- **Relics:** one dig in five turns up a relic instead: 32 old things like a pirate coin, a jade mask, a bone flute or a moon compass, each from its own place, for the artifact wing.
+- **Piecing skeletons together:** once every piece of an animal is in, put it together at the museum. One spot on the skeleton glows at a time; pick the piece that goes there. It's then on display for you both, with 60 pebbles per piece for whoever put it together.
+- **Fossil swap:** Hazel swaps 3 spare pieces (ones already on display) for one the museum is missing.
+
 ## Code
 
 | File | What it does |
@@ -303,6 +311,10 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 | `src/rules.js` | Game rules (bag, garden, fishing, mine layers, monsters and health, shop, crate, upgrades, new day). No drawing code, so it's tested and can move to the server later |
 | `src/world.js` | The jar's layout: tile grid and where each object sits |
 | `src/clock.js` | Day numbers, seasons, weather, time of day |
+| `src/fossils.js` | Fossils: every animal and its pieces, relics, dig sites, the dig kit, the excavation game |
+| `src/museum.js` | Museum rules: wings, giving, milestones, skeletons, the fossil swap |
+| `src/museum-ui.js` | The museum's panels, the excavation game and piecing skeletons together |
+| `src/museum-art.js` | Placeholder art: the museum, dig sites, skeletons drawn from each body plan |
 | `src/weather.js` | Weather rules: storms, wind, heatwaves, puddles, rainbows, sunshowers, frost, and what you find |
 | `src/weather-life.js` | The weather in the meadow and jars: today's spots, leaves on the wind, lightning, splashing |
 | `src/rng.js` | Seeded randomness, so a day's forage, weather and mine layers are the same on every device |

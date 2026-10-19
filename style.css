@@ -537,3 +537,17 @@ body {
 #sheet > header h2 { flex: 1; }
 @media (max-width: 360px) { .phone-icon { width: 46px; height: 46px; font-size: 22px; } .phone-name { font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { #phone { animation: none; } }
+
+/* museum and digging */
+.skeleton { image-rendering: pixelated; flex: none; background: #3A2E28; border-radius: 4px; }
+.skeleton.big { width: min(256px, 100%); height: auto; }
+.dig-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+.dig-energy { margin-left: auto; font-variant-numeric: tabular-nums; }
+.dig-grid { display: grid; gap: 2px; max-width: 360px; margin: 6px auto; }
+.dig-cell { aspect-ratio: 1; border: 0; padding: 0; cursor: pointer; border-radius: 2px; background: #C9A272; }
+.dig-cell.d0 { background: #E9D7A8; }
+.dig-cell.d1 { background: #B88D60; }
+.dig-cell.d2 { background: #8A6448; }
+.dig-cell.d3 { background: #5A4130; }
+.dig-cell.bone { background: #F7F2E8; box-shadow: inset 0 0 0 2px #D9C9A8; }
+.dig-cell.hint { box-shadow: inset 0 0 0 2px rgba(247,242,232,0.45); }
