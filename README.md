@@ -46,8 +46,8 @@ Any static file server works. There is no build step.
 **Building your home:**
 - **Upgrade the house:** tent → cabin → cottage → cottage with a loft. Upgrades cost pebbles, plus stone and ore from the cave. Each level allows more rooms (1, 2, 4, then 6).
 - **Add rooms:** living room, our bedroom (one, from the cabin on), kitchen, study, bathroom, sunroom and loft.
-- **Furnish:** 31 pieces in the catalogue, plus 14 special pieces from shops, visitors and events. Tap twice to place, then move or return them later; returning gives back the full price.
-- **Decorate:** 10 things for the six spots on the back wall, 8 wallpapers and 6 floors, chosen per room.
+- **Furnish:** 147 pieces in 15 sets: Classic, Cottage, Modern, Cabin, Japanese, Seaside, Fairy, Retro, Study, Kitchen, Bathroom, Playroom, Plants, Lights and Hobbies. Pick a set to browse it. There are also special pieces from shops, visitors, events and the jar animals' plushes. Tap twice to place, then move or return them later; returning gives back the full price.
+- **Decorate:** 30 things for the six spots on the back wall (windows, posters, clocks, a wreath, a dreamcatcher, neon signs, hanging plants and more), 8 wallpapers and 6 floors, chosen per room.
 - **Furniture you can use:** beds (sleep), wardrobe and dresser (change your look), seats (sit), desk (calendar), bookshelf (journal), chest (bag), record player and piano (music).
 - **Saying goodnight:** in the shared bedroom you can each get into the double bed and say goodnight. When you both do on the same day, you each get 15 pebbles, and it's kept in the journal.
 - **Shared:** the home belongs to both of you, and you see each other walking around in the same room.
@@ -94,6 +94,15 @@ Any static file server works. There is no build step.
 - **Toys (4):** an animal's panel then has a "Play with a toy" row, which gives a big happiness boost. Toys aren't used up.
 - **Outfits:** 4 hats and a cozy sweater, unlocked in the wardrobe once made.
 - **Gifts (6):** a bouquet, bracelet, carved heart, flower card, crystal charm or gem ring. Give them from the Bag; your partner opens them in the mailbox, and handmade gifts are kept in the journal.
+- **Home (34):** cosy pieces from the furniture sets that you can make instead of buy, such as a teddy bear, rocking horse, tatami mat, ship's wheel, fairy light jar and salt lamp.
+- **Outdoor (56):** for the meadow, in six groups:
+  - **Paths:** stone, brick, deck, tiles, mosaic, flower beds, stepping stones and clover. You can walk over these.
+  - **Fences:** picket, stone wall, hedge, bamboo, iron and rope.
+  - **Lights:** lamp post, tiki torch, lantern post, string lights, stone lantern and crystal lamp. These glow at night.
+  - **Seats:** benches, a heart bench, log seat, deck chair, picnic table, parasol table, garden swing and hammock. Tap one to sit.
+  - **Garden:** planters, birdbath, sundial, scarecrow, wheelbarrow, hay bales, gnome, bird feeder and more.
+  - **Fun:** arches, a signpost, your own flag, a windmill, wind chime, fountain, cat statue, totem, sandbox, tent, pumpkin lantern and a wishing stone.
+- **Finding a recipe:** the long lists are grouped, with what you can make right now at the top.
 
 **Bug catching:**
 - **What:** 27 bugs, including butterflies, moths, bees, beetles, fireflies, glow-worms, dragonflies and crickets. Each has its seasons, time of day, weather and favorite place: flowers, ground, the fruit tree or the pond.
@@ -232,6 +241,8 @@ Any static file server works. There is no build step.
 | `src/farm.js` | Farm rules: collecting from buildings and trees, opening beds, the sprinkler |
 | `src/biomes.js` | The jars' animals, shopkeepers and special spots, the five newer jars, and their rules |
 | `src/jar-life.js` | Panels for the animals, jar shops and spots, and the animals wandering |
+| `src/furniture-data.js` | The furniture sets and wall items, each drawn from a shape and two colours |
+| `src/outdoor-data.js` | Outdoor crafts and the craftable home pieces |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |

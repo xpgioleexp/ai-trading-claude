@@ -1,6 +1,7 @@
 // Placeholder art for the couple places, the animals and the 50 decorations.
 // Same rules as sprites.js: a PNG in assets/manifest.json with the same name replaces any of these.
 import { PAL, px, disc, shade, sprite } from './sprites.js';
+import { OUTDOOR_BY_TYPE, FLAT_OUTDOOR } from './outdoor-data.js';
 
 // ---------- places ----------
 
@@ -167,7 +168,7 @@ export function zzzSprite() {
 // ---------- decorations ----------
 
 // Decorations that lie flat on the ground can be walked over.
-export const FLAT_DECOR = new Set(['pathstone', 'pathwood', 'picnic', 'moss', 'clover', 'puddle', 'lilypad', 'waterbowl']);
+export const FLAT_DECOR = new Set(['pathstone', 'pathwood', 'picnic', 'moss', 'clover', 'puddle', 'lilypad', 'waterbowl', ...FLAT_OUTDOOR]);
 
 const TREE_SIZE = [24, 34];
 
@@ -385,7 +386,84 @@ function drawFarm(c, type) {
   }
 }
 
+// Outdoor crafts, drawn from their form and two colours (see outdoor-data.js).
+const TALL_OUTDOOR = new Set(['lamppost', 'torch', 'lanternpost', 'stringpole', 'scarecrow', 'arch', 'heartarch', 'signpost', 'flag', 'windmill', 'chime', 'totem', 'feeder']);
+
+function drawOutdoor(c, def, w, h) {
+  const a = def.accent, col = def.color, d = shade(col, -0.3), l = shade(col, 0.3);
+  const P = (x, y, ww, hh, cc) => px(c, x, y, ww, hh, cc);
+  const B = h - 16; // where the ground tile starts
+  switch (def.form) {
+    case 'path': for (const [x, y, r] of [[4, 4, 3], [11, 5, 3.5], [5, 11, 3.5], [12, 12, 3]]) { disc(c, x, y, r, d); disc(c, x, y - 0.5, r - 0.6, col); } return;
+    case 'bricks': for (let y = 0; y < 16; y += 4) for (let x = (y / 4) % 2 ? -4 : 0; x < 16; x += 8) { P(x, y, 7, 3, col); P(x, y, 7, 1, a); } return;
+    case 'deck': for (let x = 0; x < 16; x += 4) { P(x, 0, 3, 16, col); P(x + 3, 0, 1, 16, a); } return;
+    case 'tiles': for (const [x, y] of [[0, 0], [8, 0], [0, 8], [8, 8]]) { P(x, y, 7, 7, col); P(x, y, 7, 1, a); } return;
+    case 'mosaic': for (let y = 0; y < 16; y += 4) for (let x = 0; x < 16; x += 4) P(x, y, 3, 3, (x + y) % 8 ? col : a); return;
+    case 'flowerbed': P(0, 4, 16, 12, col); for (const [x, y] of [[3, 5], [8, 7], [12, 5], [5, 11], [11, 12]]) { P(x, y + 1, 1, 2, '#4F8A4A'); disc(c, x, y, 1.6, a); } return;
+    case 'steps': for (const [x, y] of [[3, 3], [11, 7], [5, 12]]) { disc(c, x, y, 2.8, d); disc(c, x, y - 0.5, 2.3, col); } return;
+    case 'clover': for (let i = 0; i < 14; i++) { const x = (i * 7) % 15, y = (i * 5) % 15; P(x, y, 2, 2, i % 3 ? col : shade(col, -0.15)); } P(6, 6, 2, 2, a); P(12, 10, 2, 2, a); return;
+    case 'fence': for (const x of [1, 6, 11]) { P(x, B + 3, 3, 12, col); P(x + 1, B + 2, 1, 1, col); } P(0, B + 6, 16, 2, a); P(0, B + 11, 16, 2, a); return;
+    case 'wall': for (let y = B + 4; y < h; y += 4) for (let x = ((y - B) / 4) % 2 ? -3 : 0; x < 16; x += 6) { P(x, y, 5, 3, col); P(x, y, 5, 1, l); } return;
+    case 'hedge': disc(c, 8, B + 9, 7, col); P(1, B + 9, 14, 7, col); for (const [x, y] of [[4, 5], [10, 7], [7, 11]]) P(x, B + y, 2, 2, a); return;
+    case 'railing': P(0, B + 4, 16, 1, col); P(0, B + 14, 16, 1, col); for (let x = 1; x < 16; x += 3) { P(x, B + 4, 1, 11, col); P(x, B + 3, 1, 1, a); } return;
+    case 'rope': P(2, B + 4, 2, 12, col); P(12, B + 4, 2, 12, col); for (let x = 4; x < 12; x++) { P(x, B + 6 + Math.round(Math.sin(((x - 4) / 8) * Math.PI) * 2), 1, 1, a); P(x, B + 11 + Math.round(Math.sin(((x - 4) / 8) * Math.PI) * 2), 1, 1, a); } return;
+    case 'lamppost': P(7, 6, 2, h - 6, col); P(5, h - 2, 6, 2, col); P(4, 2, 8, 5, col); P(5, 3, 6, 3, a); P(6, 0, 4, 2, col); return;
+    case 'torch': P(7, 8, 2, h - 8, col); P(6, 6, 4, 3, d); disc(c, 8, 4, 2.5, a); P(7, 0, 2, 3, '#F2E48A'); return;
+    case 'lanternpost': P(3, 2, 2, h - 2, col); P(3, 2, 9, 2, col); P(10, 4, 1, 2, col); P(8, 6, 5, 6, a); P(8, 6, 5, 1, col); P(1, h - 2, 6, 2, col); return;
+    case 'smalllight': P(7, B + 8, 2, 8, col); P(5, B + 5, 6, 4, a); P(5, B + 4, 6, 1, col); return;
+    case 'stringpole': P(2, 2, 2, h - 2, col); P(12, 6, 2, h - 6, col); for (let x = 4; x < 12; x++) { const y = 4 + Math.round(Math.sin(((x - 4) / 8) * Math.PI) * 4); P(x, y, 1, 1, '#3A3A40'); if (x % 2) P(x, y + 1, 1, 2, a); } return;
+    case 'stonelantern': P(5, B + 9, 6, 7, col); P(2, B + 6, 12, 3, d); P(4, B + 1, 8, 5, col); P(6, B + 2, 4, 3, a); P(3, B, 10, 2, d); return;
+    case 'crystal': P(5, B + 12, 6, 4, '#7D7A74'); P(6, B + 2, 4, 10, col); P(4, B + 6, 3, 6, a); P(9, B + 4, 3, 8, l); return;
+    case 'bench': P(1, B + 5, 14, 3, col); P(1, B + 9, 14, 2, col); P(2, B + 11, 2, 5, d); P(12, B + 11, 2, 5, d); return;
+    case 'heartbench': disc(c, 5, B + 5, 3.5, col); disc(c, 11, B + 5, 3.5, col); P(2, B + 6, 12, 3, col); P(1, B + 9, 14, 2, a); P(2, B + 11, 2, 5, d); P(12, B + 11, 2, 5, d); return;
+    case 'log': P(1, B + 7, 14, 8, col); disc(c, 14, B + 11, 3.5, a); disc(c, 14, B + 11, 1.5, col); return;
+    case 'deckchair': for (let i = 0; i < 8; i++) P(3 + i, B + 3 + i, 2, 1, col); P(3, B + 4, 6, 8, a); P(8, B + 10, 6, 2, a); P(3, B + 12, 1, 4, d); P(13, B + 12, 1, 4, d); return;
+    case 'picnictable': P(0, B + 4, 16, 3, col); P(0, B + 10, 16, 2, a); P(3, B + 7, 2, 9, d); P(11, B + 7, 2, 9, d); return;
+    case 'parasol': for (let y = 0; y < 5; y++) P(8 - (y + 2) * 1.4, B + y, (y + 2) * 2.8, 1, y % 2 ? col : a); P(7, B + 5, 2, 11, d); P(2, B + 11, 12, 2, col); return;
+    case 'swing': P(1, B, 2, 16, col); P(13, B, 2, 16, col); P(1, B, 14, 2, col); P(5, B + 2, 1, 8, d); P(10, B + 2, 1, 8, d); P(4, B + 10, 8, 2, a); return;
+    case 'hammock': P(1, B + 2, 2, 14, col); P(13, B + 2, 2, 14, col); for (let x = 3; x < 13; x++) P(x, B + 6 + Math.round(Math.sin(((x - 3) / 10) * Math.PI) * 4), 1, 2, a); return;
+    case 'planter': P(1, B + 8, 14, 8, col); P(1, B + 8, 14, 1, l); for (const x of [3, 7, 11]) { P(x + 1, B + 4, 1, 4, '#4F8A4A'); disc(c, x + 1, B + 3, 2, a); } return;
+    case 'pots': for (const [x, y, s] of [[2, 10, 5], [9, 8, 6]]) { P(x, B + y, s, 16 - y, col); disc(c, x + s / 2, B + y - 1, s / 2, '#4F8A4A'); P(x + 1, B + y - 3, 2, 2, a); } return;
+    case 'birdbath': P(6, B + 7, 4, 7, col); P(4, B + 14, 8, 2, col); P(1, B + 4, 14, 3, col); P(2, B + 4, 12, 1, a); return;
+    case 'sundial': P(5, B + 8, 6, 8, col); disc(c, 8, B + 6, 6, col); P(8, B + 1, 1, 5, a); P(4, B + 6, 8, 1, shade(col, -0.2)); return;
+    case 'scarecrow': P(7, 6, 2, h - 6, '#7A5A3A'); P(2, 9, 12, 2, '#7A5A3A'); disc(c, 8, 5, 3.5, col); P(4, 1, 8, 2, '#B88D60'); P(5, 10, 6, 8, a); P(2, 9, 2, 3, col); P(12, 9, 2, 3, col); return;
+    case 'wheelbarrow': P(2, B + 6, 11, 5, col); P(3, B + 7, 9, 2, '#7A5A3A'); disc(c, 4, B + 13, 2.5, '#3A3A40'); P(12, B + 9, 4, 1, a); P(10, B + 11, 1, 4, a); return;
+    case 'hay': P(1, B + 5, 14, 11, col); for (let y = B + 7; y < h; y += 3) P(1, y, 14, 1, a); P(1, B + 9, 14, 1, '#B5853A'); return;
+    case 'barrel': P(3, B + 3, 10, 13, col); P(3, B + 5, 10, 1, a); P(3, B + 13, 10, 1, a); P(4, B + 3, 8, 2, '#5F9FB5'); return;
+    case 'compost': P(1, B + 5, 14, 11, col); for (let x = 1; x < 16; x += 4) P(x, B + 5, 1, 11, a); P(3, B + 3, 10, 3, '#5A4130'); return;
+    case 'gnome': for (let y = 0; y < 7; y++) P(8 - y * 0.7, B + 1 + y, y * 1.4 + 1, 1, col); disc(c, 8, B + 10, 2.5, '#F2C4A0'); P(5, B + 11, 6, 4, '#F2F4F6'); P(5, B + 12, 6, 4, a); return;
+    case 'feeder': P(7, 7, 2, h - 7, col); P(3, 3, 10, 2, col); P(4, 5, 8, 4, a); P(4, 9, 8, 1, col); return;
+    case 'cans': for (const [x, s] of [[2, 6], [9, 5]]) { P(x, B + 16 - s - 2, s, s, col); P(x + s, B + 16 - s, 3, 1, a); P(x + 1, B + 16 - s - 4, s - 2, 2, a); } return;
+    case 'pumpkins': for (const [x, y, r] of [[5, 12, 4], [11, 12, 3.5], [8, 7, 3.5]]) { disc(c, x, B + y, r, col); P(x, B + y - r - 1, 1, 2, a); } return;
+    case 'arch': case 'heartarch': {
+      P(1, 6, 2, h - 6, col); P(13, 6, 2, h - 6, col);
+      if (def.form === 'arch') for (let x = 1; x < 15; x++) P(x, 6 - Math.round(Math.sin(((x - 1) / 14) * Math.PI) * 5), 1, 2, col);
+      else { disc(c, 5, 5, 4, col); disc(c, 11, 5, 4, col); disc(c, 5, 5, 2.5, 'rgba(0,0,0,0)'); }
+      for (const [x, y] of [[2, 9], [13, 13], [3, 17], [12, 6], [7, 2]]) P(x, y, 2, 2, a);
+      return;
+    }
+    case 'signpost': P(7, 4, 2, h - 4, col); P(2, 5, 12, 4, a); P(4, 12, 10, 4, a); P(3, 6, 6, 1, col); P(6, 13, 5, 1, col); return;
+    case 'flag': P(2, 0, 1, h, col); P(3, 1, 10, 7, a); disc(c, 8, 4.5, 1.8, PAL.linenHi); return;
+    case 'windmill': P(5, 12, 6, h - 12, col); for (let y = 8; y < 12; y++) P(5 + (12 - y) * 0.5, y, 6 - (12 - y), 1, a); P(7, 0, 2, 20, '#7A5A3A'); P(0, 9, 16, 2, '#7A5A3A'); return;
+    case 'chime': P(3, 2, 10, 2, col); for (const [x, l2] of [[4, 8], [7, 11], [10, 9], [12, 7]]) { P(x, 4, 1, l2, '#9A958A'); P(x - 1, 4 + l2, 3, 3, a); } P(7, 0, 2, 2, col); return;
+    case 'fountain': P(1, B + 9, 14, 7, col); P(2, B + 10, 12, 2, a); P(6, B + 3, 4, 7, col); P(4, B + 2, 8, 2, col); P(7, B, 2, 3, a); return;
+    case 'catstatue': P(4, B + 9, 8, 7, d); disc(c, 8, B + 9, 4, col); disc(c, 8, B + 5, 3, col); P(5, B + 1, 2, 3, col); P(9, B + 1, 2, 3, col); P(12, B + 8, 2, 6, col); return;
+    case 'totem': for (const [y, cc] of [[0, a], [8, col], [16, a]]) { P(4, y, 8, 8, cc); P(5, y + 2, 2, 2, PAL.inkDeep); P(9, y + 2, 2, 2, PAL.inkDeep); P(6, y + 5, 4, 1, PAL.inkDeep); } P(1, 9, 3, 2, col); P(12, 9, 3, 2, col); return;
+    case 'sandbox': P(0, B + 6, 16, 10, col); P(2, B + 8, 12, 6, a); P(5, B + 9, 3, 3, shade(a, -0.15)); P(10, B + 10, 2, 2, '#D9533C'); return;
+    case 'tent': for (let y = 0; y < 13; y++) P(8 - (y + 1) * 0.6, B + 3 + y, (y + 1) * 1.2, 1, col); P(7, B + 8, 2, 8, a); return;
+    case 'jack': disc(c, 8, B + 10, 6, col); P(7, B + 3, 2, 2, '#4F8A4A'); P(5, B + 8, 2, 2, a); P(9, B + 8, 2, 2, a); P(5, B + 12, 6, 1, a); return;
+    case 'wishstone': disc(c, 8, B + 11, 6, col); disc(c, 8, B + 10, 5, l); P(7, B + 7, 2, 2, a); P(5, B + 10, 1, 1, a); P(11, B + 9, 1, 1, a); return;
+    case 'snowbunny': disc(c, 8, B + 12, 5, col); disc(c, 8, B + 6, 3.5, col); P(6, B, 2, 4, col); P(9, B, 2, 4, col); P(7, B + 1, 1, 2, a); P(7, B + 6, 1, 1, PAL.inkDeep); P(9, B + 6, 1, 1, PAL.inkDeep); return;
+  }
+  P(3, B + 3, 10, 13, col);
+}
+
 export function decorSprite(type, season) {
+  const od = OUTDOOR_BY_TYPE[type];
+  if (od) {
+    const h = TALL_OUTDOOR.has(od.form) ? 28 : 16;
+    return sprite('decor_' + type, 16, h, ctx => drawOutdoor(ctx, od, 16, h));
+  }
   if (type.startsWith('tree_') && FRUIT_COLOR[type]) return sprite('decor_' + type, TREE_SIZE[0], TREE_SIZE[1], ctx => drawFarm(ctx, type));
   if (['coop', 'goat_pen', 'bee_box', 'mushroom_log'].includes(type)) return sprite('decor_' + type, 16, 16, ctx => drawFarm(ctx, type));
   const isTree = ['pine', 'oak', 'birch', 'willow', 'cherry', 'sapling'].includes(type);

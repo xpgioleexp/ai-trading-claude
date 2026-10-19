@@ -34,6 +34,7 @@ import {
 import { openEventStand, eventDocs, countMushroom } from './events-ui.js';
 import { MONSTERS } from './mine-data.js';
 import { FARM_BY_TYPE } from './farm-data.js';
+import { OUTDOOR_BY_TYPE } from './outdoor-data.js';
 import { collect as collectFarmItem } from './farm.js';
 
 const SAVE_KEY = 'little-us-terrarium';
@@ -627,7 +628,12 @@ function tapJar(c, r, x, y) {
   const deco = g.decor.find(d => d.c === c && d.r === r);
   if (deco && !FLAT_DECOR.has(deco.type)) {
     walkNextTo([{ c, r }], () => {
-      if (FARM_BY_TYPE[deco.type]) collectFarm(deco);
+      const od = OUTDOOR_BY_TYPE[deco.type];
+      if (od?.sit) {
+        g.player.pose = 'sit';
+        g.player.dir = DIRS.down;
+        UI.toast(od.swing ? `You sway gently on the ${od.name.toLowerCase()}.` : `You sit on the ${od.name.toLowerCase()} for a while.`);
+      } else if (FARM_BY_TYPE[deco.type]) collectFarm(deco);
       else if (deco.type === 'log') T.noticeDiscovery('hollow-log');
       else if (deco.type === 'campfire') ready() && openKitchen(g);
       else UI.toast(C.decorByType[deco.type]?.name || 'A decoration');

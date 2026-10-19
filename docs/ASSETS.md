@@ -165,6 +165,16 @@ The locked garden beds are drawn faded, with a small sign, in `drawJarWorld`. Ne
 
 The waterfall, hot spring steam, starry sky and glade mist are drawn in code in `drawMapWorld`.
 
+### Furniture sets and outdoor crafts
+
+- **Furniture:** every piece in `src/furniture-data.js` is `furniture_<type>`. Each one is 16 px per tile wide and tall, plus a little extra height for tall pieces (shelves, lamps, fridges, tall plants).
+  - The placeholder art is drawn from the piece's `form` and its two colours, in `drawForm` in `src/home-art.js`.
+  - For a matching look, make each set (Cottage, Modern, Cabin, Japanese, Seaside, Fairy, Retro, Study, Kitchen, Bathroom, Playroom, Plants, Lights, Hobbies) as one sheet.
+- **Wall items:** `wall_<type>`, 20 × 18, for the 20 new types in `src/furniture-data.js`.
+- **Outdoor crafts:** `decor_<type>`, 16 × 16, or 16 × 28 for tall ones (lamp posts, torches, arches, signposts, flags, the windmill, wind chime, totem, scarecrow, bird feeder).
+  - Paths, flower beds and lawns are flat and drawn under everything.
+  - The full list is in `src/outdoor-data.js`, and the placeholders are in `drawOutdoor` in `src/sprites-more.js`.
+
 ### Visitors and the merchant
 
 | Name | Size | What it is |

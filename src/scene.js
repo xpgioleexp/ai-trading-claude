@@ -1,6 +1,7 @@
 // Draws the jar, its world and the mine onto the game canvas.
 import { COLS, ROWS, TILE, OBJECTS, BEDS } from './world.js';
 import { EVENT_SPOT, SNOWMAN_SPOT, meteorAt } from './events.js';
+import { LIGHT_DECOR } from './outdoor-data.js';
 import { bedStage, bandOf, MINE_ENTRY } from './rules.js';
 import { BANDS, MONSTERS } from './mine-data.js';
 import {
@@ -453,6 +454,8 @@ function drawNight(ctx, g) {
   glow(160, 46, 70, 0.28);
   const tent = OBJECTS.find(o => o.id === 'tent');
   glow(GX + (tent.c + 2.2) * TILE, GY + tent.r * TILE + 20, 26, 0.35);
+  // Lamps, torches and lanterns you've made glow at night.
+  if (g.scene === 'jar') for (const d of g.decor) if (LIGHT_DECOR.has(d.type)) glow(GX + d.c * TILE + 8, GY + d.r * TILE - 2, 22, 0.4);
   if (g.season === 'summer' || g.season === 'spring') {
     for (let i = 0; i < 9; i++) {
       const fx = 40 + ((i * 37 + Math.sin(g.t * 0.7 + i) * 18) % 250);

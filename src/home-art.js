@@ -1,7 +1,7 @@
 // Placeholder art for your home: the house at each level, furniture, wall
 // items, wallpapers and floors. PNGs in assets/manifest.json with the same names replace these.
 import { PAL, px, disc, shade, sprite, tentSprite } from './sprites.js';
-import { FURNITURE_BY_TYPE, WALLPAPER_BY_ID, FLOOR_BY_ID } from './home.js';
+import { FURNITURE_BY_TYPE, WALLPAPER_BY_ID, FLOOR_BY_ID, WALL_BY_TYPE } from './home.js';
 import { HAIR_COLORS, SKIN_TONES } from './data.js';
 
 // ---------- the house outside ----------
@@ -105,6 +105,8 @@ export function floorTile(id) {
 function drawFurniture(ctx, type, w, h) {
   const W = w, H = h;
   const wood = PAL.wood, woodD = PAL.woodShade, woodH = PAL.woodHi;
+  const formDef = FURNITURE_BY_TYPE[type];
+  if (formDef?.form) return drawForm(ctx, formDef, W, H);
   switch (type) {
     case 'double_bed': case 'single_bed': {
       px(ctx, 1, 2, W - 2, 8, woodD);
@@ -332,13 +334,265 @@ function drawFurniture(ctx, type, w, h) {
   }
 }
 
+// Furniture drawn from a shape and two colours (see furniture-data.js).
+// Each shape fills W x H, with the floor at the bottom.
+function drawForm(ctx, def, W, H) {
+  const c = def.color, a = def.accent;
+  const d = shade(c, -0.3), l = shade(c, 0.3), ad = shade(a, -0.25), al = shade(a, 0.35);
+  const P = (x, y, w, h, col) => px(ctx, Math.round(x), Math.round(y), Math.round(w), Math.round(h), col);
+  const legs = (y, col = d) => { P(2, y, 2, H - y, col); P(W - 4, y, 2, H - y, col); };
+  const glow = (x, y, r) => { ctx.fillStyle = 'rgba(255,230,160,0.25)'; ctx.fillRect(x - r, y - r, r * 2, r * 2); };
+  switch (def.form) {
+    case 'bed': case 'futon': {
+      const low = def.form === 'futon';
+      if (!low) { P(1, 1, W - 2, 8, d); P(2, 2, W - 4, 6, c); }
+      P(1, low ? 4 : 8, W - 2, H - (low ? 6 : 10), low ? c : PAL.linenHi);
+      const pillows = W > 20 ? 2 : 1;
+      for (let i = 0; i < pillows; i++) P(3 + i * ((W - 4) / 2), low ? 6 : 10, (W - 8) / pillows - 1, 5, '#FFFFFF');
+      P(1, low ? 13 : 16, W - 2, H - (low ? 15 : 19), a);
+      for (let x = 3; x < W - 3; x += 6) P(x, low ? 15 : 18, 3, H - (low ? 19 : 23), al);
+      if (!low) P(1, H - 3, W - 2, 3, d);
+      return;
+    }
+    case 'bunk':
+      P(1, 0, 2, H, d); P(W - 3, 0, 2, H, d);
+      for (const y of [4, H / 2 + 2]) { P(2, y, W - 4, 3, PAL.linenHi); P(2, y + 3, W - 4, 6, a); P(1, y + 9, W - 2, 2, c); }
+      P(W - 6, 6, 1, H - 8, d);
+      return;
+    case 'chair':
+      P(3, 0, 10, 8, c); P(4, 1, 8, 6, l); P(2, 8, 12, 4, a); legs(12);
+      return;
+    case 'armchair':
+      P(1, 2, 14, 12, d); P(2, 3, 12, 10, c); P(1, 6, 3, 9, c); P(12, 6, 3, 9, c); P(4, 9, 8, 4, a); P(5, 4, 6, 3, l);
+      return;
+    case 'stool':
+      disc(ctx, 8, 6, 5, c); disc(ctx, 8, 5.5, 3.5, a); P(4, 8, 2, H - 8, d); P(10, 8, 2, H - 8, d);
+      return;
+    case 'stump':
+      P(3, 4, 10, H - 4, d); disc(ctx, 8, 5, 5, c); disc(ctx, 8, 5, 3, a); disc(ctx, 8, 5, 1.5, c);
+      return;
+    case 'sofa':
+      P(0, 2, W, H - 4, d); P(1, 3, W - 2, H - 6, c); P(0, 6, 3, H - 7, c); P(W - 3, 6, 3, H - 7, c);
+      for (let x = 3; x < W - 4; x += (W - 6) / 2) P(x, 8, (W - 6) / 2 - 1, 5, a);
+      P(2, H - 2, 2, 2, d); P(W - 4, H - 2, 2, 2, d);
+      return;
+    case 'beanbag':
+      disc(ctx, 8, 10, 6.5, d); disc(ctx, 8, 9.5, 6, c); disc(ctx, 6, 7, 2.5, l);
+      return;
+    case 'cushion':
+      P(2, 6, 12, 9, d); P(3, 7, 10, 7, c); P(7, 10, 2, 2, a);
+      return;
+    case 'table': case 'desk': case 'counter':
+      P(0, 4, W, 4, c); P(0, 4, W, 1, l); legs(8);
+      if (def.form === 'desk') { P(W - 9, 8, 6, 5, d); P(W - 7, 10, 2, 1, a); }
+      if (def.form === 'counter') { P(0, 8, W, H - 8, d); P(2, 10, W - 4, 4, shade(c, -0.15)); P(W / 2 - 1, 11, 2, 1, a); }
+      if (def.form === 'table') { P(W / 2 - 3, 1, 6, 3, a); }
+      return;
+    case 'round_table':
+      disc(ctx, 8, 6, 7, d); disc(ctx, 8, 5.5, 6.5, c); P(7, 9, 2, H - 9, d); P(4, H - 2, 8, 2, d); P(6, 3, 4, 2, a);
+      return;
+    case 'low_table': case 'kotatsu':
+      P(0, 7, W, 4, c); P(0, 7, W, 1, l);
+      if (def.form === 'kotatsu') { P(0, 11, W, H - 11, a); P(0, 11, W, 1, ad); } else legs(11);
+      P(W / 2 - 3, 4, 6, 3, a);
+      return;
+    case 'shelf': case 'low_shelf': {
+      const top = def.form === 'low_shelf' ? 6 : 0;
+      P(0, top, W, H - top, d); P(1, top + 1, W - 2, H - top - 2, c);
+      for (let y = top + 3; y < H - 3; y += 6) {
+        P(1, y + 4, W - 2, 1, d);
+        for (let x = 2; x < W - 3; x += 3) P(x, y, 2, 4, (x / 3) % 2 ? a : al);
+      }
+      return;
+    }
+    case 'cabinet': case 'tall_cabinet':
+      P(0, 0, W, H, d); P(1, 1, W - 2, H - 2, c);
+      if (def.form === 'tall_cabinet') { P(W / 2, 2, 1, H - 4, d); P(W / 2 - 3, H / 2, 2, 2, a); P(W / 2 + 2, H / 2, 2, 2, a); }
+      else for (let y = 3; y < H - 3; y += 5) { P(2, y + 3, W - 4, 1, d); P(W / 2 - 1, y + 1, 2, 1, a); }
+      return;
+    case 'chest':
+      P(1, 5, 14, 10, d); P(2, 6, 12, 8, c); P(1, 4, 14, 3, l); P(1, 9, 14, 1, a); P(7, 8, 2, 3, a);
+      return;
+    case 'lamp':
+      P(7, 8, 2, H - 9, c); P(4, H - 2, 8, 2, d); P(3, 1, 10, 7, a); P(4, 2, 8, 5, al); glow(8, 5, 7);
+      return;
+    case 'table_lamp':
+      P(3, 9, 10, 3, c); P(4, 12, 2, 4, d); P(10, 12, 2, 4, d); P(7, 5, 2, 4, d); P(4, 1, 8, 5, a); glow(8, 4, 6);
+      return;
+    case 'lava_lamp':
+      P(6, 0, 4, 3, c); P(5, 3, 6, 9, shade(a, 0.5)); disc(ctx, 8, 6, 1.5, a); disc(ctx, 7, 10, 1.2, a); P(5, 12, 6, 4, c);
+      return;
+    case 'lantern':
+      P(4, 2, 8, 2, c); P(3, 4, 10, 10, a); for (let y = 6; y < 14; y += 3) P(3, y, 10, 1, shade(a, -0.1)); P(4, 14, 8, 2, c); glow(8, 9, 7);
+      return;
+    case 'candles':
+      for (const [x, h] of [[3, 7], [7, 10], [11, 6]]) { P(x, 16 - h, 3, h, c); P(x + 1, 14 - h, 1, 2, a); }
+      glow(8, 8, 6);
+      return;
+    case 'salt_lamp':
+      disc(ctx, 8, 8, 5.5, c); disc(ctx, 7, 6, 2.5, a); P(4, 13, 8, 3, PAL.woodShade); glow(8, 8, 7);
+      return;
+    case 'jar_lamp':
+      P(5, 2, 6, 2, PAL.woodShade); P(4, 4, 8, 11, c); for (const [x, y] of [[6, 7], [9, 9], [7, 12]]) P(x, y, 1, 1, a); glow(8, 9, 6);
+      return;
+    case 'lighthouse':
+      P(5, 4, 6, 12, c); P(5, 7, 6, 2, a); P(5, 12, 6, 2, a); P(6, 1, 4, 3, '#F2E48A'); P(5, 0, 6, 1, a); glow(8, 2, 5);
+      return;
+    case 'plant': case 'tall_plant': {
+      const tall = def.form === 'tall_plant';
+      P(4, H - 6, 8, 6, c); P(3, H - 7, 10, 2, d);
+      if (tall) { P(7, 6, 2, H - 12, PAL.woodShade); for (const [x, y, r] of [[5, 5, 4], [11, 4, 4], [8, 1, 3.5], [4, 10, 3], [12, 10, 3]]) disc(ctx, x, y, r, a); }
+      else for (const [x, y, r] of [[5, 7, 3], [11, 6, 3], [8, 4, 3]]) disc(ctx, x, y, r, a);
+      if (def.type === 'lemon_tree_pot') for (const [x, y] of [[5, 4], [10, 7]]) P(x, y, 2, 2, '#F0DA4A');
+      return;
+    }
+    case 'cactus_pot':
+      P(4, 11, 8, 5, c); P(6, 2, 4, 9, a); P(3, 5, 3, 4, a); P(10, 4, 3, 4, a); P(7, 1, 2, 1, '#E07A9B');
+      return;
+    case 'succulents':
+      P(1, 10, 14, 5, c); for (const x of [4, 8, 12]) disc(ctx, x, 9, 2.5, a);
+      return;
+    case 'flower_box':
+      P(0, 8, W, 7, c); P(0, 8, W, 1, shade(c, 0.2)); for (let x = 2; x < W - 1; x += 4) { P(x, 4, 1, 4, '#4F8A4A'); disc(ctx, x + 0.5, 3, 1.6, a); }
+      return;
+    case 'vase':
+      P(5, 8, 6, 8, c); P(6, 6, 4, 2, c); for (const [x, y] of [[5, 3], [9, 2], [7, 1], [11, 4]]) { P(x, y + 2, 1, 4, '#4F8A4A'); disc(ctx, x, y, 1.6, a); }
+      return;
+    case 'rug':
+      P(0, 1, W, H - 2, a); P(2, 3, W - 4, H - 6, c);
+      for (let x = 4; x < W - 4; x += 6) P(x, 5, 3, H - 10, a);
+      for (let x = 1; x < W - 1; x += 3) { P(x, 0, 1, 1, a); P(x, H - 1, 1, 1, a); }
+      return;
+    case 'round_rug':
+      disc(ctx, W / 2, H / 2, W / 2 - 1, c); disc(ctx, W / 2, H / 2, W / 2 - 5, a); disc(ctx, W / 2, H / 2, W / 2 - 9, c);
+      return;
+    case 'tatami':
+      P(0, 0, W, H, c); P(0, 0, W, 1, a); P(0, H - 1, W, 1, a); P(0, 0, 1, H, a); P(W - 1, 0, 1, H, a); P(W / 2, 0, 1, H, a);
+      for (let y = 3; y < H; y += 3) P(1, y, W - 2, 1, shade(c, -0.08));
+      return;
+    case 'mat':
+      P(1, 1, W - 2, H - 2, c); P(2, 2, W - 4, H - 4, a); P(1, 1, W - 2, 1, shade(c, 0.2));
+      return;
+    case 'train':
+      P(1, 1, W - 2, H - 2, '#5E8A4A'); P(4, 4, W - 8, 2, a); P(4, H - 6, W - 8, 2, a); P(4, 4, 2, H - 8, a); P(W - 6, 4, 2, H - 8, a);
+      P(8, 2, 8, 5, c); P(9, 1, 3, 2, '#3A3A40');
+      return;
+    case 'tv':
+      P(1, H - 5, W - 2, 5, c); P(2, 1, W - 4, H - 7, '#2A2A30'); P(3, 2, W - 6, H - 9, a); P(4, 3, 3, 2, al);
+      return;
+    case 'speaker':
+      P(4, 3, 8, 13, c); disc(ctx, 8, 7, 2.5, a); disc(ctx, 8, 12, 2, a);
+      return;
+    case 'fridge': case 'washer': case 'machine':
+      P(1, 0, 14, H, d); P(2, 1, 12, H - 2, c);
+      if (def.form === 'fridge') { P(2, H * 0.4, 12, 1, d); P(11, 4, 1, 4, a); P(11, H * 0.5, 1, 6, a); }
+      if (def.form === 'washer') { disc(ctx, 8, H * 0.6, 4.5, a); disc(ctx, 8, H * 0.6, 3, al); P(3, 2, 10, 2, d); }
+      if (def.form === 'machine') { P(4, 3, 8, 4, '#2A2A30'); P(5, 9, 6, 3, a); P(5, 13, 6, 2, d); }
+      return;
+    case 'stove':
+      P(0, 1, 16, 15, d); P(1, 2, 14, 13, c); P(2, 7, 12, 7, shade(c, -0.15)); P(4, 9, 8, 3, a);
+      disc(ctx, 5, 4, 1.5, '#2A2A30'); disc(ctx, 11, 4, 1.5, '#2A2A30');
+      return;
+    case 'tub':
+      P(1, 2, W - 2, H - 5, c); P(2, 3, W - 4, 4, a); P(1, 2, W - 2, 1, shade(c, 0.1)); P(3, H - 3, 2, 3, '#D9A53A'); P(W - 5, H - 3, 2, 3, '#D9A53A');
+      return;
+    case 'vanity':
+      P(2, 0, 12, 7, PAL.woodShade); P(3, 1, 10, 5, a); P(1, 8, 14, 3, c); P(1, 11, 14, 5, shade(c, -0.1)); P(6, 9, 4, 1, '#9A958A');
+      return;
+    case 'rack':
+      P(2, 2, 1, 14, c); P(13, 2, 1, 14, c); P(2, 3, 12, 1, c); P(3, 4, 10, 7, a); P(3, 9, 10, 1, al);
+      return;
+    case 'basket':
+      P(2, 6, 12, 10, c); for (let y = 8; y < 16; y += 2) P(2, y, 12, 1, shade(c, -0.15)); P(4, 3, 8, 4, a);
+      return;
+    case 'duck':
+      disc(ctx, 8, 11, 5, c); disc(ctx, 10, 5, 3.5, c); P(13, 5, 3, 2, a); P(10, 4, 1, 1, PAL.inkDeep);
+      return;
+    case 'teddy':
+      disc(ctx, 8, 11, 5, c); disc(ctx, 8, 5, 4, c); disc(ctx, 5, 2, 1.5, c); disc(ctx, 11, 2, 1.5, c);
+      P(6, 4, 1, 1, PAL.inkDeep); P(9, 4, 1, 1, PAL.inkDeep); P(6, 9, 4, 1, a); disc(ctx, 8, 11, 2, l);
+      return;
+    case 'blocks':
+      P(1, 9, 6, 6, c); P(8, 9, 6, 6, a); P(4, 3, 6, 6, shade(a, 0.4)); P(3, 11, 2, 2, PAL.linenHi);
+      return;
+    case 'rocking_horse':
+      for (let x = 1; x < 15; x++) P(x, 14 + (Math.abs(x - 8) > 5 ? -1 : 0), 1, 1, PAL.woodShade);
+      P(3, 7, 9, 5, c); P(10, 2, 4, 6, c); P(4, 12, 1, 2, d); P(10, 12, 1, 2, d); P(9, 2, 2, 7, a); P(12, 3, 1, 1, PAL.inkDeep);
+      return;
+    case 'tent':
+      for (let y = 0; y < H - 2; y++) { const w = Math.round((y / (H - 2)) * (W - 2)); P(W / 2 - w / 2, y + 1, w, 1, (Math.floor(y / 3) % 2) ? c : a); }
+      P(W / 2 - 3, H - 10, 6, 9, shade(c, -0.4));
+      return;
+    case 'ball_pit':
+      P(0, 6, W, H - 6, a); P(2, 8, W - 4, H - 10, c);
+      for (let i = 0; i < 18; i++) disc(ctx, 4 + (i * 7) % (W - 8), 10 + (i * 5) % (H - 14), 2, ['#E07A7A', '#5F9FB5', '#F0DA4A', '#7FC95A'][i % 4]);
+      return;
+    case 'mushroom':
+      P(6, 8, 4, 8, a); disc(ctx, 8, 6, 7, c); P(1, 6, 14, 2, c); for (const [x, y] of [[4, 3], [10, 2], [8, 6]]) P(x, y, 2, 2, PAL.linenHi);
+      return;
+    case 'wheel':
+      disc(ctx, 8, 7, 6.5, c); disc(ctx, 8, 7, 4.5, PAL.linenHi); disc(ctx, 8, 7, 1.5, c);
+      for (const [x, y] of [[8, 0], [8, 13], [1, 7], [14, 7]]) P(x - 1, y, 2, 2, a); P(7, 13, 2, 3, PAL.woodShade);
+      return;
+    case 'firewood':
+      P(1, 2, 2, 14, c); P(13, 2, 2, 14, c); for (let y = 4; y < 15; y += 3) for (let x = 3; x < 13; x += 3) disc(ctx, x + 1, y + 1, 1.5, a);
+      return;
+    case 'coat_rack':
+      P(7, 2, 2, 13, c); P(4, 15, 8, 1, c); P(4, 3, 3, 1, c); P(9, 3, 3, 1, c); P(3, 4, 4, 7, a);
+      return;
+    case 'phone':
+      P(2, 8, 12, 2, c); P(3, 10, 1, 6, d); P(12, 10, 1, 6, d); P(4, 4, 8, 4, a); P(4, 3, 8, 1, shade(a, -0.3));
+      return;
+    case 'ladder':
+      P(3, 0, 2, 16, c); P(11, 0, 2, 16, c); for (let y = 2; y < 16; y += 4) P(3, y, 10, 1, a);
+      return;
+    case 'board':
+      P(1, 0, 14, 11, c); P(2, 1, 12, 9, a); P(4, 3, 6, 1, '#F2F4F6'); P(4, 5, 4, 1, '#F2F4F6'); P(3, 11, 2, 5, c); P(11, 11, 2, 5, c);
+      return;
+    case 'cart':
+      P(1, 5, 14, 2, c); P(1, 11, 14, 2, c); P(1, 5, 1, 9, d); P(14, 5, 1, 9, d); disc(ctx, 3, 15, 1.2, d); disc(ctx, 13, 15, 1.2, d);
+      P(4, 2, 3, 3, a); P(9, 2, 3, 3, a);
+      return;
+    case 'sewing':
+      P(0, 7, 16, 3, c); P(1, 10, 2, 6, d); P(13, 10, 2, 6, d); P(3, 2, 9, 5, a); P(9, 1, 3, 2, a); P(5, 6, 1, 2, PAL.inkDeep);
+      return;
+    case 'guitar':
+      disc(ctx, 8, 11, 4.5, c); disc(ctx, 8, 7, 3.2, c); disc(ctx, 8, 10, 1.3, a); P(7, 0, 2, 7, a); P(6, 0, 4, 2, d);
+      return;
+    case 'drums':
+      disc(ctx, 8, 10, 5, a); disc(ctx, 8, 10, 4, c); disc(ctx, 20, 9, 4, a); disc(ctx, 20, 9, 3, c); disc(ctx, 26, 4, 3, '#E8C25A'); P(26, 4, 1, 12, '#9A958A');
+      return;
+    case 'pottery':
+      P(2, 9, 12, 7, c); disc(ctx, 8, 8, 5, d); P(5, 2, 6, 6, a); P(6, 1, 4, 1, shade(a, -0.2));
+      return;
+    case 'computer':
+      P(0, 7, W, 3, c); P(1, 10, 2, 6, d); P(W - 3, 10, 2, 6, d); P(W / 2 - 6, 0, 12, 7, '#2A2A30'); P(W / 2 - 5, 1, 10, 5, a); P(W / 2 - 4, 6, 8, 1, '#5A5A60');
+      return;
+    case 'harp':
+      P(3, 1, 2, 15, c); for (let x = 5; x < 13; x++) P(x, 1 + (x - 5) * 0.4, 1, 1, c); P(12, 4, 2, 12, c);
+      for (let x = 6; x < 12; x += 2) P(x, 3, 1, 12, a);
+      return;
+    case 'mirror':
+      P(3, 0, 10, 14, c); P(4, 1, 8, 12, a); P(5, 2, 2, 4, PAL.linenHi); P(4, 14, 2, 2, c); P(10, 14, 2, 2, c);
+      return;
+    case 'screen':
+      for (let i = 0; i < 4; i++) { P(i * (W / 4), 1, W / 4 - 1, H - 2, c); P(i * (W / 4) + 1, 2, W / 4 - 3, H - 4, a); }
+      return;
+  }
+  P(2, 4, 12, 12, c);
+}
+
+// How far each shape rises above its floor tiles.
+const FORM_RISE = { shelf: 10, tall_cabinet: 10, lamp: 8, tall_plant: 10, fridge: 10, washer: 2, vanity: 6, lava_lamp: 2, lighthouse: 4, coat_rack: 6,
+  ladder: 8, board: 4, mirror: 6, guitar: 4, harp: 6, computer: 2, tent: 4, bunk: 10, speaker: 0, machine: 0, teddy: 2, lantern: 2 };
+
 // Height of each piece's art above its floor tiles.
 const RISE = { tall_clock: 8, canopy_bed: 0, jukebox: 2, wardrobe: 10, bookshelf: 10, double_bed: 0, single_bed: 0, icebox: 4, floor_lamp: 6, fireplace: 6, piano: 4 };
 
 export function furnitureSprite(type) {
   const f = FURNITURE_BY_TYPE[type];
   const w = (f?.w || 1) * 16;
-  const h = f?.flat ? (f.h || 1) * 16 : (f?.h || 1) * 16 + (RISE[type] ?? 0);
+  const h = f?.flat ? (f.h || 1) * 16 : (f?.h || 1) * 16 + (RISE[type] ?? FORM_RISE[f?.form] ?? 0);
   return sprite('furniture_' + type, w, h, ctx => drawFurniture(ctx, type, w, h));
 }
 
@@ -354,9 +608,34 @@ export function sleeperSprite(look) {
 
 // ---------- wall items ----------
 
+function drawWallForm(ctx, def) {
+  const c = def.color, a = def.accent, P = (x, y, w, h, col) => px(ctx, x, y, w, h, col);
+  switch (def.form) {
+    case 'window': P(1, 0, 18, 17, PAL.woodShade); P(2, 1, 16, 15, '#B7D4BD'); P(9, 1, 2, 15, PAL.woodShade); P(1, 0, 4, 17, a); P(15, 0, 4, 17, a); P(0, 0, 20, 2, c); return;
+    case 'round_window': disc(ctx, 10, 9, 8, c); disc(ctx, 10, 9, 6.5, a); P(9, 2, 2, 14, c); P(3, 8, 14, 2, c); return;
+    case 'frame': P(2, 0, 16, 18, c); P(3, 1, 14, 16, a); P(6, 4, 3, 3, shade(a, 0.5)); P(11, 9, 4, 5, shade(a, 0.3)); return;
+    case 'frames': for (const [x, y, w, h] of [[0, 1, 8, 7], [10, 0, 9, 9], [3, 10, 7, 7], [12, 11, 7, 6]]) { P(x, y, w, h, c); P(x + 1, y + 1, w - 2, h - 2, a); } return;
+    case 'cuckoo': P(4, 4, 12, 11, c); for (let i = 0; i < 6; i++) P(4 + i, 4 - i * 0.6, 12 - i * 2, 1, shade(c, -0.2)); disc(ctx, 10, 9, 3, a); P(9, 15, 1, 3, '#D9A53A'); P(11, 15, 1, 2, '#D9A53A'); return;
+    case 'clock': disc(ctx, 10, 9, 8, c); disc(ctx, 10, 9, 6.5, a); P(10, 4, 1, 5, c); P(10, 9, 4, 1, c); return;
+    case 'wreath': for (let i = 0; i < 14; i++) { const t = (i / 14) * Math.PI * 2; disc(ctx, 10 + Math.cos(t) * 6, 9 + Math.sin(t) * 6, 2.4, c); } P(8, 14, 4, 3, a); P(6, 4, 2, 2, a); P(13, 7, 2, 2, a); return;
+    case 'dreamcatcher': for (let i = 0; i < 16; i++) { const t = (i / 16) * Math.PI * 2; P(Math.round(10 + Math.cos(t) * 6), Math.round(7 + Math.sin(t) * 6), 1, 1, c); } P(9, 6, 2, 2, a); P(5, 13, 1, 5, a); P(10, 13, 1, 5, a); P(15, 13, 1, 5, a); return;
+    case 'hanging': P(10, 0, 1, 5, PAL.woodShade); P(5, 5, 10, 5, c); for (let x = 4; x < 16; x += 3) P(x, 9, 2, 3 + (x % 5), a); disc(ctx, 10, 4, 3, a); return;
+    case 'hanging_lantern': P(10, 0, 1, 4, c); P(6, 4, 8, 2, c); P(5, 6, 10, 9, a); P(6, 15, 8, 2, c); return;
+    case 'neon': P(0, 0, 20, 18, c); for (const [x, y] of [[6, 5], [14, 5]]) disc(ctx, x, y, 3.5, a); for (let y = 0; y < 8; y++) P(3 + y, 7 + y, 14 - y * 2, 1, a); disc(ctx, 6, 5, 2, c); disc(ctx, 14, 5, 2, c); for (let y = 0; y < 5; y++) P(6 + y, 8 + y, 8 - y * 2, 1, c); return;
+    case 'neon_moon': P(0, 0, 20, 18, c); disc(ctx, 10, 9, 6.5, a); disc(ctx, 13, 7, 5.5, c); return;
+    case 'board': P(0, 1, 20, 16, c); P(1, 2, 18, 14, a); P(3, 4, 5, 4, '#F2F4F6'); P(10, 6, 6, 5, '#E8C25A'); P(5, 10, 4, 4, '#B7D4BD'); return;
+    case 'plant_shelf': P(0, 12, 20, 2, c); for (const x of [2, 8, 14]) { P(x, 8, 4, 4, '#C9783A'); disc(ctx, x + 2, 6, 2.5, a); } return;
+    case 'hoop': disc(ctx, 10, 9, 8, c); disc(ctx, 10, 9, 7, '#F2EDE4'); disc(ctx, 8, 8, 2, a); disc(ctx, 12, 10, 2, a); P(10, 10, 1, 4, '#4F8A4A'); return;
+    case 'tapestry': P(2, 0, 16, 2, PAL.woodShade); P(3, 2, 14, 14, c); for (let y = 4; y < 14; y += 4) P(4, y, 12, 2, a); for (let x = 4; x < 17; x += 2) P(x, 16, 1, 2, c); return;
+    case 'wall_guitar': disc(ctx, 10, 13, 4, c); disc(ctx, 10, 9, 3, c); P(9, 0, 2, 8, a); disc(ctx, 10, 12, 1.2, a); return;
+  }
+  P(2, 2, 16, 14, c);
+}
+
 export function wallItemSprite(type) {
   return sprite('wall_' + type, 20, 18, ctx => {
     const frame = (c = PAL.woodShade) => { px(ctx, 1, 1, 18, 15, c); px(ctx, 2, 2, 16, 13, PAL.linenHi); };
+    if (WALL_BY_TYPE[type]?.form) return drawWallForm(ctx, WALL_BY_TYPE[type]);
     switch (type) {
       case 'window':
         px(ctx, 1, 0, 18, 17, PAL.woodShade); px(ctx, 2, 1, 16, 15, '#B7D4BD'); px(ctx, 9, 1, 2, 15, PAL.woodShade); px(ctx, 2, 8, 16, 1, PAL.woodShade);

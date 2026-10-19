@@ -2,6 +2,9 @@
 import { openSheet, toast, esc } from './ui.js';
 import { ITEMS } from './data.js';
 import { iconURL } from './sprites.js';
+import { pic } from './home-ui.js';
+import { furnitureSprite } from './home-art.js';
+import { decorSprite } from './sprites-more.js';
 import { CRAFTS, CATEGORIES, CRAFT_BY_ID, planCraft, haveFor, craft, alreadyUnlocked, producedItem, HATS } from './crafting.js';
 
 const WHERE = {
@@ -11,6 +14,8 @@ const WHERE = {
   Toys: 'Goes into your bag. Tap an animal and play with it.',
   Outfits: 'Unlocks a new look in the wardrobe.',
   Gifts: 'Goes into your bag. Tap it in the Bag to give it to your partner.',
+  Home: 'Furniture for your home. It goes into your bag; place it from Build inside your home.',
+  Outdoor: 'For the meadow. It goes into your bag; place it outside from Build. Lights glow at night, and you can sit on benches and swings.',
 };
 
 function needLabel(need) {
@@ -22,7 +27,9 @@ function needLabel(need) {
 export function openCrafting(g, category = 'Furniture') {
   const s = g.state;
   const tabs = CATEGORIES.map(c => `<button class="tab ${c === category ? 'on' : ''}" data-cat="${esc(c)}" aria-pressed="${c === category}">${esc(c)}</button>`).join('');
-  const rows = CRAFTS.filter(c => c.category === category).map(c => {
+  const list = CRAFTS.filter(c => c.category === category);
+  const groups = [...new Set(list.map(c => c.group || ''))];
+  const row = c => {
     const done = alreadyUnlocked(s, c);
     const ready = !done && !!planCraft(s, c);
     const out = producedItem(c);
@@ -31,13 +38,21 @@ export function openCrafting(g, category = 'Furniture') {
       return `<span class="need-chip ${have >= n ? 'ok' : ''}">${esc(needLabel(need))} ${Math.min(have, n)}/${n}</span>`;
     }).join('');
     const label = c.makes.hat != null ? `Hat: ${HATS[c.makes.hat]}` : c.name;
-    return `<li>${out ? `<img class="icon" src="${iconURL(out)}" alt="">` : ''}<span class="name">${esc(label)}<small class="needs-row">${needs}</small></span>
+    const it = ITEMS[out];
+    const src = it?.furniture ? pic('f-' + it.furniture, furnitureSprite(it.furniture), 32, 32)
+      : it?.decor ? pic('d-' + it.decor, decorSprite(it.decor, 'spring'), 32, 32) : out && iconURL(out);
+    return `<li>${out ? `<img class="icon" src="${src}" alt="">` : ''}<span class="name">${esc(label)}<small class="needs-row">${needs}</small></span>
       <button class="btn small" data-craft="${c.id}" ${ready ? '' : 'disabled'}>${done ? 'Made' : 'Craft'}</button></li>`;
+  };
+  // Long lists (home and outdoor) are grouped, with the ones you can make right now first.
+  const rows = groups.map(gr => {
+    const items = list.filter(c => (c.group || '') === gr).sort((x, y) => (planCraft(s, y) ? 1 : 0) - (planCraft(s, x) ? 1 : 0));
+    return `${gr ? `<h3>${esc(gr)}</h3>` : ''}<ul class="list">${items.map(row).join('')}</ul>`;
   }).join('');
   openSheet('Crafting', `
     <div class="tabs">${tabs}</div>
     <p class="detail small">${esc(WHERE[category])} Wood comes from shaking the fruit tree; fiber from foraging and harvesting. The beetle shop sells both.</p>
-    <ul class="list">${rows}</ul>
+    ${rows}
     <div class="row-actions"><button class="btn ghost" id="tools">Tool upgrades</button></div>`, body => {
     body.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => openCrafting(g, b.dataset.cat)));
     body.querySelectorAll('[data-craft]').forEach(b => b.addEventListener('click', () => {

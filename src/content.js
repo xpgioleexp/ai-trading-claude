@@ -3,6 +3,7 @@
 // dream starters, decorations, animal actions and discoveries.
 import { rngFor, shuffle } from './rng.js';
 import { FARM_BUILDINGS } from './farm-data.js';
+import { OUTDOOR_BY_TYPE } from './outdoor-data.js';
 
 export const C = { ready: false };
 
@@ -32,6 +33,8 @@ export async function loadContent(base = '') {
   C.decorByType = Object.fromEntries(C.decorations.map(d => [d.type, d]));
   // Farm buildings and fruit trees are placed like decorations but bought in the shop's Farm tab.
   for (const f of FARM_BUILDINGS) C.decorByType[f.type] = { type: f.type, name: f.name, category: 'Farm', price: f.price, farm: true };
+  // Outdoor crafts are made at the workbench, not bought.
+  for (const d of Object.values(OUTDOOR_BY_TYPE)) C.decorByType[d.type] = { type: d.type, name: d.name, category: 'Crafted', price: 0, crafted: true };
   C.packById = Object.fromEntries(C.packs.map(p => [p.id, p]));
   C.ready = true;
   return C;
