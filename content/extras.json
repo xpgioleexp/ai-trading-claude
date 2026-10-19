@@ -3,25 +3,25 @@
   {
    "id": "sunny",
    "label": "Sunny",
-   "description": "A little light today",
+   "description": "Bright and bouncy today",
    "color": "#e9c66d"
   },
   {
    "id": "content",
    "label": "Content",
-   "description": "Right here feels good",
+   "description": "Happy right where I am",
    "color": "#a5bd80"
   },
   {
    "id": "quiet",
    "label": "Quiet",
-   "description": "Taking things slowly",
+   "description": "Taking it slow today",
    "color": "#b9c7b1"
   },
   {
    "id": "tender",
    "label": "Tender",
-   "description": "Could use a little care",
+   "description": "Could use a little extra care",
    "color": "#dbacaa"
   },
   {
@@ -33,7 +33,7 @@
   {
    "id": "overwhelmed",
    "label": "Full up",
-   "description": "A lot on my mind",
+   "description": "A lot on my plate and mind",
    "color": "#b9acd0"
   }
  ],
@@ -41,21 +41,21 @@
   {
    "id": "listen",
    "label": "Just listen",
-   "hint": "Hear me without trying to fix it."
+   "hint": "Hear me out, no fixing needed."
   },
   {
    "id": "affection",
    "label": "A little affection",
-   "hint": "A hug, a kind word, a little closeness."
+   "hint": "A hug, a sweet message, a little closeness."
   },
   {
    "id": "space",
-   "label": "Quiet space",
-   "hint": "A little room to recharge, still loved."
+   "label": "Some quiet",
+   "hint": "A bit of time to recharge. Still loving you."
   },
   {
    "id": "help",
-   "label": "Practical help",
+   "label": "A helping hand",
    "hint": "Take one small thing off my plate."
   },
   {
@@ -66,7 +66,7 @@
   {
    "id": "reassurance",
    "label": "Reassurance",
-   "hint": "Remind me we are on the same team."
+   "hint": "Remind me we’re on the same team."
   }
  ],
  "appreciations": [
@@ -79,13 +79,13 @@
   {
    "id": "thank-you",
    "label": "Thank you",
-   "starter": "Thank you for making…",
+   "starter": "Thank you for…",
    "color": "peach"
   },
   {
    "id": "admire",
    "label": "I admire",
-   "starter": "Something I admire about you is…",
+   "starter": "Something I really admire about you is…",
    "color": "lavender"
   },
   {
@@ -99,193 +99,439 @@
   {
    "id": "everyday-us",
    "title": "Everyday us",
-   "subtitle": "Find the lovely in your ordinary.",
+   "subtitle": "Little questions about your ordinary days.",
    "level": "Easy & warm",
    "minutes": "3–5",
    "color": "sage",
    "icon": "leaf",
    "questions": [
-    "Which unplanned minute from a recent outing do you remember better than the thing we went there to do?",
-    "When we are doing separate things in the same room, what makes it feel like time together?",
-    "Which part of my daily routine do you understand least from the outside?",
-    "What keeps interrupting time we meant to enjoy together, and what would an easy workaround look like?",
-    "Which ordinary evening would you like to replay with one detail changed?",
-    "On a morning when we wake up in different moods, what would a good first hour look like for each of us?",
-    "What did I quietly take care of recently that you only noticed afterward?",
-    "If we improved one ordinary evening instead of planning a big date, what would you move, add, or skip?"
+    "What’s a tiny moment from our last day together, or our last call, that keeps popping into your head?",
+    "What’s the best thing you ate this week, and would you make me try it?",
+    "Tell me about the most boring part of your day in thrilling detail.",
+    "What part of your daily routine would surprise me most if I watched it?",
+    "Which ordinary evening of ours would you happily live again, exactly as it was?",
+    "What’s the first thing you do in the morning, before anyone needs anything from you?",
+    "What’s something small I did recently that made your day a little easier?",
+    "If we had a whole lazy evening together tonight, how would you want to spend it?"
    ]
   },
   {
    "id": "understood",
    "title": "A little more understood",
-   "subtitle": "Make room for each other’s inner world.",
+   "subtitle": "Get to know what’s going on inside.",
    "level": "A little deeper",
    "minutes": "5–8",
    "color": "lavender",
    "icon": "moon",
    "questions": [
-    "Which current decision has more than one good option, and what makes choosing difficult?",
-    "When you are quiet, how can I tell the difference between wanting company and wanting to be left alone?",
-    "Think of a day that ran longer than expected: which offer of help would have landed well, and which would have added work?",
-    "Which part of something you care about gets flattened when you try to explain it quickly?",
-    "Which small disagreement have we handled in a way you would want us to repeat?",
-    "Which interest of yours would be easier to show me than explain, and what would we start with?",
-    "When a plan is uncertain, do you prefer more options, one next step, or some time before deciding?",
-    "What is a view you held a year ago that you would phrase differently now?"
+    "What’s been on your mind lately that you haven’t said out loud yet?",
+    "When you go quiet, how can I tell if you want company or a little time alone?",
+    "On a long, tiring day, what’s the most helpful thing I could do or say?",
+    "What’s something you love that’s hard to explain in one sentence? Try anyway.",
+    "Tell me about something you’ve changed your mind about in the last year.",
+    "What’s an interest of yours you’d love to show me instead of just telling me about?",
+    "When you’re stuck on a decision, do you want ideas, a sounding board, or just time?",
+    "What did younger you worry about that you don’t worry about anymore?"
    ]
   },
   {
    "id": "little-love",
    "title": "Love in the little things",
-   "subtitle": "Notice what already makes you, you.",
+   "subtitle": "The small stuff that quietly says I love you.",
    "level": "Easy & warm",
    "minutes": "3–5",
    "color": "peach",
    "icon": "heart",
    "questions": [
-    "When have I made room for your preference even though it was not mine?",
-    "What is something I do before you ask that makes a specific part of your day work better?",
-    "Which detail from a very ordinary day with me would be hardest to explain to someone who was not there?",
-    "Which difference between us has become something you would miss if it disappeared?",
-    "When did you see me do something in my own way and think, 'that is very them'?",
-    "On a low-energy day, which kind of affection feels easy to receive and which takes effort?",
-    "Which compliment would mean more because it names effort rather than talent?",
-    "What have we gotten better at together that nobody else would think to congratulate us for?"
+    "What’s something small I do without being asked that you secretly love?",
+    "When did I last make you laugh without meaning to?",
+    "What’s a little habit of mine you’d miss if it disappeared tomorrow?",
+    "When have you watched me do something and thought, ‘that is so you’?",
+    "On a low-energy day, what feels best: kind words, a call, a hug, or a silly message?",
+    "What’s a compliment you often think about me but have never actually said?",
+    "What have we gotten really good at together that nobody else would notice?",
+    "Which message or note from me have you kept, or reread more than once?"
    ]
   },
   {
    "id": "future-roots",
    "title": "Dreaming in the same direction",
-   "subtitle": "Little hopes. A future with room for both.",
+   "subtitle": "Small hopes and big someday plans.",
    "level": "A little deeper",
    "minutes": "5–8",
    "color": "butter",
    "icon": "sun",
    "questions": [
-    "Which thing we keep calling 'someday' would still excite you if we tried a small version this month?",
-    "If our future routines became busier, which ordinary shared habit would you protect first?",
-    "What would you want to learn about a place before agreeing to live there for a year?",
-    "Which part of our future would you like to keep flexible rather than map out now?",
-    "What could we repeat each year that would still work if our budget, location, or energy changed?",
-    "Which personal goal would benefit from me asking about the process instead of the result?",
-    "What about our current circumstances do you think future us might be surprised we managed?",
-    "Which future decision needs more real-world information before we form a strong opinion about it?"
+    "Which ‘someday’ plan of ours could we try a tiny version of this month?",
+    "What’s one little habit of ours you’d want to keep no matter how busy life gets?",
+    "If we could live anywhere for a year, where would you pick, and what would you want to know first?",
+    "What part of our future would you rather leave as a happy surprise than plan out?",
+    "What’s a tradition we could start this year and keep forever, wherever we are?",
+    "What’s a personal goal you’re working on that you’d love me to ask about more often?",
+    "What do you think future us will be proudest of when we look back at right now?",
+    "Describe a perfectly ordinary Tuesday for us ten years from now."
    ]
   },
   {
    "id": "play-wonder",
    "title": "A little ridiculous",
-   "subtitle": "Less overthinking. More giggling.",
+   "subtitle": "Less overthinking, more giggling.",
    "level": "Light & playful",
    "minutes": "2–4",
    "color": "blue",
    "icon": "spark",
    "questions": [
-    "Our terrarium resident writes one complaint about our decorating: what is it, and what change would settle it?",
-    "We have to run a two-person business using only skills we already have: who does what, and what goes wrong first?",
-    "Which everyday object would you nominate for a ridiculously specific world championship, and what are the rules?",
-    "If one of our harmless habits became a spectator sport, what would the commentator keep saying?",
-    "We can give our resident one completely impractical room: what is in it, and what does it never get used for?",
-    "We swap daily routines for a day: which moment would make each of us call for backup?",
-    "Which of our inside jokes would become most confusing if someone tried to explain it professionally?",
-    "A board game based on an ordinary day with us needs one unfairly powerful bonus card: what does it do?"
+    "Our terrarium creature files one complaint about our decorating. What does it say?",
+    "We have to open a tiny business using only skills we already have. What is it, and what goes wrong first?",
+    "What everyday object deserves its own very specific world championship?",
+    "If one of our harmless habits became an Olympic sport, what would the commentator keep yelling?",
+    "Would you rather have a pet that only talks in rhymes or one that narrates everything you do?",
+    "We swap lives for a day. At what exact moment do you call me for help?",
+    "Which of our inside jokes would be hardest to explain to a very serious judge?",
+    "If our relationship were a board game, what would the most unfair bonus card do?"
    ]
   },
   {
    "id": "same-team",
    "title": "Back on the same team",
-   "subtitle": "Gentle conversations, when you both feel ready.",
+   "subtitle": "Gentle talks for when you both feel ready.",
    "level": "Go gently",
    "minutes": "8–12",
    "color": "rose",
    "icon": "bridge",
    "questions": [
-    "In a recent small disagreement, what were we each trying to protect that may have sounded like something else?",
-    "How would you like a pause to end so it does not feel as though a difficult conversation has been abandoned?",
-    "When I get something wrong, which detail helps you tell a misunderstanding from not being taken seriously?",
-    "What is a sentence I could say that would show I understood your point before explaining mine?",
-    "Which repeated minor friction would be easier to solve by changing the setup rather than asking either of us to try harder?",
-    "After an apology, which small follow-through makes the words feel believable to you?",
-    "What is something you would like to be able to decline without having to defend the reason?",
-    "Which agreement should we make smaller so we can realistically keep it on a difficult week?"
+    "Think of a small disagreement we had. What were you really hoping I’d understand?",
+    "When one of us needs a break in the middle of a hard talk, how should we pick it back up?",
+    "When I’ve misunderstood you, what helps you feel heard again?",
+    "What could I say that would show you I got your point before I share mine?",
+    "Is there a little thing that keeps tripping us up that one simple change could fix?",
+    "After an apology, what small thing helps you really believe it?",
+    "What’s something you’d like to be able to say no to without having to explain why?",
+    "What’s one promise we could make smaller so it’s easier to keep on a rough week?"
    ]
   }
  ],
  "rituals": [
   {
    "id": "soft-landing",
-   "title": "Our soft landing",
-   "description": "Set the week down. Pick up each other.",
+   "title": "Soft landing",
+   "description": "Put the week down and catch up on each other.",
    "minutes": 12,
    "color": "sage",
    "prompts": [
     {
      "id": "bright",
-     "label": "A little light",
-     "question": "Which moment from this week would you have wanted me to see?"
+     "label": "A bright spot",
+     "question": "What moment from this week do you wish I’d been there to see?"
     },
     {
      "id": "heavy",
-     "label": "Something to hold gently",
-     "question": "Which part of the week needed more energy than it looked like from the outside?"
+     "label": "The heavy part",
+     "question": "What part of this week was harder than it looked from the outside?"
     },
     {
      "id": "thank",
-     "label": "Something I noticed",
-     "question": "Which effort did your partner make this week that you might normally leave unmentioned?"
+     "label": "A thank-you",
+     "question": "What’s something I did this week that you never got around to thanking me for?"
     },
     {
      "id": "hope",
-     "label": "A little room for next week",
-     "question": "Which single change would make our actual plans for next week work better for both people?"
+     "label": "Next week",
+     "question": "What’s one small thing that would make next week go better for both of us?"
     }
    ]
   },
   {
    "id": "unwind",
-   "title": "A little exhale",
-   "description": "For a full week and a softer evening.",
+   "title": "Little exhale",
+   "description": "For the end of a long week, when you just want a softer evening.",
    "minutes": 8,
    "color": "lavender",
    "prompts": [
     {
      "id": "leave",
      "label": "Leave it here",
-     "question": "Which unfinished thought can we acknowledge without trying to fix it tonight?"
+     "question": "What’s one thing on your mind we can set down tonight without solving it?"
     },
     {
      "id": "care",
      "label": "A little care",
-     "question": "What looks like rest from the outside but does not actually help you recharge?"
+     "question": "What looks restful but doesn’t actually recharge you, and what really does?"
     },
     {
      "id": "us",
-     "label": "A moment for us",
-     "question": "What would genuinely fit the time and energy we have left tonight?"
+     "label": "Just us",
+     "question": "What would feel good tonight, with the energy we’ve got left?"
     }
    ]
   },
   {
    "id": "date-night",
-   "title": "The two-of-us pause",
-   "description": "A small date with a little more meaning.",
+   "title": "Two-of-us pause",
+   "description": "A small date night with a little extra heart.",
    "minutes": 10,
    "color": "peach",
    "prompts": [
     {
      "id": "close",
-     "label": "A little closer",
-     "question": "Which moment this week made you feel we were paying attention to the same thing?"
+     "label": "In sync",
+     "question": "When this week did it feel like we were totally on the same wavelength?"
     },
     {
      "id": "curious",
-     "label": "Still getting to know you",
-     "question": "What did you recently start reading, watching, or trying that you want to tell me about?"
+     "label": "Still curious about you",
+     "question": "What have you started reading, watching, or trying lately that you want to tell me about?"
     },
     {
      "id": "more",
      "label": "More of this",
-     "question": "Which part of this evening would you like to repeat without turning it into another obligation?"
+     "question": "What part of tonight would you love for us to do again soon?"
+    }
+   ]
+  },
+  {
+   "id": "little-wins",
+   "title": "Little wins",
+   "description": "Celebrate the good stuff from this week, no win too small.",
+   "minutes": 10,
+   "color": "sage",
+   "prompts": [
+    {
+     "id": "win",
+     "label": "Tiny trophy",
+     "question": "What’s a small win from your week that deserves a round of applause?"
+    },
+    {
+     "id": "thanks",
+     "label": "Thank you for",
+     "question": "Who made your week a little better, and what did they do?"
+    },
+    {
+     "id": "proud",
+     "label": "Proud of you",
+     "question": "What’s something you saw me do this week that made you proud?"
+    }
+   ]
+  },
+  {
+   "id": "week-ahead",
+   "title": "Week ahead, together",
+   "description": "A quick, friendly look at the week, so it feels easier for both of you.",
+   "minutes": 12,
+   "color": "lavender",
+   "prompts": [
+    {
+     "id": "busy",
+     "label": "The busy bits",
+     "question": "Which day this week looks fullest for you, and what would make it easier?"
+    },
+    {
+     "id": "together",
+     "label": "Our time",
+     "question": "When can we count on a little time together this week, even just a call?"
+    },
+    {
+     "id": "fun",
+     "label": "Something fun",
+     "question": "What’s one small fun thing we could put on the calendar this week?"
+    },
+    {
+     "id": "skip",
+     "label": "Let it wait",
+     "question": "What’s one thing on your list that could happily wait until next week?"
+    }
+   ]
+  },
+  {
+   "id": "silly-hour",
+   "title": "Silly hour",
+   "description": "No deep thoughts allowed. Just giggles.",
+   "minutes": 8,
+   "color": "peach",
+   "prompts": [
+    {
+     "id": "animal",
+     "label": "Week as an animal",
+     "question": "If your week were an animal, which one was it, and what noise would it make?"
+    },
+    {
+     "id": "award",
+     "label": "Weekly award",
+     "question": "What’s the most ridiculous thing that happened to you this week, and what award does it win?"
+    },
+    {
+     "id": "rename",
+     "label": "Rename it",
+     "question": "If you could rename one day of the week, what would you call it?"
+    }
+   ]
+  },
+  {
+   "id": "someday",
+   "title": "Someday, together",
+   "description": "Dream a little about the life you’re building, big hopes and tiny ones.",
+   "minutes": 12,
+   "color": "lavender",
+   "prompts": [
+    {
+     "id": "dream",
+     "label": "Someday",
+     "question": "What’s a someday plan that’s been on your mind lately?"
+    },
+    {
+     "id": "step",
+     "label": "Tiny first step",
+     "question": "What’s the smallest step we could take toward one of our dreams this month?"
+    },
+    {
+     "id": "picture",
+     "label": "Picture it",
+     "question": "Describe a perfect ordinary day for us five years from now, from breakfast to bedtime."
+    }
+   ]
+  },
+  {
+   "id": "fresh-start",
+   "title": "Fresh start",
+   "description": "For after a rough week. Go gently, then start the next one lighter.",
+   "minutes": 15,
+   "color": "sage",
+   "prompts": [
+    {
+     "id": "hard",
+     "label": "The hard part",
+     "question": "What was the toughest moment of your week, big or small?"
+    },
+    {
+     "id": "more",
+     "label": "A little more",
+     "question": "Was there a moment this week when you could have used a little more from me?"
+    },
+    {
+     "id": "lighter",
+     "label": "Clean slate",
+     "question": "Is there anything you’d like to say, or hear, so we can start next week fresh?"
+    },
+    {
+     "id": "next",
+     "label": "Next time",
+     "question": "If a week like this comes around again, what’s one small thing that would help?"
+    }
+   ]
+  },
+  {
+   "id": "rest-recharge",
+   "title": "Rest and recharge",
+   "description": "Check in on sleep, energy, and how you’re really feeling.",
+   "minutes": 10,
+   "color": "sage",
+   "prompts": [
+    {
+     "id": "battery",
+     "label": "Battery check",
+     "question": "If your energy were a phone battery right now, what percent would it be at?"
+    },
+    {
+     "id": "rest",
+     "label": "Real rest",
+     "question": "What’s the most restful thing you did this week?"
+    },
+    {
+     "id": "kind",
+     "label": "Be kind to you",
+     "question": "What’s one kind thing you could do for yourself this week, like an early night?"
+    },
+    {
+     "id": "cozy",
+     "label": "Cozy plans",
+     "question": "What cozy little thing could we each do this weekend, together or on a call?"
+    }
+   ]
+  },
+  {
+   "id": "remember-when",
+   "title": "Remember when",
+   "description": "A trip down memory lane, from your early days to last week.",
+   "minutes": 12,
+   "color": "peach",
+   "prompts": [
+    {
+     "id": "early",
+     "label": "Way back",
+     "question": "What’s a memory from our very beginning that still makes you smile?"
+    },
+    {
+     "id": "photo",
+     "label": "Photo flashback",
+     "question": "Find an old photo on your phone. What’s the story behind it?"
+    },
+    {
+     "id": "laugh",
+     "label": "Still laughing",
+     "question": "What’s a moment of ours you still laugh about?"
+    },
+    {
+     "id": "again",
+     "label": "Do it again",
+     "question": "Which memory of ours would you most love to live all over again?"
+    }
+   ]
+  },
+  {
+   "id": "miles-apart",
+   "title": "Closer than it looks",
+   "description": "Close the distance a little, whether you’re miles apart or on the same couch.",
+   "minutes": 12,
+   "color": "lavender",
+   "prompts": [
+    {
+     "id": "miss",
+     "label": "Wish you were here",
+     "question": "When this week did you most wish I were right there with you?"
+    },
+    {
+     "id": "show",
+     "label": "Show and tell",
+     "question": "What’s something near you right now you’d love to show me?"
+    },
+    {
+     "id": "close",
+     "label": "Feeling close",
+     "question": "What’s a small thing I could do this week to make you feel close, wherever we are?"
+    },
+    {
+     "id": "next",
+     "label": "Countdown",
+     "question": "What’s the next thing we’re excited to do together, in person or on a call?"
+    }
+   ]
+  },
+  {
+   "id": "month-ahead",
+   "title": "The month ahead",
+   "description": "A cozy look at the next few weeks: the fun, the busy, and the bits for us.",
+   "minutes": 15,
+   "color": "peach",
+   "prompts": [
+    {
+     "id": "forward",
+     "label": "Looking forward",
+     "question": "What are you most looking forward to this month?"
+    },
+    {
+     "id": "try",
+     "label": "Something new",
+     "question": "What’s one thing you’d love to get done or try this month?"
+    },
+    {
+     "id": "us",
+     "label": "Us this month",
+     "question": "What’s one small thing we could do together this month just for fun?"
+    },
+    {
+     "id": "heads-up",
+     "label": "Heads up",
+     "question": "Is there a busy or tricky stretch coming up that you’d like me to know about?"
     }
    ]
   }
@@ -294,73 +540,73 @@
   {
    "id": "dream-starter-0",
    "title": "A weekend somewhere new",
-   "text": "A place we are curious about, with room for both our travel styles.",
+   "text": "A place we’re both curious about, with time for your kind of trip and mine.",
    "category": "Adventure"
   },
   {
    "id": "dream-starter-1",
    "title": "Make our space feel like home",
-   "text": "Small changes that make everyday life more comfortable.",
+   "text": "Small touches that make everyday life cozier, wherever we’re living.",
    "category": "Home"
   },
   {
    "id": "dream-starter-2",
    "title": "Learn something side by side",
-   "text": "Choose a class, skill, or hobby we can explore at our own pace.",
+   "text": "A class, skill, or hobby we can pick up together at our own pace.",
    "category": "Learning"
   },
   {
    "id": "dream-starter-3",
-   "title": "Start a tradition with our friends",
-   "text": "An easy reason to spend time with the people we care about.",
+   "title": "A tradition with our people",
+   "text": "An easy, regular excuse to see the friends and family we love.",
    "category": "Friends & family"
   },
   {
    "id": "dream-starter-4",
-   "title": "Make a tiny creative project",
-   "text": "Something we can make together, just because we would enjoy it.",
+   "title": "A tiny creative project",
+   "text": "Something we make together just because it sounds fun.",
    "category": "Just for fun"
   },
   {
    "id": "dream-starter-5",
-   "title": "Set aside a future fund",
-   "text": "A shared hope and a realistic first conversation about getting there.",
+   "title": "Save up for something special",
+   "text": "A shared treat to save toward, big or small, and an easy first step.",
    "category": "Our life"
   },
   {
    "id": "dream-starter-6",
-   "title": "Grow a real little garden",
-   "text": "A windowsill, a pot, or a patch of ground we can care for.",
+   "title": "Grow a little garden",
+   "text": "A windowsill herb, a pot on the step, or a patch of ground to look after.",
    "category": "Home"
   },
   {
    "id": "dream-starter-7",
-   "title": "A trip to see someone we miss",
-   "text": "Make room for the friends or family who live farther away.",
+   "title": "Visit someone we miss",
+   "text": "A trip, or a long video call, with the friends or family who live far away.",
    "category": "Friends & family"
   },
   {
    "id": "dream-starter-8",
-   "title": "Try an unfamiliar adventure",
-   "text": "Something new that suits our energy, budget, and access needs.",
+   "title": "Try something we’ve never done",
+   "text": "A new adventure that fits our energy, budget, and the way we get around.",
    "category": "Adventure"
   },
   {
    "id": "dream-starter-9",
-   "title": "Build a gentler everyday rhythm",
-   "text": "A life with room for rest, individual interests, and time together.",
+   "title": "A gentler everyday rhythm",
+   "text": "Days with time to rest, time for our own things, and time for us.",
    "category": "Our life"
   },
   {
    "id": "dream-starter-10",
-   "title": "Make a book of our memories",
-   "text": "Collect the ordinary little moments we want to remember.",
+   "title": "A book of our memories",
+   "text": "Collect the little everyday moments we never want to forget.",
    "category": "Just for fun"
   },
   {
    "id": "dream-starter-11",
-   "title": "Support our separate ambitions",
-   "text": "A shared plan with space for both people to grow.",
+   "title": "Cheer on each other’s big goals",
+   "text": "A plan where we both get to grow, with a fan in the front row.",
    "category": "Learning"
   }
  ],
@@ -382,35 +628,35 @@
  "prompts": [
   {
    "kind": "appreciation",
-   "text": "What’s one small thing I do that makes you feel loved?"
+   "text": "What’s a small thing I do that makes you feel loved, maybe without me even noticing?"
   },
   {
    "kind": "support",
-   "text": "What would make this week feel a little lighter for you?"
+   "text": "What’s one thing that would make this week a little easier for you?"
   },
   {
    "kind": "memories",
-   "text": "What ordinary moment with me would you love to relive?"
+   "text": "Which totally ordinary moment with me would you love to live again?"
   },
   {
    "kind": "understanding",
-   "text": "What’s something you wish I understood better about your day?"
+   "text": "What part of your day do you wish I could see for myself?"
   },
   {
    "kind": "future",
-   "text": "What’s a little dream you’d like us to make room for?"
+   "text": "What’s a little dream you’d love for us to chase together?"
   },
   {
    "kind": "playful",
-   "text": "If our terrarium could have one ridiculous object, what would you choose?"
+   "text": "If our terrarium could have one ridiculous object, what would you add?"
   },
   {
    "kind": "appreciation",
-   "text": "What’s something I did recently that you quietly appreciated?"
+   "text": "What’s something I did lately that you loved but never mentioned?"
   },
   {
    "kind": "comfort",
-   "text": "When you’re overwhelmed, what kind of company helps most?"
+   "text": "When everything feels like too much, what kind of company helps most?"
   },
   {
    "kind": "connection",
@@ -418,43 +664,43 @@
   },
   {
    "kind": "memories",
-   "text": "What’s a tiny detail from our early days you still remember?"
+   "text": "What’s a tiny detail from our early days that you still remember?"
   },
   {
    "kind": "future",
-   "text": "What’s a new tradition you’d like us to start?"
+   "text": "What’s a new tradition you’d love for us to start?"
   },
   {
    "kind": "playful",
-   "text": "What would our little creature say about us as a couple?"
+   "text": "If our little creature wrote a review of us as a couple, what would it say?"
   },
   {
    "kind": "understanding",
-   "text": "What’s a part of yourself you’ve been getting to know lately?"
+   "text": "What’s something new you’ve noticed about yourself lately?"
   },
   {
    "kind": "support",
-   "text": "What’s something you’d love a little encouragement with?"
+   "text": "What are you working on that could use a little cheering on?"
   },
   {
    "kind": "appreciation",
-   "text": "What makes you feel at home with me?"
+   "text": "What makes you feel at home with me, even when we’re apart?"
   },
   {
    "kind": "future",
-   "text": "What would a really lovely, ordinary day together look like?"
+   "text": "What would a perfectly lovely, ordinary day together look like?"
   },
   {
    "kind": "connection",
-   "text": "What’s one thing we could do more slowly together?"
+   "text": "What’s something we usually rush that you’d love for us to slow down and enjoy?"
   },
   {
    "kind": "memories",
-   "text": "What’s a small adventure you’re glad we shared?"
+   "text": "What’s a small adventure you’re glad we had together?"
   },
   {
    "kind": "comfort",
-   "text": "What helps you feel listened to?"
+   "text": "What helps you feel really listened to?"
   },
   {
    "kind": "playful",
@@ -462,39 +708,39 @@
   },
   {
    "kind": "appreciation",
-   "text": "What quality in me have you grown to appreciate more over time?"
+   "text": "What’s something about me you’ve come to love more over time?"
   },
   {
    "kind": "understanding",
-   "text": "What does a peaceful evening look like to you right now?"
+   "text": "What does a perfect quiet evening look like for you these days?"
   },
   {
    "kind": "future",
-   "text": "What place would you like us to explore together someday?"
+   "text": "Where in the world would you love for us to explore together someday?"
   },
   {
    "kind": "support",
-   "text": "Is there a responsibility you’d like us to approach more as a team?"
+   "text": "Is there a chore or worry you’d like us to tackle more as a team?"
   },
   {
    "kind": "connection",
-   "text": "What’s a question you’d like me to ask you more often?"
+   "text": "What’s a question you wish I asked you more often?"
   },
   {
    "kind": "memories",
-   "text": "What’s an inside joke that always makes you smile?"
+   "text": "Which inside joke of ours still makes you smile every time?"
   },
   {
    "kind": "comfort",
-   "text": "What’s a small sign that you need a little extra care?"
+   "text": "What’s a small sign that you could use a little extra care?"
   },
   {
    "kind": "appreciation",
-   "text": "What’s something about us that you feel proud of?"
+   "text": "What’s something about us that you’re proud of?"
   },
   {
    "kind": "playful",
-   "text": "What would you name a tiny café inside our terrarium?"
+   "text": "What would you name a tiny café inside our terrarium, and what’s on the menu?"
   },
   {
    "kind": "future",

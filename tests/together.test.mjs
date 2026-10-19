@@ -20,8 +20,8 @@ test('all the original content came across', () => {
   assert.equal(C.landmarks.length, 10);
   assert.equal(C.decorations.length, 30, 'forest decorations (20 more are added at load)');
   assert.equal(C.moods.length, 6);
-  assert.equal(C.rituals.length, 3);
-  for (const m of C.missions) assert.equal(m.steps.length, 3, m.id);
+  assert.equal(C.rituals.length, 12);
+  for (const m of C.missions) assert.ok(m.steps.length >= 2 && m.steps.length <= 5, m.id);
 });
 
 test('the daily question never repeats until all 3,000 have come up', () => {
