@@ -3,6 +3,7 @@
 // special spots. Data and pure rules; jar-life.js does the panels.
 import { ITEMS } from './data.js';
 import { MAPS, addMap } from './maps.js';
+import { ROWS } from './world.js';
 import { addBugs } from './bugs.js';
 import { FURNITURE, FURNITURE_BY_TYPE } from './home.js';
 import { rngFor, shuffle } from './rng.js';
@@ -222,6 +223,9 @@ for (const [id, objs] of Object.entries(MORE_OBJECTS)) {
 // it was in the middle (door and all), and its east side.
 export const JAR_WEST = 17;
 export const JAR_COLS = 34;
+// ...and taller: rows above the top of the screen and below the bottom.
+export const JAR_NORTH = 8;
+export const JAR_SOUTH = 8;
 const WIDE = {
   beach: [
     { id: 'palm_w1', kind: 'palm', name: 'Palm tree', c: -6, r: 2, fruit: 'coconut' },
@@ -230,24 +234,38 @@ const WIDE = {
     { id: 'palm_e1', kind: 'palm', name: 'Palm tree', c: 22, r: 2, fruit: 'coconut' },
     { id: 'palm_e2', kind: 'palm', name: 'Palm tree', c: 30, r: 6 },
     { id: 'palm_e3', kind: 'palm', name: 'Palm tree', c: 26, r: 4 },
+    { id: 'palm_n1', kind: 'palm', name: 'Palm tree', c: 3, r: -6, fruit: 'coconut' }, { id: 'palm_n2', kind: 'palm', name: 'Palm tree', c: -9, r: -4 },
+    { id: 'palm_n3', kind: 'palm', name: 'Palm tree', c: 24, r: -7 }, { id: 'water4', kind: 'pool', name: 'Tide pool', c: 10, r: -6, w: 3, h: 2 },
   ],
   snow: [
     { id: 'pine_w1', kind: 'pine', name: 'Snowy pine', c: -14, r: 2 }, { id: 'pine_w2', kind: 'pine', name: 'Snowy pine', c: -9, r: 8 },
     { id: 'pine_w3', kind: 'pine', name: 'Snowy pine', c: -4, r: 1 }, { id: 'pine_e1', kind: 'pine', name: 'Snowy pine', c: 20, r: 3 },
     { id: 'pine_e2', kind: 'pine', name: 'Snowy pine', c: 31, r: 9 }, { id: 'pine_e3', kind: 'pine', name: 'Snowy pine', c: 30, r: 2 },
     { id: 'water3', kind: 'ice', name: 'Little frozen pond', c: 23, r: 5, w: 4, h: 3 },
+    { id: 'pine_n1', kind: 'pine', name: 'Snowy pine', c: 2, r: -7 }, { id: 'pine_n2', kind: 'pine', name: 'Snowy pine', c: -11, r: -5 },
+    { id: 'pine_n3', kind: 'pine', name: 'Snowy pine', c: 26, r: -6 }, { id: 'water4', kind: 'ice', name: 'High frozen lake', c: 9, r: -6, w: 4, h: 3 },
+    { id: 'pine_s1', kind: 'pine', name: 'Snowy pine', c: 5, r: 16 }, { id: 'pine_s2', kind: 'pine', name: 'Snowy pine', c: -8, r: 18 },
+    { id: 'pine_s3', kind: 'pine', name: 'Snowy pine', c: 22, r: 15 }, { id: 'pine_s4', kind: 'pine', name: 'Snowy pine', c: 30, r: 18 },
   ],
   flower: [
     { id: 'tree_w1', kind: 'decotree', tree: 'cherry', name: 'Cherry tree', c: -12, r: 2 }, { id: 'tree_w2', kind: 'decotree', tree: 'cherry', name: 'Cherry tree', c: -5, r: 9 },
     { id: 'fern_w1', kind: 'fern', name: 'Fern', c: -15, r: 9 }, { id: 'water3', kind: 'pond', name: 'Lotus pond', c: -10, r: 5, w: 4, h: 3 },
     { id: 'tree_e1', kind: 'decotree', tree: 'cherry', name: 'Cherry tree', c: 21, r: 3 }, { id: 'tree_e2', kind: 'decotree', tree: 'willow', name: 'Willow', c: 29, r: 8 },
     { id: 'fern_e1', kind: 'fern', name: 'Fern', c: 25, r: 1 },
+    { id: 'tree_n1', kind: 'decotree', tree: 'cherry', name: 'Cherry tree', c: 4, r: -6 }, { id: 'tree_n2', kind: 'decotree', tree: 'willow', name: 'Willow', c: -10, r: -4 },
+    { id: 'fern_n1', kind: 'fern', name: 'Fern', c: 22, r: -7 }, { id: 'water4', kind: 'pond', name: 'Lily stream', c: 11, r: 14, w: 4, h: 3 },
+    { id: 'tree_s1', kind: 'decotree', tree: 'cherry', name: 'Cherry tree', c: 3, r: 17 }, { id: 'tree_s2', kind: 'decotree', tree: 'cherry', name: 'Cherry tree', c: 27, r: 16 },
+    { id: 'fern_s1', kind: 'fern', name: 'Fern', c: -12, r: 15 },
   ],
   desert: [
     { id: 'cactus_w1', kind: 'cactus', name: 'Cactus', c: -14, r: 3, fruit: 'cactus_fruit' }, { id: 'cactus_w2', kind: 'cactus', name: 'Cactus', c: -7, r: 9 },
     { id: 'water3', kind: 'oasis', name: 'Small oasis', c: -10, r: 5, w: 3, h: 2 }, { id: 'palm_w1', kind: 'palm', name: 'Date palm', c: -11, r: 4, fruit: 'dates' },
     { id: 'cactus_e1', kind: 'cactus', name: 'Cactus', c: 21, r: 2 }, { id: 'cactus_e2', kind: 'cactus', name: 'Cactus', c: 28, r: 8, fruit: 'cactus_fruit' },
     { id: 'palm_e1', kind: 'palm', name: 'Date palm', c: 25, r: 4, fruit: 'dates' },
+    { id: 'cactus_n1', kind: 'cactus', name: 'Cactus', c: 3, r: -6, fruit: 'cactus_fruit' }, { id: 'cactus_n2', kind: 'cactus', name: 'Cactus', c: -12, r: -3 },
+    { id: 'cactus_n3', kind: 'cactus', name: 'Cactus', c: 26, r: -7 }, { id: 'water4', kind: 'oasis', name: 'Hidden oasis', c: 12, r: 15, w: 3, h: 2 },
+    { id: 'palm_s1', kind: 'palm', name: 'Date palm', c: 11, r: 14, fruit: 'dates' }, { id: 'cactus_s1', kind: 'cactus', name: 'Cactus', c: -6, r: 17 },
+    { id: 'cactus_s2', kind: 'cactus', name: 'Cactus', c: 29, r: 16, fruit: 'cactus_fruit' },
   ],
   rainforest: [
     { id: 'bigtree_w', kind: 'bigtree', name: 'Giant tree', c: -12, r: 1, w: 2, h: 2, fruit: 'passion_fruit' },
@@ -255,22 +273,37 @@ const WIDE = {
     { id: 'water3', kind: 'falls', name: 'Jungle pool', c: 24, r: 6, w: 4, h: 3 },
     { id: 'fern_e1', kind: 'fern', name: 'Fern', c: 20, r: 2 }, { id: 'fern_e2', kind: 'fern', name: 'Fern', c: 31, r: 3 },
     { id: 'bigtree_e', kind: 'bigtree', name: 'Giant tree', c: 28, r: 0, w: 2, h: 2 },
+    { id: 'bigtree_n', kind: 'bigtree', name: 'Giant tree', c: 4, r: -7, w: 2, h: 2, fruit: 'passion_fruit' },
+    { id: 'fern_n1', kind: 'fern', name: 'Fern', c: -8, r: -5 }, { id: 'fern_n2', kind: 'fern', name: 'Fern', c: 23, r: -3 },
+    { id: 'water4', kind: 'falls', name: 'River pool', c: 10, r: 14, w: 4, h: 3 },
+    { id: 'fern_s1', kind: 'fern', name: 'Fern', c: 2, r: 17 }, { id: 'fern_s2', kind: 'fern', name: 'Fern', c: -13, r: 15 },
+    { id: 'bigtree_s', kind: 'bigtree', name: 'Giant tree', c: 26, r: 16, w: 2, h: 2 },
   ],
   glade: [
     { id: 'shroom_w1', kind: 'bigshroom', name: 'Giant mushroom', c: -14, r: 2 }, { id: 'shroom_w2', kind: 'bigshroom', name: 'Giant mushroom', c: -6, r: 8 },
     { id: 'shroom_e1', kind: 'bigshroom', name: 'Giant mushroom', c: 22, r: 3 }, { id: 'shroom_e2', kind: 'bigshroom', name: 'Giant mushroom', c: 30, r: 9 },
     { id: 'water3', kind: 'glow', name: 'Glowing pool', c: 25, r: 5, w: 3, h: 3 }, { id: 'fern_w1', kind: 'fern', name: 'Fern', c: -10, r: 4 },
+    { id: 'shroom_n1', kind: 'bigshroom', name: 'Giant mushroom', c: 3, r: -6 }, { id: 'shroom_n2', kind: 'bigshroom', name: 'Giant mushroom', c: -11, r: -4 },
+    { id: 'fern_n1', kind: 'fern', name: 'Fern', c: 24, r: -7 }, { id: 'water4', kind: 'glow', name: 'Deep glow pool', c: 10, r: 15, w: 3, h: 3 },
+    { id: 'shroom_s1', kind: 'bigshroom', name: 'Giant mushroom', c: 2, r: 17 }, { id: 'shroom_s2', kind: 'bigshroom', name: 'Giant mushroom', c: 28, r: 15 },
   ],
   springs: [
     { id: 'bamboo_w1', kind: 'bamboo', name: 'Bamboo', c: -15, r: 1 }, { id: 'bamboo_w2', kind: 'bamboo', name: 'Bamboo', c: -14, r: 1 },
     { id: 'bamboo_w3', kind: 'bamboo', name: 'Bamboo', c: -8, r: 9 }, { id: 'lantern_w', kind: 'lantern', name: 'Stone lantern', c: -4, r: 3 },
     { id: 'bamboo_e1', kind: 'bamboo', name: 'Bamboo', c: 24, r: 2 }, { id: 'lantern_e', kind: 'lantern', name: 'Stone lantern', c: 20, r: 8 },
     { id: 'water3', kind: 'pond', name: 'Koi stream', c: 27, r: 4, w: 4, h: 3 },
+    { id: 'bamboo_n1', kind: 'bamboo', name: 'Bamboo', c: 2, r: -7 }, { id: 'bamboo_n2', kind: 'bamboo', name: 'Bamboo', c: 3, r: -7 },
+    { id: 'lantern_n', kind: 'lantern', name: 'Stone lantern', c: 14, r: -4 }, { id: 'water4', kind: 'spring', name: 'Mountain spring', c: -9, r: -6, w: 4, h: 3 },
+    { id: 'bamboo_s1', kind: 'bamboo', name: 'Bamboo', c: 6, r: 17 }, { id: 'lantern_s', kind: 'lantern', name: 'Stone lantern', c: 21, r: 15 },
+    { id: 'bamboo_s2', kind: 'bamboo', name: 'Bamboo', c: -12, r: 16 },
   ],
   stars: [
     { id: 'cloud_w1', kind: 'cloud', name: 'Cloud', c: -13, r: 2, w: 2 }, { id: 'cloud_w2', kind: 'cloud', name: 'Cloud', c: -6, r: 9, w: 3 },
     { id: 'cloud_e1', kind: 'cloud', name: 'Cloud', c: 21, r: 3, w: 2 }, { id: 'cloud_e2', kind: 'cloud', name: 'Cloud', c: 29, r: 8, w: 3 },
     { id: 'water3', kind: 'moon', name: 'Moon pool', c: -10, r: 5, w: 4, h: 3 },
+    { id: 'cloud_n1', kind: 'cloud', name: 'Cloud', c: 3, r: -6, w: 2 }, { id: 'cloud_n2', kind: 'cloud', name: 'Cloud', c: -11, r: -4, w: 3 },
+    { id: 'cloud_n3', kind: 'cloud', name: 'Cloud', c: 24, r: -7, w: 2 }, { id: 'water4', kind: 'moon', name: 'Comet pool', c: 12, r: 15, w: 4, h: 3 },
+    { id: 'cloud_s1', kind: 'cloud', name: 'Cloud', c: -6, r: 17, w: 3 }, { id: 'cloud_s2', kind: 'cloud', name: 'Cloud', c: 27, r: 16, w: 2 },
   ],
 };
 for (const [id, extras] of Object.entries(WIDE)) {
@@ -278,9 +311,10 @@ for (const [id, extras] of Object.entries(WIDE)) {
   if (!map || map.west) continue;
   map.west = JAR_WEST;
   map.cols = JAR_COLS;
-  const door = map.objects.find(o => o.id === 'door');
-  // The sea runs the whole width of the beach.
-  for (const o of map.objects) if (o.kind === 'sea') { o.c = -JAR_WEST; o.w = JAR_WEST + JAR_COLS; }
+  map.north = JAR_NORTH;
+  map.south = JAR_SOUTH;
+  // The sea runs the whole width of the beach, and all the way down.
+  for (const o of map.objects) if (o.kind === 'sea') { o.c = -JAR_WEST; o.w = JAR_WEST + JAR_COLS; o.h = ROWS + JAR_SOUTH - o.r; }
   for (const o of extras) map.objects.push({ w: 1, h: 1, ...o });
 }
 

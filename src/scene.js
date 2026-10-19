@@ -1,5 +1,5 @@
 // Draws the jar, its world and the mine onto the game canvas.
-import { COLS, MEADOW_COLS, MEADOW_WEST, ROWS, TILE, OBJECTS, BEDS } from './world.js';
+import { COLS, MEADOW_COLS, MEADOW_WEST, MEADOW_NORTH, MEADOW_SOUTH, ROWS, TILE, OBJECTS, BEDS, PONDS } from './world.js';
 import { EVENT_SPOT, SNOWMAN_SPOT, meteorAt } from './events.js';
 import { LIGHT_DECOR } from './outdoor-data.js';
 import { bedStage, bandOf, MINE_ENTRY } from './rules.js';
@@ -30,6 +30,20 @@ export const MEADOW_W = GX * 2 + MEADOW_COLS * TILE;
 // How far the camera can slide either way.
 export const CAM_MIN = MEADOW_LEFT;
 export const CAM_MAX = MEADOW_W - W;
+// ...and up and down (see g.camY): the hills sit higher, the soil lower.
+export const CAMY_MIN = -MEADOW_NORTH * TILE;
+export const CAMY_MAX = MEADOW_SOUTH * TILE;
+
+// Where the camera can go in the scene you're in, or null when it stays still.
+export function camBounds(g) {
+  if (g.scene === 'jar') return { minX: CAM_MIN, maxX: CAM_MAX, minY: CAMY_MIN, maxY: CAMY_MAX };
+  const map = g.scene === 'map' ? MAPS[g.mapId] : null;
+  if (!map || !(map.west || map.north || map.south)) return null;
+  return {
+    minX: -(map.west || 0) * TILE, maxX: GX * 2 + (map.cols || COLS) * TILE - W,
+    minY: -(map.north || 0) * TILE, maxY: (map.south || 0) * TILE,
+  };
+}
 const JAR = { x: 12, y: 40, w: 296, h: 332, r: 24 };
 
 export function tileCenter(c, r) {
@@ -64,9 +78,10 @@ export function drawScene(ctx, g) {
   ctx.clip();
   if (g.scene === 'mine') drawMine(ctx, g);
   else if (g.scene === 'home') drawHome(ctx, g);
-  if (g.scene === 'map' && MAPS[g.mapId]?.west) {
+  const cam = camBounds(g);
+  if (g.scene === 'map' && cam) {
     ctx.save();
-    ctx.translate(-Math.round(g.camX || 0), 0);
+    ctx.translate(-Math.round(g.camX || 0), -Math.round(g.camY || 0));
     drawMapWorld(ctx, g);
     drawEffects(ctx, g);
     ctx.restore();
@@ -77,27 +92,28 @@ export function drawScene(ctx, g) {
   if (g.scene === 'jar') {
     // The meadow is drawn in world space and slid by the camera.
     ctx.save();
-    ctx.translate(-Math.round(g.camX || 0), 0);
+    ctx.translate(-Math.round(g.camX || 0), -Math.round(g.camY || 0));
     drawJarWorld(ctx, g);
     drawEffects(ctx, g);
     ctx.restore();
   } else if (g.scene !== 'map') drawEffects(ctx, g);
   ctx.restore();
   drawGlass(ctx, g);
-  if (g.scene === 'jar' || (g.scene === 'map' && MAPS[g.mapId]?.west)) drawEdgeHints(ctx, g);
+  if (cam) drawEdgeHints(ctx, g, cam);
   if (g.fishing) drawFishingUi(ctx, g);
 }
 
-// Little arrows at the glass when there's more meadow to that side.
-function drawEdgeHints(ctx, g) {
-  const cam = g.camX || 0;
-  const map = g.scene === 'map' ? MAPS[g.mapId] : null;
-  const min = map ? -map.west * TILE : CAM_MIN, max = map ? GX * 2 + map.cols * TILE - W : CAM_MAX;
-  const y = GY + (ROWS * TILE) / 2, pulse = Math.floor(g.t * 2) % 2;
+// Little arrows at the glass when there's more world that way.
+function drawEdgeHints(ctx, g, b) {
+  const cx = g.camX || 0, cy = g.camY || 0;
+  const y = GY + (ROWS * TILE) / 2, x = W / 2, pulse = Math.floor(g.t * 2) % 2;
   ctx.fillStyle = 'rgba(255,250,235,0.7)';
-  const chevron = (x, dir) => { for (let i = 0; i < 5; i++) ctx.fillRect(x + dir * (i < 3 ? i : 4 - i), y - 4 + i * 2, 2, 2); };
-  if (cam > min + 2) chevron(18 - pulse, -1);
-  if (cam < max - 2) chevron(300 + pulse, 1);
+  const side = (x, dir) => { for (let i = 0; i < 5; i++) ctx.fillRect(x + dir * (i < 3 ? i : 4 - i), y - 4 + i * 2, 2, 2); };
+  const updown = (y, dir) => { for (let i = 0; i < 5; i++) ctx.fillRect(x - 4 + i * 2, y + dir * (i < 3 ? i : 4 - i), 2, 2); };
+  if (cx > b.minX + 2) side(18 - pulse, -1);
+  if (cx < b.maxX - 2) side(300 + pulse, 1);
+  if (cy > b.minY + 2) updown(48 - pulse, -1);
+  if (cy < b.maxY - 2) updown(362 + pulse, 1);
 }
 
 // The animals and people who live in a jar (see behaviors.js): hops and flights
@@ -133,24 +149,29 @@ function drawCritters(ctx, g, items) {
 
 function drawJarWorld(ctx, g) {
   const { season } = g;
-  const X0 = MEADOW_LEFT, WW = MEADOW_W - MEADOW_LEFT, cam = Math.round(g.camX || 0);
-  px(ctx, X0, 0, WW, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  const X0 = MEADOW_LEFT, WW = MEADOW_W - MEADOW_LEFT, cam = Math.round(g.camX || 0), camY = Math.round(g.camY || 0);
+  // North rows sit above row 0, so the sky and hills move up; the soil moves down.
+  const NT = MEADOW_NORTH * TILE, ST = MEADOW_SOUTH * TILE;
+  px(ctx, X0, -NT, WW, H + NT + ST, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  ctx.save();
+  ctx.translate(0, -NT);
   drawBackdrop(ctx, g, WW, X0);
+  ctx.restore();
 
   // Grass, including the strips beside the tile grid.
   const [base, dark] = [grassTile(season, 0), grassTile(season, 1)];
   for (let x = X0; x < X0 + WW; x += TILE) {
-    for (let y = GY - 8; y < SOIL_TOP; y += TILE) ctx.drawImage((x + y) % 32 ? base : dark, x, y);
+    for (let y = GY - 8 - NT; y < SOIL_TOP + ST; y += TILE) ctx.drawImage((x + y) % 32 ? base : dark, x, y);
   }
-  for (let r = 0; r < ROWS; r++) {
+  for (let r = -MEADOW_NORTH; r < ROWS + MEADOW_SOUTH; r++) {
     for (let c = -MEADOW_WEST; c < MEADOW_COLS; c++) {
       const v = hashString(c + ':' + r) % 4;
       ctx.drawImage(grassTile(season, v), GX + c * TILE, GY + r * TILE);
     }
   }
-  px(ctx, X0, GY - 9, WW, 2, shade(SEASON_EDGE[season], -0.2));
+  px(ctx, X0, GY - 9 - NT, WW, 2, shade(SEASON_EDGE[season], -0.2));
 
-  for (const id of ['pond', 'pond2', 'pond3', 'pond4']) drawPond(ctx, g, id);
+  for (const id of PONDS) drawPond(ctx, g, id);
   const cave = OBJECTS.find(o => o.id === 'cave');
   ctx.drawImage(caveSprite(), GX + cave.c * TILE, GY + cave.r * TILE);
   BEDS.forEach((b, i) => {
@@ -294,15 +315,18 @@ function drawJarWorld(ctx, g) {
   items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
   if (g.fishing) drawLine(ctx, g);
 
+  ctx.save();
+  ctx.translate(0, ST);
   drawSoil(ctx, g, WW, X0);
+  ctx.restore();
   // Weather, the night sky and shooting stars stay put on screen.
   ctx.save();
-  ctx.translate(cam, 0);
+  ctx.translate(cam, camY);
   drawWeather(ctx, g);
   ctx.restore();
   if (g.night) drawNight(ctx, g);
   ctx.save();
-  ctx.translate(cam, 0);
+  ctx.translate(cam, camY);
   drawEventSky(ctx, g);
   ctx.restore();
 }
@@ -515,9 +539,9 @@ function drawWeather(ctx, g) {
 
 function drawNight(ctx, g) {
   // In the meadow the camera has moved the drawing; the dark and the moon stay on screen.
-  const ox = Math.round(g.camX || 0);
+  const ox = Math.round(g.camX || 0), oy = Math.round(g.camY || 0);
   ctx.fillStyle = 'rgba(22,30,58,0.48)';
-  ctx.fillRect(ox, 0, W, H);
+  ctx.fillRect(ox, oy, W, H);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const glow = (x, y, r, a) => {
@@ -527,7 +551,7 @@ function drawNight(ctx, g) {
     ctx.fillStyle = grad;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
   };
-  glow(ox + 160, 46, 70, 0.28);
+  glow(ox + 160, oy + 46, 70, 0.28);
   const tent = OBJECTS.find(o => o.id === 'tent');
   glow(GX + (tent.c + 2.2) * TILE, GY + tent.r * TILE + 20, 26, 0.35);
   // Lamps, torches and lanterns you've made glow at night.
@@ -535,7 +559,7 @@ function drawNight(ctx, g) {
   if (g.season === 'summer' || g.season === 'spring') {
     for (let i = 0; i < 9; i++) {
       const fx = ox + 40 + ((i * 37 + Math.sin(g.t * 0.7 + i) * 18) % 250);
-      const fy = GY + 20 + ((i * 29 + Math.cos(g.t * 0.5 + i * 2) * 14) % 130);
+      const fy = oy + GY + 20 + ((i * 29 + Math.cos(g.t * 0.5 + i * 2) * 14) % 130);
       if (Math.floor(g.t * 3 + i) % 3) glow(fx, fy, 4, 0.9);
     }
   }
@@ -559,12 +583,16 @@ const WATER = {
 function drawMapWorld(ctx, g) {
   const map = MAPS[g.mapId];
   // Wide jars are drawn in world space; drawScene slides them by the camera.
-  const X0 = -(map.west || 0) * TILE, WW = GX * 2 + (map.cols || COLS) * TILE - X0, cam = Math.round(g.camX || 0);
-  px(ctx, X0, 0, WW, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  const X0 = -(map.west || 0) * TILE, WW = GX * 2 + (map.cols || COLS) * TILE - X0, cam = Math.round(g.camX || 0), camY = Math.round(g.camY || 0);
+  const NT = (map.north || 0) * TILE, ST = (map.south || 0) * TILE;
+  px(ctx, X0, -NT, WW, H + NT + ST, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  ctx.save();
+  ctx.translate(0, -NT);
   drawBackdrop(ctx, g, WW, X0);
+  ctx.restore();
   const ground = map.ground;
-  for (let x = X0; x < X0 + WW; x += TILE) for (let y = GY - 8; y < SOIL_TOP; y += TILE) ctx.drawImage(grassTile(ground, (x + y) % 32 ? 0 : 1), x, y);
-  for (let r = 0; r < ROWS; r++) for (let c = -(map.west || 0); c < (map.cols || COLS); c++) ctx.drawImage(grassTile(ground, hashString(map.id + c + ':' + r) % 4), GX + c * TILE, GY + r * TILE);
+  for (let x = X0; x < X0 + WW; x += TILE) for (let y = GY - 8 - NT; y < SOIL_TOP + ST; y += TILE) ctx.drawImage(grassTile(ground, (x + y) % 32 ? 0 : 1), x, y);
+  for (let r = -(map.north || 0); r < ROWS + (map.south || 0); r++) for (let c = -(map.west || 0); c < (map.cols || COLS); c++) ctx.drawImage(grassTile(ground, hashString(map.id + c + ':' + r) % 4), GX + c * TILE, GY + r * TILE);
   // water
   for (const o of map.objects) {
     const kind = o.spot === 'hot_spring' ? 'spring' : o.kind;
@@ -572,7 +600,7 @@ function drawMapWorld(ctx, g) {
     const [base, deep, hi] = WATER[kind];
     const x = GX + o.c * TILE, y = GY + o.r * TILE, w = o.w * TILE, h = o.h * TILE;
     if (o.kind === 'sea') {
-      px(ctx, X0, y, WW, SOIL_TOP - y, base);
+      px(ctx, X0, y, WW, SOIL_TOP + ST - y, base);
       px(ctx, X0, y, WW, 3, hi);
       px(ctx, X0, y + h - 14, WW, 14, deep);
     } else {
@@ -637,9 +665,9 @@ function drawMapWorld(ctx, g) {
   // The waterfall pours into its pool.
   const falls = map.objects.find(o => o.spot === 'waterfall');
   if (falls) {
-    const x = GX + falls.c * TILE, y = GY - 20;
-    px(ctx, x, y, falls.w * TILE, (falls.r + 2) * TILE + 20, '#9FD3E0');
-    for (let i = 0; i < 6; i++) px(ctx, x + 4 + i * 7, y + ((g.t * 60 + i * 13) % ((falls.r + 2) * TILE + 16)), 2, 6, '#F2FAFF');
+    const x = GX + falls.c * TILE, y = GY - 20 - NT, fh = (falls.r + 2) * TILE + 20 + NT;
+    px(ctx, x, y, falls.w * TILE, fh, '#9FD3E0');
+    for (let i = 0; i < 6; i++) px(ctx, x + 4 + i * 7, y + ((g.t * 60 + i * 13) % (fh - 4)), 2, 6, '#F2FAFF');
   }
   drawCritters(ctx, g, items);
   for (const b of g.bugs) {
@@ -654,7 +682,7 @@ function drawMapWorld(ctx, g) {
   for (const o of g.others) if (o.scene === 'map' && o.mapId === g.mapId) items.push({ y: o.y, draw: () => drawAvatarAt(ctx, o, o.look, false, g.t) });
   items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
   if (g.fishing) drawLine(ctx, g);
-  px(ctx, X0, SOIL_TOP, WW, H - SOIL_TOP, map.soil || (map.id === 'beach' ? '#C9B07A' : map.id === 'snow' ? '#8E9AA0' : '#8A6A4A'));
+  px(ctx, X0, SOIL_TOP + ST, WW, H - SOIL_TOP, map.soil || (map.id === 'beach' ? '#C9B07A' : map.id === 'snow' ? '#8E9AA0' : '#8A6A4A'));
   // Steam over the hot spring.
   for (const o of map.objects) {
     if (o.spot !== 'hot_spring') continue;
@@ -666,12 +694,12 @@ function drawMapWorld(ctx, g) {
   }
   // Weather, night, stars and mist stay put on screen.
   ctx.save();
-  ctx.translate(cam, 0);
+  ctx.translate(cam, camY);
   drawWeather(ctx, g);
   ctx.restore();
   if (g.night) drawNight(ctx, g);
   ctx.save();
-  ctx.translate(cam, 0);
+  ctx.translate(cam, camY);
   if (map.night) {
     for (let i = 0; i < 40; i++) {
       const hx = hashString('star' + i);

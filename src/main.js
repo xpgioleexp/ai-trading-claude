@@ -3,9 +3,9 @@ import * as R from './rules.js';
 import { ITEMS, ROD_ZONE, MINE_LAYERS, FORAGE, DAILY_BITES } from './data.js';
 import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay, deviceTimeZone } from './clock.js';
 import { COLS, MEADOW_COLS, TILE } from './world.js';
-import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles } from './world.js';
+import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles, PONDS } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
-import { drawScene, tileCenter, pointToTile, W, H, GX, MEADOW_W, CAM_MIN, CAM_MAX } from './scene.js';
+import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W, CAM_MIN, CAMY_MIN, CAMY_MAX, camBounds } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
 import { DIRS } from './avatar.js';
 import * as UI from './ui.js';
@@ -309,7 +309,7 @@ function habitats() {
       mapTiles[map.id] = {
         flower: open, ground: open,
         tree: mapNear(map, ['palm', 'pine', 'hive', 'arch', 'cactus', 'bigtree', 'bamboo', 'bigshroom', 'fern', 'decotree'], 2),
-        pond: mapNear(map, ['water', 'water2', 'water3'], 1),
+        pond: mapNear(map, ['water', 'water2', 'water3', 'water4'], 1),
       };
     }
     return mapTiles[map.id];
@@ -320,7 +320,7 @@ function habitats() {
   bugTiles = {
     flower: open, ground: open,
     tree: near(OBJECTS.find(o => o.id === 'tree'), 2),
-    pond: ['pond', 'pond2', 'pond3', 'pond4'].flatMap(id => near(OBJECTS.find(o => o.id === id), 1)),
+    pond: PONDS.flatMap(id => near(OBJECTS.find(o => o.id === id), 1)),
   };
   return bugTiles;
 }
@@ -559,7 +559,7 @@ function readOthers() {
     const prev = g.others.find(o => o.id === id);
     const o = prev || { id, x: pr.x, y: pr.y };
     Object.assign(o, {
-      tx: Math.max(CAM_MIN, Math.min(MEADOW_W, pr.x)), ty: Math.max(0, Math.min(H, pr.y)), dir: pr.dir | 0, frame: pr.frame | 0,
+      tx: Math.max(CAM_MIN, Math.min(MEADOW_W, pr.x)), ty: Math.max(CAMY_MIN, Math.min(H + CAMY_MAX, pr.y)), dir: pr.dir | 0, frame: pr.frame | 0,
       pose: ['walk', 'sit', 'cast', 'swing', 'crouch'].includes(pr.pose) ? pr.pose : 'walk',
       scene: ['mine', 'home', 'map'].includes(pr.scene) ? pr.scene : 'jar', layer: pr.layer | 0, look: cleanLook(pr.look),
       mapId: MAPS[pr.mapId] ? pr.mapId : null,
@@ -788,7 +788,7 @@ function useObject(o) {
       g.player.pose = 'sit';
       g.player.dir = DIRS.down;
       return ready() && T.openToday(g);
-    case 'pond': case 'pond2': case 'pond3': case 'pond4': return startFishing(o);
+    case 'pond': case 'pond2': case 'pond3': case 'pond4': case 'pond5': case 'pond6': return startFishing(o);
     case 'door': return ready() && openTravel(g);
     case 'cave':
       if (g.state.mine.deepest >= 11) return UI.openElevator(g, enterMine);
@@ -1203,7 +1203,7 @@ function leaveMine() {
 
 // Open floor in the mine. Rocks, walls, chests and the lake block the way.
 function mineOpen(c, r, flying) {
-  if (!inBounds(c, r, COLS, 0) || g.mineWalls.has(c + ',' + r)) return false;
+  if (!inBounds(c, r, COLS, 0, 0, ROWS) || g.mineWalls.has(c + ',' + r)) return false;
   const p = g.mine?.pool;
   if (p && c >= p.c && c < p.c + p.w && r >= p.r && r < p.r + p.h) return false;
   if (g.mine?.chests.some(ch => ch.c === c && ch.r === r)) return false;
@@ -1429,7 +1429,8 @@ function onPointerDown(e) {
   const screen = canvasPoint(e);
   if (g.scene === 'jar' && g.meteors.length && tapMeteor(screen.x, screen.y)) return;
   // In the meadow the view may have slid: turn the tap into a spot in the world.
-  const x = screen.x + (g.scene === 'jar' || g.scene === 'map' ? Math.round(g.camX) : 0), y = screen.y;
+  const moved = g.scene === 'jar' || g.scene === 'map';
+  const x = screen.x + (moved ? Math.round(g.camX) : 0), y = screen.y + (moved ? Math.round(g.camY) : 0);
   const { c, r } = pointToTile(x, y);
   if (g.scene === 'mine') tapMine(c, r, x, y);
   else if (g.scene === 'home') tapHome(c, r);
@@ -1548,22 +1549,27 @@ function frame(now) {
 // The view slides when you walk near the jar's glass, so the meadow can be
 // wider than the screen. Elsewhere (home, mine, other jars) it stays still.
 const EDGE = 110;
+// Up and down: how close to the lid or the soil you get before the view moves.
+const EDGE_TOP = 120, EDGE_BOTTOM = 100;
 function updateCamera(dt) {
-  if (g.scene !== 'jar' && !(g.scene === 'map' && MAPS[g.mapId]?.west)) {
+  const b = camBounds(g);
+  if (!b) {
     g.camX = 0;
+    g.camY = 0;
     return;
   }
-  // The meadow, or a jar that's wider than the screen.
-  const map = g.scene === 'map' ? MAPS[g.mapId] : null;
-  const min = map ? -map.west * TILE : CAM_MIN;
-  const max = map ? GX * 2 + map.cols * TILE - W : CAM_MAX;
-  let target = g.camX;
-  if (g.player.x - target < EDGE) target = g.player.x - EDGE;
-  if (g.player.x - target > W - EDGE) target = g.player.x - (W - EDGE);
-  target = Math.max(min, Math.min(max, target));
+  // The meadow, or a jar that's bigger than the screen.
+  let tx = g.camX, ty = g.camY;
+  if (g.player.x - tx < EDGE) tx = g.player.x - EDGE;
+  if (g.player.x - tx > W - EDGE) tx = g.player.x - (W - EDGE);
+  if (g.player.y - ty < EDGE_TOP) ty = g.player.y - EDGE_TOP;
+  if (g.player.y - ty > H - EDGE_BOTTOM) ty = g.player.y - (H - EDGE_BOTTOM);
+  tx = Math.max(b.minX, Math.min(b.maxX, tx));
+  ty = Math.max(b.minY, Math.min(b.maxY, ty));
   // Arriving from far away (a new scene, a jump): snap instead of gliding.
-  if (Math.abs(target - g.camX) > W / 2) g.camX = target;
-  else g.camX += (target - g.camX) * Math.min(1, dt * 6);
+  const k = Math.min(1, dt * 6);
+  g.camX = Math.abs(tx - g.camX) > W / 2 ? tx : g.camX + (tx - g.camX) * k;
+  g.camY = Math.abs(ty - g.camY) > H / 2 ? ty : g.camY + (ty - g.camY) * k;
 }
 
 // ---------- start ----------
@@ -1634,7 +1640,7 @@ function start(hotData = {}) {
   const today = dayNumber(new Date()) + (saved?.dayOffset || 0);
   g = {
     state: R.migrate(saved, seed, today),
-    scene: 'jar', camX: 0, layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(), mine: null, mineWalls: new Set(), monsters: [], maxHp: 100,
+    scene: 'jar', camX: 0, camY: 0, layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(), mine: null, mineWalls: new Set(), monsters: [], maxHp: 100,
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
     residents: [], bugs: [], bugKey: '', visitors: [], visitorKey: '', critters: [], events: [], eventsToday: [], eventKey: '', mushrooms: [], meteors: [], snowman: false, crouch, sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     mapId: null, mapDaily: null, enterMap, leaveMap,

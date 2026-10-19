@@ -36,6 +36,8 @@ test('every spot, shop, tree and pond in every jar can be reached from the door'
     const door = m.objects.find(o => o.id === 'door');
     const start = { c: door.c + 1, r: door.r };
     assert.ok(m.west && m.cols, `${id} is wide`);
+    assert.ok(m.north && m.south, `${id} is tall`);
+    assert.ok(m.objects.some(o => o.r < 0), `${id} has things up north`);
     for (const o of m.objects) {
       const tiles = [];
       for (let c = o.c; c < o.c + o.w; c++) for (let r = o.r; r < o.r + o.h; r++) tiles.push({ c, r });

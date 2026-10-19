@@ -211,6 +211,8 @@ test('every spot in the jar can be reached from the start', () => {
     assert.ok(p, o.id);
   }
   for (const b of BEDS) assert.ok(pathNextTo(walk, START_TILE, [b]), 'bed');
+  // The meadow runs above and below the first screen too.
+  assert.ok(forageTiles().some(t => t.r < 0) && forageTiles().some(t => t.r >= 12), 'north and south rows');
 });
 
 test('old or broken saves fall back to a fresh state', () => {

@@ -21,7 +21,9 @@ Any static file server works. There is no build step.
 
 ## What's in the jar
 
-**A wider meadow:** the meadow is four screens wide, with the one you started on second from the left. Walk toward the glass on either side and the view slides with you; little arrows at the edges show there's more that way. **West woods:** a forest pool to fish in and six trees. **East meadow:** a lily pond, a reed pond, eight trees, and the door to the other jars on the far east wall. There's lots of open room for decorations, farm buildings and crafts. Your home, the mine and the other jars still fit on one screen.
+**A wider meadow:** the meadow is four screens wide, with the one you started on second from the left. Walk toward the glass on either side and the view slides with you; little arrows at the edges show there's more that way. **West woods:** a forest pool to fish in and six trees. **East meadow:** a lily pond, a reed pond, eight trees, and the door to the other jars on the far east wall. There's lots of open room for decorations, farm buildings and crafts.
+
+**A taller meadow:** it also runs 8 rows above the first screen and 8 below. Walk toward the lid or the soil and the view slides up or down; arrows at the top and bottom show there's more. **North hills:** a hill spring to fish in and six trees. **South fields:** a meadow marsh to fish in and five trees. Your home and the mine still fit on one screen.
 
 **Wider jars:** every jar is three screens wide too, with the jar you know in the middle (door and all), so each one opens up to the left and the right. Each side has scenery that fits the jar and an extra place to fish:
 
@@ -37,6 +39,8 @@ Any static file server works. There is no build step.
 | Starlight isle | moon pool | more clouds |
 
 Wider jars have 8 forage spots a day instead of 5.
+
+**Taller jars:** every jar also runs 8 rows north and 8 rows south, with its own trees up and down, plus one more pond: a tide pool (beach), a high frozen lake (snow), a lily stream (flower), a hidden oasis (desert), a river pool (rainforest), a deep glow pool (glade), a mountain spring (hot springs) and a comet pool (starlight isle). The beach's sea runs all the way down.
 
 **Neighbours and wildlife in the meadow:** they each have their own way of moving and their own hours. Tap any of them to chat, pet, play or give a gift. Friendship works like the jar animals': 5 hearts, a daily present at 3, and a plush at 5.
 

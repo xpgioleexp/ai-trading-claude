@@ -8,7 +8,12 @@ export const COLS = 17;
 // wall), so the meadow you started with keeps its spot in the middle.
 export const MEADOW_WEST = 17;
 export const MEADOW_COLS = 51;
+// ROWS is how many rows fit on screen. The meadow also runs MEADOW_NORTH rows
+// above row 0 (toward the hills) and MEADOW_SOUTH rows below the last one, and
+// the view slides up and down as you walk.
 export const ROWS = 12;
+export const MEADOW_NORTH = 8;
+export const MEADOW_SOUTH = 8;
 export const TILE = 16;
 
 // Each object covers a block of tiles (c, r, w, h). Blocked tiles can't be walked on.
@@ -47,7 +52,24 @@ export const OBJECTS = [
   { id: 'west5', kind: 'tree', tree: 'pine', name: 'Pine', c: -6, r: 10, w: 1, h: 1 },
   { id: 'west6', kind: 'tree', tree: 'cherry', name: 'Cherry tree', c: -16, r: 10, w: 1, h: 1 },
   { id: 'pond4', name: 'Forest pool', c: -11, r: 4, w: 4, h: 3 },
+  // The north hills, above the tent (negative rows).
+  { id: 'north1', kind: 'tree', tree: 'pine', name: 'Pine', c: 2, r: -7, w: 1, h: 1 },
+  { id: 'north2', kind: 'tree', tree: 'birch', name: 'Birch', c: 9, r: -5, w: 1, h: 1 },
+  { id: 'north3', kind: 'tree', tree: 'oak', name: 'Old oak', c: 15, r: -7, w: 1, h: 1 },
+  { id: 'north4', kind: 'tree', tree: 'pine', name: 'Pine', c: 27, r: -4, w: 1, h: 1 },
+  { id: 'north5', kind: 'tree', tree: 'cherry', name: 'Cherry tree', c: 40, r: -6, w: 1, h: 1 },
+  { id: 'north6', kind: 'tree', tree: 'willow', name: 'Willow', c: -9, r: -5, w: 1, h: 1 },
+  { id: 'pond5', name: 'Hill spring', c: 19, r: -7, w: 4, h: 3 },
+  // The south fields, below the cave.
+  { id: 'south1', kind: 'tree', tree: 'oak', name: 'Oak', c: 3, r: 16, w: 1, h: 1 },
+  { id: 'south2', kind: 'tree', tree: 'willow', name: 'Willow', c: 14, r: 18, w: 1, h: 1 },
+  { id: 'south3', kind: 'tree', tree: 'birch', name: 'Birch', c: 33, r: 15, w: 1, h: 1 },
+  { id: 'south4', kind: 'tree', tree: 'pine', name: 'Pine', c: 46, r: 17, w: 1, h: 1 },
+  { id: 'south5', kind: 'tree', tree: 'cherry', name: 'Cherry tree', c: -13, r: 15, w: 1, h: 1 },
+  { id: 'pond6', name: 'Meadow marsh', c: 7, r: 14, w: 5, h: 3 },
 ];
+// Every pond you can fish in.
+export const PONDS = ['pond', 'pond2', 'pond3', 'pond4', 'pond5', 'pond6'];
 
 // Garden beds, rows of three. The first six are open; the garden upgrades open the rest.
 export const BEDS = [];
@@ -73,8 +95,8 @@ function buildBlocked() {
 
 export const BLOCKED = buildBlocked();
 
-export function inBounds(c, r, cols = MEADOW_COLS, from = -MEADOW_WEST) {
-  return c >= from && r >= 0 && c < cols && r < ROWS;
+export function inBounds(c, r, cols = MEADOW_COLS, from = -MEADOW_WEST, top = -MEADOW_NORTH, rows = ROWS + MEADOW_SOUTH) {
+  return c >= from && r >= top && c < cols && r < rows;
 }
 
 export function isWalkable(c, r, extraBlocked) {
@@ -86,7 +108,7 @@ export function isWalkable(c, r, extraBlocked) {
 // Open tiles where forage can appear: walkable, not next to the start or cave.
 export function forageTiles() {
   const out = [];
-  for (let r = 0; r < ROWS; r++) {
+  for (let r = -MEADOW_NORTH; r < ROWS + MEADOW_SOUTH; r++) {
     for (let c = -MEADOW_WEST; c < MEADOW_COLS; c++) {
       if (!isWalkable(c, r)) continue;
       if (OBJECTS.some(o => o.walkable && c >= o.c && c < o.c + o.w && r >= o.r && r < o.r + o.h)) continue;
