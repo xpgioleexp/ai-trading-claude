@@ -1,3 +1,4 @@
+import { R, oval, box } from './art-style.js';
 // Draws the jar, its world and the mine onto the game canvas.
 import { COLS, MEADOW_COLS, MEADOW_WEST, MEADOW_NORTH, MEADOW_SOUTH, ROWS, TILE, OBJECTS, BEDS, PONDS, MEADOW_REGIONS } from './world.js';
 import { regionAt } from './regions.js';
@@ -481,6 +482,11 @@ function drawPond(ctx, g, id = 'pond') {
   roundRect(ctx, x, y, w, h, 12, '#CDBB8E');
   roundRect(ctx, x + 3, y + 3, w - 6, h - 6, 10, water);
   roundRect(ctx, x + 3, y + h - 10, w - 6, 7, 4, frozen ? '#93B8BE' : PAL.waterShade);
+  // Handful of bank details: rounded stones and grass growing towards the water.
+  for(const [dx,dy]of [[5,9],[w-9,h-13],[w*.4,h-3]]){
+    oval(ctx,x+dx,y+dy,3,2,'#9A958A');R(ctx,x+dx-1,y+dy-1,2,1,'#C4BFB3');
+  }
+  for(const [dx,dy]of [[9,h-4],[w-5,13]]){R(ctx,x+dx,y+dy-3,1,4,PAL.leafShade);R(ctx,x+dx+2,y+dy-2,1,3,PAL.leaf);}
   // ripples
   for (let i = 0; i < 5; i++) {
     const rx = x + 10 + ((i * 23 + Math.floor(g.t * 6)) % (w - 26));
@@ -502,10 +508,12 @@ function drawPond(ctx, g, id = 'pond') {
 }
 
 function roundRect(ctx, x, y, w, h, r, color) {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-  ctx.fill();
+  const radius=Math.min(r,Math.floor(w/2),Math.floor(h/2));
+  for(let yy=0;yy<Math.round(h);yy++){
+    const dy=yy<radius?radius-yy-1:yy>=h-radius?yy-(h-radius):0;
+    const inset=dy?radius-Math.floor(Math.sqrt(Math.max(0,radius*radius-dy*dy))):0;
+    px(ctx,x+inset,y+yy,w-inset*2,1,color);
+  }
 }
 
 function drawPlayer(ctx, g) {
@@ -716,9 +724,9 @@ function drawWeatherGround(ctx, g) {
   for (const t of s.puddles) {
     const x = GX + t.c * TILE, y = GY + t.r * TILE;
     ctx.fillStyle = 'rgba(70,100,110,0.35)';
-    ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
+    oval(ctx,x+8,y+10,8,4,'rgba(70,100,110,0.35)');
     ctx.fillStyle = 'rgba(160,200,215,0.55)';
-    ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 6.5, 3, 0, 0, Math.PI * 2); ctx.fill();
+    oval(ctx,x+8,y+10,6,3,'rgba(160,200,215,0.55)');
     px(ctx, x + 4, y + 9, 3, 1, 'rgba(255,255,255,0.7)');
     if (raining) {
       // Puddles can sit on negative rows and columns; keep the ripple between 0 and 1.
@@ -745,7 +753,7 @@ function drawWeatherGround(ctx, g) {
   if (s.pot && !d.rainbow) {
     const x = GX + s.pot.c * TILE, y = GY + s.pot.r * TILE;
     ['#E8707A', '#F0DA6A', '#8DC76A', '#6FA9D9'].forEach((c, i) => px(ctx, x + 7 + i, y - 10 + i * 4, 2, 6, c));
-    px(ctx, x + 3, y + 7, 10, 7, '#3A3A40'); px(ctx, x + 2, y + 6, 12, 2, '#5A5A60');
+    box(ctx,x+3,y+7,10,7,'#38493D'); px(ctx, x + 2, y + 6, 12, 2, '#5A5A60');
     px(ctx, x + 5, y + 4, 6, 3, '#E8C25A');
     if (Math.floor(g.t * 3) % 2) px(ctx, x + 12, y + 3, 2, 2, '#FFFFFF');
   }

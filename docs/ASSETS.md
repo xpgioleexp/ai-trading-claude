@@ -2,6 +2,8 @@
 
 Give this page to ChatGPT (or any artist) when asking for art. Every piece the game draws has a name. A PNG with that name replaces the placeholder the code draws today.
 
+For the shared shapes, lighting, depth, and procedural painters, see [the dimensional pixel-art style](ART-STYLE.md).
+
 ## How to add a finished PNG
 
 1. Save the file in `assets/`, for example `assets/mailbox_full.png`.

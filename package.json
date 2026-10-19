@@ -4,6 +4,10 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "start": "python3 -m http.server 4173"
+    "start": "python3 -m http.server 4173",
+    "test:art": "node tests/art-browser.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.57.0"
   }
 }

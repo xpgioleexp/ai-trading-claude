@@ -1,5 +1,8 @@
+import {paintResident,paintMonster} from './creature-art.js';
 // Placeholder pixel art, drawn in code. Each sprite has a stable name, and a PNG
 // listed in assets/manifest.json with the same name replaces it (see docs/ASSETS.md).
+import {R,oval,poly,line,box,plank,leaf,roof,paintTree,finishPixels} from './art-style.js';
+import {paintItem} from './item-art.js';
 import { ITEMS, CROP_BY_ID } from './data.js';
 import { hashString } from './rng.js';
 import { ROCKS, BANDS, MONSTERS } from './mine-data.js';
@@ -97,6 +100,7 @@ export function sprite(name, w, h, draw) {
   if (!c) {
     c = makeCanvas(w, h);
     draw(c.getContext('2d'));
+    finishPixels(c,name);
     cache.set(name, c);
   }
   return c;
@@ -108,12 +112,9 @@ export function grassTile(season, variant) {
   return sprite(`ground_${season}_${variant}`, 16, 16, ctx => {
     const [base, dark, light] = SEASON_GROUND[season];
     px(ctx, 0, 0, 16, 16, base);
-    let h = hashString(season + variant);
-    for (let i = 0; i < 9; i++) {
-      h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
-      const x = h % 15, y = (h >>> 8) % 15;
-      px(ctx, x, y, 1, i % 3 === 0 ? 2 : 1, i % 2 ? dark : light);
-    }
+    const seed=hashString(season+variant),x=2+seed%10,y=3+(seed>>>8)%9;
+    px(ctx,x,y,1,2,shade(base,-.09));px(ctx,x+1,y+1,2,1,shade(base,.07));
+    if(variant%2===0){px(ctx,(x+7)%14,(y+5)%14,1,1,shade(base,.08));}
     if (variant === 3 && season !== 'winter') {
       px(ctx, 5, 9, 1, 1, PAL.linenHi);
       px(ctx, 11, 4, 1, 1, PAL.roseHi);
@@ -124,6 +125,7 @@ export function grassTile(season, variant) {
 // ---------- item icons ----------
 
 function drawShape(ctx, item) {
+  if(paintItem(ctx,item))return;
   const c = item.color;
   const dark = shade(c, -0.35);
   const light = shade(c, 0.4);
@@ -331,143 +333,72 @@ export function clearIconURLs() {
 // ---------- jar objects ----------
 
 export function tentSprite() {
-  return sprite('tent', 48, 40, ctx => {
-    for (let y = 4; y < 36; y++) {
-      const half = Math.floor((y - 4) * 0.72) + 2;
-      for (let x = 24 - half; x < 24 + half; x++) {
-        const stripe = Math.floor((x - 24 + 40) / 6) % 2;
-        px(ctx, x, y, 1, 1, stripe ? PAL.rose : PAL.roseHi);
-      }
-    }
-    for (let y = 4; y < 36; y++) px(ctx, 24 - Math.floor((y - 4) * 0.72) - 2, y, 1, 1, PAL.roseShade);
-    for (let y = 18; y < 36; y++) {
-      const half = Math.floor((y - 18) * 0.5) + 1;
-      px(ctx, 24 - half, y, half * 2, 1, '#4A3A34');
-    }
-    px(ctx, 23, 0, 2, 6, PAL.woodShade);
-    px(ctx, 25, 1, 5, 3, PAL.leafHi);
-    px(ctx, 0, 36, 48, 2, PAL.roseShade);
-    px(ctx, 32, 26, 4, 5, '#E9C86A');
-    px(ctx, 33, 27, 2, 3, PAL.linenHi);
+  return sprite('tent',48,40,c=>{
+    poly(c,[[3,35],[15,9],[32,6],[46,34],[42,38],[8,39]],PAL.roseShade);
+    poly(c,[[5,34],[16,10],[31,8],[22,36]],PAL.roseHi);
+    poly(c,[[23,35],[32,9],[44,34]],PAL.rose);
+    for(const [x,y]of[[12,20],[16,13],[9,27]])line(c,x,y,x+4,y+12,PAL.roseShade);
+    poly(c,[[22,36],[31,16],[38,35]],'#38493D');
+    poly(c,[[31,17],[29,34],[23,35]],PAL.linenShade);poly(c,[[32,18],[37,34],[34,32]],PAL.linen);
+    line(c,15,9,32,6,PAL.linenHi);line(c,4,35,42,37,PAL.roseShade,2);
+    line(c,15,10,1,38,PAL.woodShade);line(c,42,32,47,38,PAL.woodShade);
+    R(c,0,38,3,2,PAL.wood);R(c,45,38,3,2,PAL.wood);R(c,30,2,1,6,PAL.woodShade);R(c,31,2,5,3,PAL.leafHi);
+    box(c,36,25,5,8,PAL.woodShade);R(c,37,27,3,4,'#F2D39A');R(c,37,27,1,3,PAL.linenHi);
   });
 }
 
 export function mailboxSprite(hasMail) {
-  return sprite('mailbox_' + (hasMail ? 'full' : 'empty'), 16, 26, ctx => {
-    px(ctx, 7, 12, 2, 14, PAL.woodShade);
-    px(ctx, 2, 4, 12, 9, PAL.rose);
-    px(ctx, 2, 3, 12, 2, PAL.roseHi);
-    px(ctx, 2, 12, 12, 1, PAL.roseShade);
-    px(ctx, 3, 7, 7, 1, PAL.roseShade);
-    if (hasMail) {
-      px(ctx, 13, 0, 1, 8, PAL.woodShade);
-      px(ctx, 14, 0, 2, 3, '#D9533C');
-      px(ctx, 4, 8, 6, 3, PAL.linenHi);
-    } else {
-      px(ctx, 13, 6, 3, 1, '#D9533C');
-    }
-  });
+ return sprite('mailbox_'+(hasMail?'full':'empty'),16,26,c=>{
+  plank(c,7,12,3,14,PAL.wood);R(c,8,16,1,7,PAL.woodHi);plank(c,3,14,12,2,PAL.woodShade);
+  poly(c,[[1,5],[3,2],[11,2],[14,5],[14,13],[1,13]],PAL.roseShade);
+  box(c,2,4,11,9,PAL.rose);R(c,3,4,7,1,PAL.roseHi);R(c,3,7,7,1,PAL.roseShade);R(c,9,10,2,1,PAL.woodShade);
+  if(hasMail){R(c,12,0,1,9,PAL.woodShade);R(c,13,0,3,3,'#C93A4A');box(c,3,7,7,4,PAL.linenHi);line(c,4,8,6,9,PAL.rose);line(c,6,9,9,8,PAL.rose)}else R(c,13,7,3,1,PAL.roseShade);
+ });
 }
 
 export function crateSprite(full) {
-  return sprite('crate_' + (full ? 'full' : 'empty'), 16, 18, ctx => {
-    if (full) {
-      disc(ctx, 5, 4, 2.5, '#C9483A');
-      disc(ctx, 10, 4, 2.5, PAL.water);
-      disc(ctx, 8, 3, 2, '#E8B83A');
-    }
-    px(ctx, 1, 5, 14, 12, PAL.wood);
-    for (const y of [5, 9, 13]) px(ctx, 1, y, 14, 1, PAL.woodShade);
-    px(ctx, 1, 5, 1, 12, PAL.woodShade);
-    px(ctx, 14, 5, 1, 12, PAL.woodShade);
-    px(ctx, 2, 6, 12, 1, PAL.woodHi);
-    px(ctx, 1, 17, 14, 1, PAL.inkDeep);
-  });
+ return sprite('crate_'+(full?'full':'empty'),16,18,c=>{
+  if(full){oval(c,5,5,3,3,'#C68F89');oval(c,11,4,3,3,'#9DBA74');R(c,9,0,1,3,PAL.leafShade);R(c,4,2,1,1,PAL.roseHi)}
+  box(c,1,6,14,12,PAL.woodShade);R(c,2,6,12,2,PAL.woodHi);R(c,3,8,10,8,'#8E6B4F');
+  for(const y of[8,12,16])plank(c,1,y,14,2,PAL.wood);
+  R(c,2,8,2,9,PAL.woodHi);R(c,12,8,2,9,PAL.woodShade);R(c,3,9,1,1,PAL.ink);R(c,12,14,1,1,PAL.ink);
+ });
 }
 
 export function workbenchSprite() {
-  return sprite('workbench', 16, 20, ctx => {
-    px(ctx, 0, 7, 16, 4, PAL.wood);
-    px(ctx, 0, 7, 16, 1, PAL.woodHi);
-    px(ctx, 1, 11, 2, 9, PAL.woodShade);
-    px(ctx, 13, 11, 2, 9, PAL.woodShade);
-    px(ctx, 3, 16, 10, 1, PAL.woodShade);
-    px(ctx, 3, 3, 1, 4, PAL.woodShade);
-    px(ctx, 2, 2, 4, 2, PAL.stone);
-    px(ctx, 10, 4, 5, 3, PAL.stoneHi);
-    px(ctx, 11, 5, 3, 1, PAL.stoneShade);
-  });
+ return sprite('workbench',16,20,c=>{
+  plank(c,1,9,3,11,PAL.woodShade);plank(c,12,9,3,11,PAL.woodShade);plank(c,1,15,14,2,PAL.wood);
+  plank(c,0,6,16,5,PAL.wood);R(c,1,6,14,1,PAL.woodHi);R(c,3,9,1,1,PAL.ink);R(c,12,9,1,1,PAL.ink);
+  R(c,4,2,1,5,PAL.woodShade);box(c,2,1,6,3,PAL.stone);R(c,3,1,3,1,PAL.stoneHi);
+  poly(c,[[9,3],[13,2],[15,4],[13,6],[10,6]],PAL.stoneShade);R(c,10,3,3,1,PAL.stoneHi);R(c,8,6,3,1,PAL.linen);
+ });
 }
 
 export function stallSprite() {
-  return sprite('stall', 32, 34, ctx => {
-    px(ctx, 2, 6, 2, 26, PAL.woodShade);
-    px(ctx, 28, 6, 2, 26, PAL.woodShade);
-    for (let x = 0; x < 32; x++) px(ctx, x, 2, 1, 7, Math.floor(x / 4) % 2 ? PAL.linen : PAL.rose);
-    for (let x = 0; x < 32; x += 4) px(ctx, x, 9, 4, 1, Math.floor(x / 4) % 2 ? PAL.linenShade : PAL.roseShade);
-    // the beetle shopkeeper
-    disc(ctx, 16, 17, 4.5, '#3F4A5E');
-    px(ctx, 16, 13, 1, 9, '#2A3242');
-    px(ctx, 13, 15, 1, 1, PAL.linenHi);
-    px(ctx, 18, 15, 1, 1, PAL.linenHi);
-    px(ctx, 13, 10, 1, 3, '#2A3242');
-    px(ctx, 19, 10, 1, 3, '#2A3242');
-    px(ctx, 1, 21, 30, 9, PAL.wood);
-    px(ctx, 1, 21, 30, 1, PAL.woodHi);
-    px(ctx, 1, 29, 30, 1, PAL.woodShade);
-    disc(ctx, 7, 20, 2, '#D9533C');
-    disc(ctx, 24, 20, 2, '#E8B83A');
-    px(ctx, 11, 18, 3, 3, PAL.linen);
-  });
+ return sprite('stall',32,34,c=>{
+  for(const x of[2,28])plank(c,x,7,2,27,PAL.woodShade);
+  poly(c,[[0,7],[4,1],[28,1],[32,7]],PAL.roseShade);
+  for(let x=2;x<30;x+=4){R(c,x,3,4,5,x%8===2?PAL.rose:PAL.linen);R(c,x,8,4,2,x%8===2?PAL.roseShade:PAL.linenShade)}
+  R(c,4,1,24,1,PAL.linenHi);R(c,0,10,32,1,PAL.woodShade);
+  oval(c,16,18,5,6,'#384952');oval(c,15,16,3,4,'#607674');line(c,16,13,16,22,PAL.inkDeep);R(c,12,16,1,1,PAL.linenHi);R(c,19,16,1,1,PAL.linenHi);R(c,12,11,1,3,PAL.ink);R(c,19,11,1,3,PAL.ink);
+  plank(c,0,23,32,4,PAL.wood);box(c,2,27,28,7,PAL.woodShade);R(c,3,28,25,4,PAL.wood);
+  for(let x=7;x<28;x+=6)R(c,x,28,1,4,PAL.woodShade);
+  oval(c,6,22,3,2,PAL.rose);R(c,5,20,1,1,PAL.roseHi);box(c,22,18,5,5,PAL.linen);R(c,23,19,3,1,'#E8C25A');R(c,10,21,3,2,PAL.leafHi);
+ });
 }
 
 export function treeSprite(season, hasFruit) {
-  return sprite(`tree_${season}_${hasFruit ? 1 : 0}`, 40, 52, ctx => {
-    px(ctx, 17, 30, 6, 22, PAL.woodShade);
-    px(ctx, 18, 30, 2, 22, PAL.wood);
-    if (season === 'winter') {
-      px(ctx, 10, 18, 2, 14, PAL.woodShade);
-      px(ctx, 28, 16, 2, 16, PAL.woodShade);
-      px(ctx, 12, 28, 6, 2, PAL.woodShade);
-      px(ctx, 22, 26, 6, 2, PAL.woodShade);
-      disc(ctx, 20, 18, 10, '#6B8A6A');
-      disc(ctx, 20, 15, 8, '#F2F6F6');
-      disc(ctx, 11, 18, 3, '#F2F6F6');
-      disc(ctx, 29, 16, 3, '#F2F6F6');
-    } else {
-      const [base, dark, light] = season === 'autumn'
-        ? ['#C98A44', '#9A5E30', '#E3B266']
-        : [PAL.leaf, PAL.leafShade, PAL.leafHi];
-      disc(ctx, 20, 21, 15, dark);
-      disc(ctx, 20, 19, 14, base);
-      disc(ctx, 13, 15, 7, light);
-      disc(ctx, 26, 13, 5, light);
-      if (season === 'spring') {
-        for (const [x, y] of [[9, 18], [24, 9], [30, 22], [15, 27], [21, 20]]) px(ctx, x, y, 2, 2, PAL.roseHi);
-      }
-    }
-    if (hasFruit) {
-      const color = { spring: '#C93A4A', summer: '#F0A27A', autumn: '#C9483A', winter: '#EE9A3A' }[season];
-      for (const [x, y] of [[11, 22], [27, 19], [19, 27], [23, 12]]) {
-        disc(ctx, x, y, 2, color);
-        px(ctx, x - 1, y - 1, 1, 1, PAL.linenHi);
-      }
-    }
-  });
+  return sprite(`tree_${season}_${hasFruit ? 1 : 0}`, 40, 52, ctx => paintTree(ctx,40,52,{season,fruit:hasFruit}));
 }
 
 export function benchSprite() {
-  return sprite('bench', 32, 18, ctx => {
-    px(ctx, 1, 2, 30, 3, PAL.wood);
-    px(ctx, 1, 2, 30, 1, PAL.woodHi);
-    px(ctx, 0, 9, 32, 3, PAL.wood);
-    px(ctx, 0, 9, 32, 1, PAL.woodHi);
-    px(ctx, 0, 11, 32, 1, PAL.woodShade);
-    px(ctx, 3, 5, 2, 13, PAL.woodShade);
-    px(ctx, 27, 5, 2, 13, PAL.woodShade);
-    px(ctx, 18, 6, 9, 3, PAL.rose);
-    px(ctx, 18, 6, 9, 1, PAL.roseHi);
-  });
+ return sprite('bench',32,18,c=>{
+  for(const x of[3,26])plank(c,x,4,3,14,PAL.woodShade);
+  plank(c,1,1,30,4,PAL.wood);plank(c,1,6,30,3,PAL.wood);plank(c,0,10,32,4,PAL.wood);
+  R(c,2,10,28,1,PAL.woodHi);R(c,2,14,28,1,PAL.woodShade);
+  box(c,18,8,10,5,PAL.rose);R(c,20,9,5,1,PAL.roseHi);R(c,23,11,1,1,PAL.roseShade);
+  for(const x of[4,27])R(c,x,2,1,1,PAL.ink);
+ });
 }
 
 export function caveSprite() {
@@ -538,9 +469,11 @@ export function rockSprite(kind, band) {
     const def = ROCKS[kind] || ROCKS.stone;
     const look = ITEMS[def.drop]?.color;
     const fill = def.tint || (def.style === 'fossil' ? '#CDBF9F' : def.style === 'geode' ? shade(look || '#857B70', -0.15) : ROCK_BASE[band]);
-    disc(ctx, 8, 9, 7, shade(fill, -0.35));
-    disc(ctx, 8, 8.5, 6.5, fill);
-    disc(ctx, 6, 6, 3, shade(fill, 0.25));
+    poly(ctx,[[2,7],[5,3],[10,2],[14,6],[15,11],[12,15],[4,15],[1,12]],shade(fill,-.35));
+    poly(ctx,[[3,7],[6,4],[10,3],[13,6],[12,12],[5,13],[2,11]],fill);
+    poly(ctx,[[3,7],[6,4],[10,3],[9,6],[5,8]],shade(fill,.25));
+    line(ctx,9,7,12,10,shade(fill,-.18));
+
     px(ctx, 2, 14, 12, 1, PAL.inkDeep);
     if (def.style === 'fossil') {
       px(ctx, 6, 8, 4, 1, '#8F7F62');
@@ -565,7 +498,10 @@ export function caveWallSprite(band) {
   return sprite('cave_wall_' + band, 16, 16, ctx => {
     const wall = BANDS[band].wall;
     px(ctx, 0, 0, 16, 16, shade(wall, 0.15));
-    px(ctx, 0, 12, 16, 4, shade(wall, -0.2));
+    px(ctx,0,12,16,4,shade(wall,-.2));
+    for(const [x,y,w,h]of [[0,1,6,5],[7,0,9,6],[1,7,9,5],[11,7,5,5]]){
+      box(ctx,x,y,w,h,shade(wall,.13));px(ctx,x+1,y+1,Math.max(1,w-3),1,shade(wall,.26));
+    }
     px(ctx, 2, 3, 5, 3, shade(wall, 0.3));
     px(ctx, 9, 7, 4, 2, shade(wall, 0.3));
     if (band === 2) { px(ctx, 10, 2, 2, 5, '#B9A8E0'); px(ctx, 12, 4, 2, 3, '#A9E0E8'); }
@@ -592,60 +528,9 @@ export function chestSprite(open) {
 }
 
 // Monsters, by shape. Bosses are drawn bigger.
-export function monsterSprite(kind, frame, flash) {
-  const def = MONSTERS[kind];
-  const size = def.boss ? 26 : 16;
-  return sprite(`monster_${kind}_${frame}_${flash ? 1 : 0}`, size, size, ctx => {
-    const s = size / 16;
-    const P = (x, y, w, h, c) => px(ctx, Math.round(x * s), Math.round(y * s), Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)), c);
-    const D = (x, y, r, c) => disc(ctx, x * s, y * s, r * s, c);
-    const col = flash ? '#FFFFFF' : def.color, dark = flash ? '#FFFFFF' : shade(def.color, -0.3);
-    const up = frame ? 1 : 0;
-    const eyes = (y, gap = 3) => { P(8 - gap, y, 1.5, 1.5, PAL.inkDeep); P(8 + gap - 1, y, 1.5, 1.5, PAL.inkDeep); };
-    switch (def.shape) {
-      case 'slime':
-        D(8, 11 - up * 0.5, 6 + up * 0.4, dark); D(8, 10.5 - up * 0.5, 5.5, col); P(5, 7, 2, 2, shade(col, 0.4)); eyes(10);
-        if (kind === 'big_slime') { P(5, 3, 6, 2, '#E8C25A'); P(5, 2, 1, 1, '#E8C25A'); P(8, 1, 1, 2, '#E8C25A'); P(10, 2, 1, 1, '#E8C25A'); }
-        break;
-      case 'grub':
-        for (let i = 0; i < 4; i++) D(3 + i * 3, 11 - (i % 2 ? up : 0), 2.6, i % 2 ? dark : col);
-        P(13, 9, 1, 1, PAL.inkDeep);
-        break;
-      case 'bat':
-        D(8, 8, 3, col);
-        P(1, 6 - up * 2, 5, 3, dark); P(10, 6 - up * 2, 5, 3, dark);
-        P(6, 4, 1, 2, col); P(9, 4, 1, 2, col); eyes(8, 2);
-        break;
-      case 'crab':
-        D(8, 10, 5.5, dark); D(8, 9.5, 5, col);
-        P(1, 7 - up, 3, 3, dark); P(12, 7 - up, 3, 3, dark);
-        for (const x of [3, 5, 10, 12]) P(x, 14, 1, 2, dark);
-        eyes(8);
-        break;
-      case 'wisp':
-        D(8, 8 - up, 5, shade(col, -0.1)); D(8, 7 - up, 3.5, col);
-        P(6, 12 - up, 1, 3, col); P(9, 13 - up, 1, 2, col); eyes(7);
-        break;
-      case 'golem':
-        P(3, 4 - up * 0.5, 10, 8, dark); P(4, 5 - up * 0.5, 8, 6, col);
-        P(1, 6, 2, 6, dark); P(13, 6, 2, 6, dark); P(4, 12, 3, 4, dark); P(9, 12, 3, 4, dark);
-        P(6, 7, 1.5, 1.5, '#F2C46A'); P(9, 7, 1.5, 1.5, '#F2C46A');
-        break;
-      case 'wyrm':
-        for (let i = 0; i < 5; i++) D(3 + i * 2.6, 10 + Math.sin(i + up) * 2, 3, i % 2 ? dark : col);
-        D(14, 7, 2.6, col); P(14, 6, 1, 1, PAL.inkDeep); P(13, 3, 1, 2, '#B9A8E0');
-        break;
-      case 'jelly':
-        D(8, 6 - up, 5.5, col); P(3, 6 - up, 10, 3, col);
-        for (const x of [4, 7, 10, 12]) P(x, 9 - up, 1, 5 + (x % 3), shade(col, -0.2));
-        eyes(5 - up);
-        break;
-      case 'moth':
-        P(1, 4 - up, 6, 7, dark); P(9, 4 - up, 6, 7, dark); P(2, 5 - up, 4, 2, col); P(10, 5 - up, 4, 2, col);
-        P(7, 4, 2, 9, col); P(6, 2, 1, 2, col); P(9, 2, 1, 2, col);
-        break;
-    }
-  });
+export function monsterSprite(kind,frame,flash) {
+ const def=MONSTERS[kind],size=def.boss?26:16;
+ return sprite(`monster_${kind}_${frame}_${flash?1:0}`,size,size,c=>paintMonster(c,def,size,frame,flash));
 }
 
 export function ladderHoleSprite() {
@@ -666,25 +551,8 @@ export function ladderUpSprite() {
   });
 }
 
-export function bunnySprite(frame, sleeping) {
-  return sprite(`bunny_${frame}_${sleeping ? 1 : 0}`, 14, 12, ctx => {
-    const lift = frame === 1 ? 1 : 0;
-    const fur = '#F2EDE4', shadeFur = '#D5CCBE';
-    disc(ctx, 7, 8 - lift, 4.5, fur);
-    px(ctx, 3, 10 - lift, 8, 1, shadeFur);
-    disc(ctx, 10, 5 - lift, 2.8, fur);
-    if (sleeping) {
-      px(ctx, 9, 1, 2, 3, fur);
-      px(ctx, 10, 5, 2, 1, PAL.ink);
-    } else {
-      px(ctx, 9, 0 - lift, 1, 4, fur);
-      px(ctx, 11, 0 - lift, 1, 4, fur);
-      px(ctx, 11, 1 - lift, 1, 2, PAL.roseHi);
-      px(ctx, 11, 5 - lift, 1, 1, PAL.inkDeep);
-    }
-    px(ctx, 12, 6 - lift, 1, 1, PAL.rose);
-    disc(ctx, 2.5, 7 - lift, 1.5, '#FFFFFF');
-  });
+export function bunnySprite(frame,sleeping) {
+ return sprite(`bunny_${frame}_${sleeping?1:0}`,14,12,c=>paintResident(c,'bunny',frame,sleeping,false));
 }
 
 export function heartSprite() {
@@ -695,6 +563,6 @@ export function heartSprite() {
     px(ctx, 1, 3, 5, 1, PAL.rose);
     px(ctx, 2, 4, 3, 1, PAL.rose);
     px(ctx, 3, 5, 1, 1, PAL.rose);
-    px(ctx, 1, 1, 1, 1, PAL.roseHi);
+    px(ctx,1,1,2,1,PAL.roseHi);px(ctx,3,4,1,1,PAL.roseShade);
   });
 }

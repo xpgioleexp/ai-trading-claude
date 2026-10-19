@@ -1,3 +1,7 @@
+import {paintOutdoor} from './outdoor-art.js';
+import {paintNature} from './nature-art.js';
+import {R,oval,poly,line,box,plank,leaf,flower,roof,paintTree} from './art-style.js';
+import {paintCritter,paintResident} from './creature-art.js';
 // Placeholder art for the couple places, the animals and the 50 decorations.
 // Same rules as sprites.js: a PNG in assets/manifest.json with the same name replaces any of these.
 import { PAL, px, disc, shade, sprite } from './sprites.js';
@@ -7,33 +11,46 @@ import { OUTDOOR_BY_TYPE, FLAT_OUTDOOR } from './outdoor-data.js';
 
 export function boardSprite(hasNew) {
   return sprite('board_' + (hasNew ? 'new' : 'plain'), 18, 26, ctx => {
-    px(ctx, 2, 8, 2, 18, PAL.woodShade);
-    px(ctx, 14, 8, 2, 18, PAL.woodShade);
-    px(ctx, 0, 2, 18, 14, PAL.wood);
-    px(ctx, 1, 3, 16, 12, '#C9A272');
-    px(ctx, 0, 2, 18, 1, PAL.woodHi);
-    px(ctx, 3, 5, 6, 5, PAL.linenHi);
-    px(ctx, 10, 6, 5, 6, PAL.linen);
-    px(ctx, 5, 4, 2, 2, PAL.rose);
-    px(ctx, 12, 5, 1, 2, '#4F6FB3');
-    if (hasNew) px(ctx, 13, 0, 4, 4, '#D9533C');
+    plank(ctx, 2, 12, 2, 14, PAL.woodShade);
+    plank(ctx, 14, 12, 2, 14, PAL.woodShade);
+    box(ctx, 0, 2, 18, 15, PAL.woodShade);
+    R(ctx, 2, 4, 12, 10, '#C9A272');
+    R(ctx, 2, 4, 12, 1, PAL.woodHi);
+    for (const [x, y, w, h] of [[3, 6, 5, 6], [9, 7, 5, 7]]) {
+      R(ctx, x + 1, y + 1, w, h, PAL.woodShade);
+      R(ctx, x, y, w, h, PAL.linenHi);
+      R(ctx, x + 1, y + 2, w - 2, 1, PAL.linenShade);
+      R(ctx, x + 1, y + h - 2, w - 3, 1, PAL.linenShade);
+      R(ctx, x + 2, y - 1, 1, 2, PAL.rose);
+    }
+    if (hasNew) {
+      box(ctx, 13, 0, 4, 4, '#C68F89');
+      R(ctx, 14, 1, 1, 1, PAL.roseHi);
+    }
   });
 }
 
 export function wellSprite(lights) {
   return sprite('well_' + lights, 20, 28, ctx => {
-    px(ctx, 2, 4, 2, 14, PAL.woodShade);
-    px(ctx, 16, 4, 2, 14, PAL.woodShade);
-    for (let x = 0; x < 20; x++) px(ctx, x, 2 - Math.floor(Math.abs(x - 10) / 5), 1, 3, PAL.rose);
-    px(ctx, 4, 8, 12, 1, PAL.woodShade);
-    px(ctx, 9, 9, 2, 4, PAL.stoneShade);
-    disc(ctx, 10, 21, 9, PAL.stoneShade);
-    disc(ctx, 10, 20, 8.5, PAL.stone);
-    for (const [x, y] of [[4, 18], [9, 16], [14, 19], [7, 23], [13, 24]]) px(ctx, x, y, 3, 2, PAL.stoneHi);
-    disc(ctx, 10, 18, 5, '#2F3E44');
+    plank(ctx, 2, 6, 2, 16, PAL.woodShade);
+    plank(ctx, 16, 6, 2, 16, PAL.woodShade);
+    roof(ctx, 0, 0, 20, 7, PAL.rose);
+    plank(ctx, 4, 10, 12, 2, PAL.wood);
+    line(ctx, 10, 12, 10, 19, PAL.woodShade);
+    box(ctx, 8, 15, 4, 4, PAL.woodHi);
+    oval(ctx, 10, 23, 9, 4, PAL.stoneShade);
+    R(ctx, 1, 20, 18, 4, PAL.stone);
+    R(ctx, 2, 24, 15, 1, PAL.stoneShade);
+    for (const [x, y] of [[3, 21], [8, 23], [13, 21]]) {
+      R(ctx, x, y, 4, 1, PAL.stoneHi);
+      R(ctx, x + 4, y, 1, 2, PAL.stoneShade);
+    }
+    oval(ctx, 10, 20, 9, 3, PAL.stoneHi);
+    oval(ctx, 10, 20, 6, 2, PAL.stoneShade);
+    oval(ctx, 10, 20, 5, 1, '#2F3E44');
     for (let i = 0; i < lights; i++) {
-      disc(ctx, 7 + i * 6, 17, 2, '#FFE7A8');
-      px(ctx, 7 + i * 6, 16, 1, 1, '#FFFFFF');
+      oval(ctx, 7 + i * 6, 19, 1, 1, '#FFE7A8');
+      R(ctx, 7 + i * 6, 18, 1, 1, PAL.linenHi);
     }
   });
 }
@@ -47,22 +64,28 @@ export function picnicSprite() {
       }
     }
     px(ctx, 0, 13, 32, 1, PAL.roseShade);
-    px(ctx, 4, 0, 7, 6, PAL.wood);
-    px(ctx, 5, 0, 5, 1, PAL.woodHi);
-    px(ctx, 22, 3, 4, 4, PAL.linen);
-    px(ctx, 26, 4, 1, 2, PAL.linen);
+    oval(ctx, 7, 2, 3, 2, PAL.woodShade);
+    oval(ctx, 7, 2, 2, 1, PAL.linenHi);
+    box(ctx, 3, 3, 9, 6, PAL.wood);
+    R(ctx, 4, 4, 6, 1, PAL.woodHi);
+    for (const x of [5, 8]) R(ctx, x, 5, 1, 3, PAL.woodShade);
+    R(ctx, 4, 6, 7, 1, PAL.woodHi);
+    box(ctx, 22, 3, 4, 4, PAL.linen);
+    R(ctx, 23, 3, 2, 1, PAL.woodShade);
+    R(ctx, 26, 4, 1, 2, PAL.linen);
   });
 }
 
 export function easelSprite() {
   return sprite('easel', 16, 26, ctx => {
-    px(ctx, 3, 8, 1, 18, PAL.woodShade);
-    px(ctx, 12, 8, 1, 18, PAL.woodShade);
-    px(ctx, 7, 4, 2, 22, PAL.wood);
-    px(ctx, 1, 2, 14, 13, PAL.linenHi);
-    px(ctx, 1, 2, 14, 3, PAL.rose);
+    line(ctx, 5, 12, 2, 25, PAL.woodShade, 2);
+    line(ctx, 10, 12, 13, 25, PAL.woodShade, 2);
+    plank(ctx, 7, 3, 2, 22, PAL.wood);
+    box(ctx, 1, 2, 14, 14, PAL.woodShade);
+    R(ctx, 2, 3, 11, 11, PAL.linenHi);
+    R(ctx, 2, 3, 11, 2, PAL.rose);
     for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) px(ctx, 2 + c * 3, 6 + r * 3, 2, 2, r === 1 && c === 2 ? '#D9533C' : PAL.linenShade);
-    px(ctx, 1, 15, 14, 1, PAL.woodShade);
+    plank(ctx, 0, 16, 16, 2, PAL.wood);
   });
 }
 
@@ -70,71 +93,14 @@ export function easelSprite() {
 
 // frame: 0/1 movement, sleeping draws closed eyes. Frog and turtle swim when inWater.
 export function animalSprite(species, frame, sleeping, inWater) {
-  const key = `animal_${species}_${frame}_${sleeping ? 1 : 0}_${inWater ? 1 : 0}`;
-  const size = { frog: [14, 12], turtle: [16, 12], snail: [14, 11], marimo: [12, 12] }[species];
-  return sprite(key, size[0], size[1], ctx => {
-    const lift = frame === 1 ? 1 : 0;
-    if (species === 'frog') {
-      const g = '#7FAF5B', d = '#557F3C';
-      if (inWater) {
-        disc(ctx, 7, 8, 4.5, g);
-        px(ctx, 2, 10, 10, 2, 'rgba(183,212,189,0.8)');
-      } else {
-        disc(ctx, 7, 8 - lift, 4.5, g);
-        px(ctx, 2, 10 - lift, 3, 2, d);
-        px(ctx, 9, 10 - lift, 3, 2, d);
-        px(ctx, 4, 9 - lift, 6, 2, '#C9D98A');
-      }
-      disc(ctx, 4.5, 4.5 - lift, 2, g);
-      disc(ctx, 9.5, 4.5 - lift, 2, g);
-      if (sleeping) {
-        px(ctx, 3, 4 - lift, 3, 1, PAL.inkDeep);
-        px(ctx, 8, 4 - lift, 3, 1, PAL.inkDeep);
-      } else {
-        px(ctx, 4, 4 - lift, 1, 1, PAL.inkDeep);
-        px(ctx, 9, 4 - lift, 1, 1, PAL.inkDeep);
-      }
-      px(ctx, 6, 7 - lift, 2, 1, d);
-    } else if (species === 'turtle') {
-      const shell = '#8E7A4E', shellHi = '#B39A60', skin = '#9DBA74';
-      if (!inWater) {
-        px(ctx, 2 + lift, 9, 2, 3, skin);
-        px(ctx, 11 - lift, 9, 2, 3, skin);
-      }
-      disc(ctx, 13.5, 7 - (inWater ? 0 : lift * 0), 2.5, skin);
-      px(ctx, 14, 6, 1, 1, sleeping ? skin : PAL.inkDeep);
-      disc(ctx, 7.5, 7, 5.5, shell);
-      px(ctx, 4, 4, 7, 1, shellHi);
-      px(ctx, 5, 6, 2, 2, shellHi);
-      px(ctx, 9, 6, 2, 2, shellHi);
-      px(ctx, 7, 8, 2, 2, shellHi);
-      if (inWater) px(ctx, 0, 10, 16, 2, 'rgba(183,212,189,0.8)');
-    } else if (species === 'snail') {
-      const shell = '#C68F89', body = '#D9C9A0';
-      px(ctx, 1, 8, 12, 3, body);
-      px(ctx, 11, 4 - lift, 1, 5, body);
-      px(ctx, 13, 4 - lift, 1, 4, body);
-      px(ctx, 11, 3 - lift, 1, 1, PAL.inkDeep);
-      px(ctx, 13, 3 - lift, 1, 1, PAL.inkDeep);
-      disc(ctx, 6, 5.5, 4.5, shell);
-      disc(ctx, 6, 5.5, 2.5, shade(shell, -0.2));
-      disc(ctx, 6, 5.5, 1, shell);
-      px(ctx, 3, 3, 2, 1, PAL.roseHi);
-    } else {
-      // marimo: a textured moss ball, not a furry animal
-      disc(ctx, 6, 6.5, 5, '#4F7A44');
-      for (const [x, y] of [[3, 4], [7, 3], [9, 6], [4, 8], [7, 9], [2, 6]]) px(ctx, x, y, 1, 1, '#79A35F');
-      px(ctx, 3, 3, 2, 1, '#8FB872');
-      if (inWater) px(ctx, 0, 10, 12, 2, 'rgba(183,212,189,0.7)');
-    }
-  });
+ const key=`animal_${species}_${frame}_${sleeping?1:0}_${inWater?1:0}`;
+ const size={frog:[14,12],turtle:[16,12],snail:[14,11],marimo:[12,12]}[species];
+ return sprite(key,size[0],size[1],c=>paintResident(c,species,frame,sleeping,inWater));
 }
-
-// ---------- effects ----------
 
 export function noteSprite() {
   return sprite('fx_note', 6, 8, ctx => {
-    px(ctx, 3, 0, 1, 6, PAL.ink);
+    px(ctx,3,0,2,1,PAL.ink);px(ctx,3,1,1,5,PAL.ink);
     px(ctx, 3, 0, 3, 1, PAL.ink);
     disc(ctx, 2, 6, 1.8, PAL.ink);
   });
@@ -143,7 +109,7 @@ export function noteSprite() {
 export function bubbleSprite() {
   return sprite('fx_bubble', 6, 6, ctx => {
     disc(ctx, 3, 3, 2.6, 'rgba(183,212,189,0.6)');
-    px(ctx, 2, 1, 1, 1, '#FFFFFF');
+    px(ctx,2,1,2,1,'#FFFFFF');px(ctx,1,2,1,1,'#FFFFFF');
   });
 }
 
@@ -151,13 +117,13 @@ export function sparkleSprite() {
   return sprite('fx_sparkle', 7, 7, ctx => {
     px(ctx, 3, 0, 1, 7, '#FFF2B0');
     px(ctx, 0, 3, 7, 1, '#FFF2B0');
-    px(ctx, 3, 3, 1, 1, '#FFFFFF');
+    px(ctx,3,3,1,1,'#FFFFFF');px(ctx,2,2,1,1,'#F3E9CF');
   });
 }
 
 export function zzzSprite() {
   return sprite('fx_zzz', 6, 6, ctx => {
-    px(ctx, 0, 0, 5, 1, PAL.ink);
+    px(ctx,0,0,5,1,PAL.ink);px(ctx,0,1,1,1,PAL.leafShade);
     px(ctx, 3, 1, 1, 1, PAL.ink);
     px(ctx, 2, 2, 1, 1, PAL.ink);
     px(ctx, 1, 3, 1, 1, PAL.ink);
@@ -174,45 +140,10 @@ export const FLAT_DECOR = { has: type => FLAT_BASE.has(type) || FLAT_OUTDOOR.inc
 
 const TREE_SIZE = [24, 34];
 
-function tree(ctx, kind, season) {
-  const winter = season === 'winter';
-  const autumn = season === 'autumn';
-  if (kind === 'pine') {
-    px(ctx, 11, 26, 3, 8, PAL.woodShade);
-    for (let y = 0; y < 27; y++) {
-      const w = Math.min(22, Math.floor(y * 0.8) + 2 - (y % 7 === 6 ? 3 : 0));
-      px(ctx, 12 - w / 2, y, w, 1, y % 7 > 4 ? PAL.leafShade : winter && y % 7 < 2 ? '#F2F6F6' : '#4F7A54');
-    }
-    return;
-  }
-  const trunk = kind === 'birch' ? '#E9E4D8' : PAL.woodShade;
-  px(ctx, 10, 18, 4, 16, trunk);
-  if (kind === 'birch') for (let y = 20; y < 34; y += 4) px(ctx, 10, y, 2, 1, PAL.inkDeep);
-  if (winter) {
-    disc(ctx, 12, 12, 8, '#7D8F7C');
-    disc(ctx, 12, 9, 7, '#F2F6F6');
-    return;
-  }
-  const colors = {
-    oak: autumn ? ['#C98A44', '#9A5E30'] : [PAL.leaf, PAL.leafShade],
-    birch: autumn ? ['#E3B266', '#B5853A'] : ['#9DBA74', '#6F925B'],
-    willow: ['#8FB06A', '#5E8A4A'],
-    cherry: season === 'spring' ? ['#E4B4A3', '#C68F89'] : [PAL.leaf, PAL.leafShade],
-    sapling: [PAL.leafHi, PAL.leaf],
-  }[kind];
-  if (kind === 'sapling') {
-    px(ctx, 11, 22, 2, 12, PAL.wood);
-    disc(ctx, 12, 20, 5, colors[1]);
-    disc(ctx, 12, 19, 4, colors[0]);
-    return;
-  }
-  disc(ctx, 12, 13, 11, colors[1]);
-  disc(ctx, 12, 12, 10, colors[0]);
-  disc(ctx, 8, 9, 4, shade(colors[0], 0.2));
-  if (kind === 'willow') for (let x = 3; x < 22; x += 3) px(ctx, x, 14, 1, 12, colors[1]);
-}
+function tree(ctx, kind, season) { paintTree(ctx,24,34,{kind,season}); }
 
 function drawDecor(ctx, type, season) {
+  if(paintNature(ctx,type,16,16,season))return;
   const c = ctx;
   switch (type) {
     case 'pine': case 'oak': case 'birch': case 'willow': case 'cherry': case 'sapling':
@@ -354,19 +285,9 @@ function drawDecor(ctx, type, season) {
 const FRUIT_COLOR = { tree_pear: '#C9C25A', tree_plum: '#7A3A6A', tree_lemon: '#F0DA4A', tree_mango: '#F0A040', tree_banana: '#F0DA6A' };
 
 function drawFarm(c, type) {
-  if (type.startsWith('tree_')) {
-    const [w, h] = TREE_SIZE;
-    px(c, w / 2 - 2, h - 14, 4, 13, PAL.woodShade);
-    if (type === 'tree_banana') {
-      for (const [x, y, dx] of [[4, 8, 1], [14, 6, -1], [8, 2, 1], [16, 12, -1]]) for (let i = 0; i < 8; i++) px(c, x + i * dx * 0.6 + (dx < 0 ? 6 : 0), y + i * 0.6, 3, 2, i % 2 ? PAL.leaf : PAL.leafShade);
-      px(c, 9, 12, 5, 3, FRUIT_COLOR[type]);
-    } else {
-      disc(c, w / 2, 11, 10, PAL.leafShade);
-      disc(c, w / 2, 10, 9, PAL.leaf);
-      for (const [x, y] of [[7, 8], [15, 7], [11, 13], [17, 12], [6, 14]]) px(c, x, y, 3, 3, FRUIT_COLOR[type]);
-    }
-    return;
-  }
+  if(type==='coop'){box(c,1,7,14,9,PAL.wood);roof(c,0,2,16,6,PAL.roseShade);box(c,5,10,5,6,PAL.woodShade);R(c,6,12,3,4,PAL.ink);R(c,11,9,3,3,PAL.linenHi);R(c,12,10,1,1,PAL.roseHi);return;}
+
+  if(type.startsWith('tree_')){paintTree(c,24,34,{season:'summer',fruit:true,fruitColor:FRUIT_COLOR[type]});return;}
   switch (type) {
     case 'coop':
       px(c, 1, 5, 14, 10, PAL.wood); px(c, 0, 3, 16, 3, '#B5324A'); px(c, 6, 9, 4, 6, PAL.woodShade);
@@ -392,8 +313,9 @@ function drawFarm(c, type) {
 const TALL_OUTDOOR = new Set(['lamppost', 'torch', 'lanternpost', 'stringpole', 'scarecrow', 'arch', 'heartarch', 'signpost', 'flag', 'windmill', 'chime', 'totem', 'feeder']);
 
 function drawOutdoor(c, def, w, h) {
+  if(paintOutdoor(c,def,w,h))return;
   const a = def.accent, col = def.color, d = shade(col, -0.3), l = shade(col, 0.3);
-  const P = (x, y, ww, hh, cc) => px(c, x, y, ww, hh, cc);
+  const P = (x,y,ww,hh,cc) => ww>=5&&hh>=4?box(c,x,y,ww,hh,cc):px(c,x,y,ww,hh,cc);
   const B = h - 16; // where the ground tile starts
   switch (def.form) {
     case 'path': for (const [x, y, r] of [[4, 4, 3], [11, 5, 3.5], [5, 11, 3.5], [12, 12, 3]]) { disc(c, x, y, r, d); disc(c, x, y - 0.5, r - 0.6, col); } return;
@@ -488,7 +410,7 @@ export function bugSprite(kind, color, frame) {
       disc(ctx, 5, 5, 2.6, color); px(ctx, 4, 4, 1, 3, PAL.inkDeep); px(ctx, 6, 4, 1, 3, PAL.inkDeep);
       px(ctx, 2, up ? 1 : 2, 3, 2, 'rgba(255,255,255,0.8)'); px(ctx, 6, up ? 1 : 2, 3, 2, 'rgba(255,255,255,0.8)');
     } else if (kind === 'beetle') {
-      disc(ctx, 5, 5, 3, color); px(ctx, 5, 2, 1, 6, shade(color, -0.35)); px(ctx, 4, 1, 3, 1, PAL.inkDeep);
+      oval(ctx,5,5,3,3,shade(color,-.2));oval(ctx,4,4,2,2,color);px(ctx,5,2,1,5,shade(color,-.35));px(ctx,4,1,3,1,PAL.inkDeep);px(ctx,3,3,1,1,PAL.linenShade);px(ctx,7,6,1,1,PAL.woodShade);
       px(ctx, 3, 4, 1, 1, shade(color, 0.4));
     } else if (kind === 'firefly') {
       px(ctx, 4, 3, 2, 3, PAL.inkDeep); disc(ctx, 5, 6, 2, up ? color : shade(color, -0.2));
@@ -536,15 +458,7 @@ export function hiveSprite(hasHoney) {
   });
 }
 
-export function pineSprite() {
-  return sprite('snow_pine', 20, 32, ctx => {
-    px(ctx, 9, 24, 3, 8, PAL.woodShade);
-    for (let y = 0; y < 25; y++) {
-      const w = Math.min(18, Math.floor(y * 0.75) + 2);
-      px(ctx, 10 - w / 2, y, w, 1, y % 6 < 2 ? '#F2F6F6' : '#4F7A54');
-    }
-  });
-}
+export function pineSprite(){return sprite('snow_pine',20,32,c=>paintTree(c,20,32,{kind:'pine',season:'winter'}));}
 
 export function snowmanSprite() {
   return sprite('snowman', 16, 24, ctx => {
@@ -565,31 +479,14 @@ export function archSprite() {
 // ---------- visitors and the merchant ----------
 
 // An upright little animal visitor, 16 x 20. frame 1 bobs up a pixel.
-export function visitorSprite(species, color, frame) {
-  return sprite(`visitor_${species}_${frame}`, 16, 20, ctx => {
-    const up = frame ? 1 : 0;
-    const d = shade(color, -0.25), l = shade(color, 0.3);
-    // ears / head shapes by species
-    if (species === 'fox') { px(ctx, 4, 1 - up, 2, 3, color); px(ctx, 10, 1 - up, 2, 3, color); px(ctx, 12, 13, 3, 3, l); }
-    if (species === 'bear' || species === 'mouse') { disc(ctx, 4.5, 3.5 - up, species === 'mouse' ? 2.5 : 2, color); disc(ctx, 11.5, 3.5 - up, species === 'mouse' ? 2.5 : 2, color); }
-    if (species === 'deer') { px(ctx, 3, 0 - up, 1, 3, PAL.woodShade); px(ctx, 12, 0 - up, 1, 3, PAL.woodShade); px(ctx, 2, 1 - up, 2, 1, PAL.woodShade); px(ctx, 12, 1 - up, 2, 1, PAL.woodShade); }
-    if (species === 'owl') { px(ctx, 4, 2 - up, 2, 2, d); px(ctx, 10, 2 - up, 2, 2, d); }
-    if (species === 'hedgehog') for (let x = 2; x < 14; x += 2) px(ctx, x, 2 - up + (x % 4 ? 1 : 0), 2, 3, d);
-    disc(ctx, 8, 7 - up, 5, color);
-    if (species === 'duck') px(ctx, 6, 8 - up, 4, 2, '#E8A03A');
-    else if (species === 'owl') { disc(ctx, 6, 6 - up, 1.8, PAL.linenHi); disc(ctx, 10, 6 - up, 1.8, PAL.linenHi); px(ctx, 7, 8 - up, 2, 1, '#E8A03A'); }
-    else px(ctx, 6, 8 - up, 4, 2, l);
-    px(ctx, 6, 6 - up, 1, 1, PAL.inkDeep);
-    px(ctx, 9, 6 - up, 1, 1, PAL.inkDeep);
-    // body
-    px(ctx, 4, 11 - up, 8, 6, color);
-    px(ctx, 6, 12 - up, 4, 4, l);
-    px(ctx, 4, 17, 3, 2, d);
-    px(ctx, 9, 17, 3, 2, d);
-  });
+export function visitorSprite(species,color,frame) {
+ return sprite(`visitor_${species}_${frame}`,16,20,c=>{
+  paintCritter(c,species,color,PAL.linen,frame);
+  box(c,4,11,8,6,PAL.leaf);R(c,5,12,6,1,PAL.leafHi);R(c,8,14,1,1,PAL.woodHi);
+  R(c,4,18,3,2,PAL.woodShade);R(c,9,18,3,2,PAL.woodShade);
+ });
 }
 
-// A request bubble above a visitor.
 export function requestMarkSprite() {
   return sprite('request_mark', 7, 9, ctx => {
     px(ctx, 0, 0, 7, 7, PAL.linenHi);
@@ -650,124 +547,10 @@ export function eventStandSprite() {
 // ---------- the biome jars ----------
 
 // The animals who live in the jars, and the shopkeepers. 16 x 18, two frames.
-export function critterSprite(shape, color, accent, frame) {
-  return sprite(`critter_${shape}_${color}_${accent || ''}_${frame}`, 16, 18, ctx => {
-    const up = frame ? 1 : 0;
-    const d = shade(color, -0.25), l = shade(color, 0.3), eye = PAL.inkDeep;
-    const e = (x, y) => px(ctx, x, y - up, 1, 1, eye);
-    switch (shape) {
-      case 'crab':
-        disc(ctx, 8, 12, 5, d); disc(ctx, 8, 11.5, 4.5, color);
-        px(ctx, 1, 8 - up, 3, 3, d); px(ctx, 12, 8 - up, 3, 3, d);
-        px(ctx, 6, 7, 1, 2, d); px(ctx, 9, 7, 1, 2, d); e(6, 7); e(9, 7);
-        for (const x of [3, 5, 10, 12]) px(ctx, x, 15, 1, 2, d);
-        break;
-      case 'bird': case 'penguin': case 'crane': case 'owl':
-        disc(ctx, 8, 11 - up, 5, color);
-        if (shape === 'penguin') px(ctx, 6, 9 - up, 4, 6, '#F2F4F6');
-        disc(ctx, 8, 5 - up, 3.5, color);
-        e(7, 4); if (shape === 'owl') { disc(ctx, 6.5, 5 - up, 1.6, PAL.linenHi); disc(ctx, 9.5, 5 - up, 1.6, PAL.linenHi); e(6, 5); e(9, 5); }
-        px(ctx, 10, 5 - up, shape === 'crane' ? 4 : 3, 1, accent || '#E8A03A');
-        if (shape === 'crane') { px(ctx, 7, 1 - up, 3, 2, accent || '#C9333C'); px(ctx, 7, 15, 1, 3, PAL.ink); px(ctx, 9, 15, 1, 3, PAL.ink); }
-        else { px(ctx, 6, 15, 2, 2, '#E8A03A'); px(ctx, 9, 15, 2, 2, '#E8A03A'); }
-        px(ctx, 3, 10 - up, 2, 4, d);
-        break;
-      case 'bee': case 'moth':
-        disc(ctx, 8, 10 - up, 4, color);
-        if (shape === 'bee') { px(ctx, 5, 9 - up, 7, 1, PAL.inkDeep); px(ctx, 5, 11 - up, 7, 1, PAL.inkDeep); }
-        px(ctx, 2, 4 - up * 2, 5, 5, shape === 'bee' ? 'rgba(255,255,255,0.8)' : l); px(ctx, 9, 4 - up * 2, 5, 5, shape === 'bee' ? 'rgba(255,255,255,0.8)' : l);
-        e(10, 9); px(ctx, 10, 5, 1, 2, d);
-        break;
-      case 'shroom':
-        disc(ctx, 8, 6 - up, 6, color); px(ctx, 4, 4 - up, 2, 2, PAL.linenHi); px(ctx, 10, 3 - up, 2, 2, PAL.linenHi);
-        px(ctx, 5, 9 - up, 6, 7, '#F2EDE4'); e(6, 12); e(9, 12);
-        px(ctx, 5, 16, 2, 2, '#E9DFC0'); px(ctx, 9, 16, 2, 2, '#E9DFC0');
-        break;
-      case 'squirrel':
-        disc(ctx, 4, 8 - up, 4, color); disc(ctx, 3, 5 - up, 3, l);
-        disc(ctx, 10, 12, 3.5, color); disc(ctx, 11, 8 - up, 2.6, color);
-        px(ctx, 10, 5 - up, 1, 2, color); e(12, 8);
-        px(ctx, 8, 15, 2, 2, d); px(ctx, 11, 15, 2, 2, d);
-        break;
-      case 'duck': case 'duckling': {
-        const sm = shape === 'duckling' ? 0.7 : 1;
-        disc(ctx, 8, 12, 5 * sm, color); disc(ctx, 11, 7 + (1 - sm) * 4 - up, 3 * sm, shape === 'duck' ? '#4F8A4A' : color);
-        px(ctx, 13, 7 + (1 - sm) * 4 - up, 3, 2, '#E8A03A'); e(11, 6 + (1 - sm) * 4);
-        px(ctx, 3, 11, 3, 2, d);
-        break;
-      }
-      case 'hedgehog':
-        disc(ctx, 7, 12 - up * 0.5, 5, d);
-        for (let x = 3; x < 12; x += 2) px(ctx, x, 7 - up + (x % 4 ? 1 : 0), 2, 3, d);
-        disc(ctx, 12, 12, 2.5, '#D9C9A0'); e(12, 11); px(ctx, 14, 12, 1, 1, PAL.inkDeep);
-        break;
-      case 'cat':
-        disc(ctx, 8, 12 - up * 0.5, 4.5, color); disc(ctx, 8, 6 - up, 3.5, color);
-        px(ctx, 5, 2 - up, 2, 2, color); px(ctx, 9, 2 - up, 2, 2, color); e(7, 6); e(9, 6);
-        px(ctx, 12, 9, 3, 1, color); px(ctx, 14, 7, 1, 3, color);
-        if (accent) px(ctx, 6, 9 - up, 4, 1, accent);
-        break;
-      case 'turtle':
-        disc(ctx, 8, 11, 6, accent || '#8E7A4E'); px(ctx, 4, 8, 8, 1, shade(accent || '#8E7A4E', 0.3));
-        disc(ctx, 13, 7 - up, 3, color); e(14, 6); px(ctx, 3, 15, 2, 2, color); px(ctx, 11, 15, 2, 2, color);
-        px(ctx, 10, 2 - up, 6, 2, '#5F7FB5');
-        break;
-      case 'mole':
-        disc(ctx, 8, 11 - up * 0.5, 5.5, color); disc(ctx, 12, 9 - up, 2.5, color);
-        px(ctx, 14, 9 - up, 2, 2, accent || '#E07A9B'); e(11, 8);
-        px(ctx, 4, 14, 3, 2, '#E9C9B0'); px(ctx, 10, 14, 3, 2, '#E9C9B0');
-        px(ctx, 6, 3 - up, 6, 2, '#D9B47A');
-        break;
-      case 'pelican':
-        disc(ctx, 7, 11 - up, 5, color); disc(ctx, 9, 4 - up, 2.5, color); e(9, 3);
-        px(ctx, 11, 4 - up, 5, 2, accent || '#E8B83A'); px(ctx, 11, 6 - up, 4, 2, shade(accent || '#E8B83A', -0.15));
-        px(ctx, 5, 16, 2, 2, '#E8A03A'); px(ctx, 8, 16, 2, 2, '#E8A03A');
-        px(ctx, 2, 9 - up, 4, 3, '#5F7FB5');
-        break;
-      case 'snail':
-        px(ctx, 1, 13, 14, 3, '#D9C9A0'); disc(ctx, 7, 9, 5, color); disc(ctx, 7, 9, 2.5, d);
-        px(ctx, 12, 8 - up, 1, 5, '#D9C9A0'); e(12, 7);
-        break;
-      case 'bat':
-        disc(ctx, 8, 8 - up * 2, 3, color);
-        for (const sx of [-1, 1]) for (let i = 0; i < 6; i++) px(ctx, 8 + sx * (2 + i), 7 - up * 2 + (up ? i % 2 : -(i % 2)), 1, 3 - (i % 2), d);
-        px(ctx, 6, 4 - up * 2, 1, 2, color); px(ctx, 9, 4 - up * 2, 1, 2, color); e(7, 7 - up * 2); e(9, 7 - up * 2);
-        return;
-      case 'snake':
-        for (let x = 2; x < 13; x++) px(ctx, x, 13 + Math.round(Math.sin(x / 1.6 + up) * 1.5), 2, 2, x % 3 ? color : (accent || d));
-        disc(ctx, 13.5, 12, 2, color); e(14, 11); px(ctx, 15, 12, 1, 1, '#C9283A');
-        return;
-      case 'mouse':
-        disc(ctx, 8, 13 - up, 3.5, color); disc(ctx, 11, 11 - up, 2.2, color); disc(ctx, 10, 8.5 - up, 1.4, l); disc(ctx, 12.5, 8.5 - up, 1.4, l);
-        e(11, 11); px(ctx, 13, 11 - up, 1, 1, '#E8A0B0'); for (let x = 1; x < 5; x++) px(ctx, x, 14 - (x % 2), 1, 1, d);
-        return;
-      case 'seal':
-        disc(ctx, 7, 13 - up, 5, color); disc(ctx, 11, 10 - up, 3.5, color); px(ctx, 1, 14, 3, 2, d); px(ctx, 6, 16, 3, 1, d);
-        e(10, 9); e(12, 9); px(ctx, 13, 11 - up, 2, 1, accent || d);
-        return;
-      default: {
-        // four-legged and upright animals: fox, deer, camel, sloth, capybara, monkey, bunny, otter, bear, lizard, toad
-        const low = ['capybara', 'lizard', 'toad', 'otter'].includes(shape);
-        const by = low ? 12 : 11;
-        disc(ctx, 8, by - up, low ? 5 : 4.5, color);
-        disc(ctx, low ? 12 : 8, low ? 9 - up : 5 - up, 3.5, color);
-        const hx = low ? 12 : 8, hy = low ? 9 : 5;
-        if (shape === 'fox') { px(ctx, 5, 0 - up, 2, 3, color); px(ctx, 10, 0 - up, 2, 3, color); px(ctx, 12, 12, 3, 3, l); }
-        if (shape === 'bunny') { px(ctx, 6, -1 - up, 2, 4, color); px(ctx, 9, -1 - up, 2, 4, color); }
-        if (shape === 'deer') { px(ctx, 5, 0 - up, 1, 3, PAL.woodShade); px(ctx, 10, 0 - up, 1, 3, PAL.woodShade); }
-        if (shape === 'camel') { disc(ctx, 7, 7 - up, 3, d); px(ctx, 5, 14, 1, 4, d); px(ctx, 10, 14, 1, 4, d); }
-        if (shape === 'bear' || shape === 'monkey') { disc(ctx, 5, 2 - up, 1.5, d); disc(ctx, 11, 2 - up, 1.5, d); }
-        if (shape === 'monkey') px(ctx, 6, 4 - up, 4, 3, accent || '#E9C9B0');
-        if (shape === 'sloth') { px(ctx, 6, 4 - up, 4, 2, l); px(ctx, 6, 4 - up, 1, 1, PAL.inkDeep); px(ctx, 9, 4 - up, 1, 1, PAL.inkDeep); }
-        if (shape === 'lizard') px(ctx, 1, 13, 4, 1, color);
-        if (shape !== 'sloth') { e(hx - 1, hy - 1); e(hx + 1, hy - 1); }
-        px(ctx, 5, 15, 2, 2, d); px(ctx, 9, 15, 2, 2, d);
-      }
-    }
-  });
+export function critterSprite(shape,color,accent,frame) {
+ return sprite(`critter_${shape}_${color}_${accent||''}_${frame}`,16,18,c=>paintCritter(c,shape,color,accent,frame));
 }
 
-// A little market stall in the jar's colours, 32 x 22.
 export function jarStallSprite(color) {
   return sprite('jar_stall_' + color, 32, 22, ctx => {
     px(ctx, 2, 6, 2, 16, PAL.woodShade); px(ctx, 28, 6, 2, 16, PAL.woodShade);
@@ -790,17 +573,12 @@ export function jarThingSprite(kind, state = 0) {
         if (state) disc(c, 7, 3, 2, '#D9466A');
         break;
       case 'bigtree':
-        px(c, 14, 20, 8, 24, PAL.woodShade); px(c, 16, 20, 4, 24, PAL.wood);
-        disc(c, 18, 14, 16, '#3F6F3A'); disc(c, 18, 12, 13, '#4F8A4A');
-        if (state) for (const [x, y] of [[10, 12], [24, 9], [18, 18], [27, 16]]) px(c, x, y, 3, 3, '#7A3A6A');
-        break;
+        paintTree(c,36,44,{kind:'oak',season:'summer',fruit:!!state,fruitColor:'#7A3A6A'});break;
       case 'fern':
         for (let i = 0; i < 5; i++) px(c, 2 + i * 3, 4 + Math.abs(2 - i) * 2, 2, 10 - Math.abs(2 - i) * 2, i % 2 ? '#4F8A4A' : '#6FAF5B');
         break;
       case 'bigshroom':
-        px(c, 7, 12, 6, 14, '#F2EDE4'); disc(c, 10, 9, 10, '#C9483A'); px(c, 1, 9, 18, 3, '#C9483A');
-        for (const [x, y] of [[5, 5], [12, 3], [15, 8], [8, 9]]) px(c, x, y, 2, 2, PAL.linenHi);
-        break;
+        paintNature(c,'bigshroom',20,26,'spring');break;
       case 'bamboo':
         for (const x of [1, 6]) { px(c, x, 0, 3, 30, '#8DBA5C'); for (let y = 4; y < 30; y += 7) px(c, x, y, 3, 1, '#5E8A4A'); }
         px(c, 3, 6, 4, 2, '#6FAF5B');

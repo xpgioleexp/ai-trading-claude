@@ -1,3 +1,5 @@
+import {paintHouse} from './art-style.js';
+import {paintFurniture,paintWall} from './furniture-art.js';
 // Placeholder art for your home: the house at each level, furniture, wall
 // items, wallpapers and floors. PNGs in assets/manifest.json with the same names replace these.
 import { PAL, px, disc, shade, sprite, tentSprite } from './sprites.js';
@@ -10,47 +12,8 @@ export function houseSprite(level, night) {
   if (level <= 0) return tentSprite();
   const size = [[0, 0], [52, 46], [56, 54], [60, 64]][level];
   return sprite(`house_${level}_${night ? 1 : 0}`, size[0], size[1], ctx => {
-    const [w, h] = size;
-    const wallTop = level === 3 ? 30 : level === 2 ? 24 : 20;
-    const wall = level === 1 ? PAL.wood : '#E9DCC0';
-    const wallShade = level === 1 ? PAL.woodShade : '#CDBB98';
-    // walls
-    px(ctx, 4, wallTop, w - 8, h - wallTop - 2, wall);
-    if (level === 1) for (let y = wallTop + 3; y < h - 2; y += 4) px(ctx, 4, y, w - 8, 1, wallShade);
-    else { px(ctx, 4, wallTop, 3, h - wallTop - 2, PAL.woodShade); px(ctx, w - 7, wallTop, 3, h - wallTop - 2, PAL.woodShade); }
-    px(ctx, 4, h - 3, w - 8, 1, PAL.inkDeep);
-    // roof
-    const roof = level === 1 ? '#7A6A5A' : level === 2 ? '#8E5E54' : '#5E6E7A';
-    for (let y = 0; y <= wallTop; y++) {
-      const half = Math.floor((y / wallTop) * (w / 2)) + 2;
-      px(ctx, w / 2 - half, y, half * 2, 1, y % 4 === 3 ? shade(roof, -0.2) : roof);
-    }
-    // loft window in the roof
-    if (level === 3) {
-      px(ctx, w / 2 - 5, 12, 10, 9, PAL.woodShade);
-      px(ctx, w / 2 - 4, 13, 8, 7, night ? '#FFE7A8' : '#B7D4BD');
-      px(ctx, w / 2, 13, 1, 7, PAL.woodShade);
-    }
-    // chimney
-    px(ctx, w - 16, 2, 6, 10, PAL.stoneShade);
-    px(ctx, w - 17, 1, 8, 2, PAL.stone);
-    // door
-    const dx = Math.floor(w / 2) - 5;
-    px(ctx, dx, h - 18, 10, 15, PAL.woodShade);
-    px(ctx, dx + 1, h - 17, 8, 14, '#8A6448');
-    px(ctx, dx + 7, h - 10, 1, 1, '#E8C25A');
-    // windows
-    const win = (x, y) => {
-      px(ctx, x, y, 9, 8, PAL.woodShade);
-      px(ctx, x + 1, y + 1, 7, 6, night ? '#FFE7A8' : '#B7D4BD');
-      px(ctx, x + 4, y + 1, 1, 6, PAL.woodShade);
-      px(ctx, x, y + 8, 9, 2, '#9DBA74');
-    };
-    win(8, h - 18);
-    win(w - 17, h - 18);
-    if (level >= 2) { win(8, wallTop + 4); win(w - 17, wallTop + 4); }
-    // a little step
-    px(ctx, dx - 2, h - 3, 14, 3, PAL.stone);
+    const [w,h]=size;
+    paintHouse(ctx,w,h,{level,night,wall:level===1?PAL.wood:'#E9DCC0',roofColor:level===1?'#7A6A5A':level===2?'#A96E75':'#6F8590'});
   });
 }
 
@@ -60,8 +23,9 @@ export function wallpaperTile(id) {
   return sprite('wallpaper_' + id, 16, 16, ctx => {
     const wp = WALLPAPER_BY_ID[id] || WALLPAPER_BY_ID.linen;
     const [a, b] = wp.colors;
-    px(ctx, 0, 0, 16, 16, a);
-    if (wp.pattern) return drawPattern(ctx, wp.pattern, a, b);
+    px(ctx,0,0,16,16,a);
+    px(ctx,2,5,2,1,shade(a,.035));px(ctx,11,13,2,1,shade(a,-.035));
+    if(wp.pattern){drawPattern(ctx,wp.pattern,a,b);px(ctx,1,15,2,1,shade(a,-.025));return;}
     switch (id) {
       case 'sage_stripe': px(ctx, 0, 0, 5, 16, b); break;
       case 'rose_floral':
@@ -87,8 +51,9 @@ export function floorTile(id) {
   return sprite('floor_' + id, 16, 16, ctx => {
     const fl = FLOOR_BY_ID[id] || FLOOR_BY_ID.planks;
     const [a, b] = fl.colors;
-    px(ctx, 0, 0, 16, 16, a);
-    if (fl.pattern) return drawPattern(ctx, fl.pattern, a, b);
+    px(ctx,0,0,16,16,a);
+    px(ctx,2,5,2,1,shade(a,.035));px(ctx,11,13,2,1,shade(a,-.035));
+    if(fl.pattern){drawPattern(ctx,fl.pattern,a,b);px(ctx,2,5,3,1,shade(a,.06));px(ctx,10,12,2,1,shade(a,-.05));return;}
     switch (id) {
       case 'checker': px(ctx, 0, 0, 8, 8, b); px(ctx, 8, 8, 8, 8, b); break;
       case 'stone': px(ctx, 0, 7, 16, 1, b); px(ctx, 7, 0, 1, 7, b); px(ctx, 12, 8, 1, 8, b); break;
@@ -155,6 +120,7 @@ function drawPattern(ctx, pattern, a, b) {
 
 function drawFurniture(ctx, type, w, h) {
   const W = w, H = h;
+  if(paintFurniture(ctx,FURNITURE_BY_TYPE[type]||{type},W,H))return;
   const wood = PAL.wood, woodD = PAL.woodShade, woodH = PAL.woodHi;
   const formDef = FURNITURE_BY_TYPE[type];
   if (formDef?.form) return drawForm(ctx, formDef, W, H);
@@ -392,7 +358,7 @@ function drawForm(ctx, def, W, H) {
   const d = shade(c, -0.3), l = shade(c, 0.3), ad = shade(a, -0.25), al = shade(a, 0.35);
   const P = (x, y, w, h, col) => px(ctx, Math.round(x), Math.round(y), Math.round(w), Math.round(h), col);
   const legs = (y, col = d) => { P(2, y, 2, H - y, col); P(W - 4, y, 2, H - y, col); };
-  const glow = (x, y, r) => { ctx.fillStyle = 'rgba(255,230,160,0.25)'; ctx.fillRect(x - r, y - r, r * 2, r * 2); };
+  const glow = (x,y,r) => { px(ctx,x-1,y-1,1,2,al); };
   switch (def.form) {
     case 'bed': case 'futon': {
       const low = def.form === 'futon';
@@ -734,6 +700,7 @@ export function sleeperSprite(look) {
 // ---------- wall items ----------
 
 function drawWallForm(ctx, def) {
+  if(paintWall(ctx,def))return;
   const c = def.color, a = def.accent, P = (x, y, w, h, col) => px(ctx, x, y, w, h, col);
   switch (def.form) {
     case 'window': P(1, 0, 18, 17, PAL.woodShade); P(2, 1, 16, 15, '#B7D4BD'); P(9, 1, 2, 15, PAL.woodShade); P(1, 0, 4, 17, a); P(15, 0, 4, 17, a); P(0, 0, 20, 2, c); return;
@@ -767,6 +734,7 @@ function drawWallForm(ctx, def) {
 
 export function wallItemSprite(type) {
   return sprite('wall_' + type, 20, 18, ctx => {
+    if(paintWall(ctx,WALL_BY_TYPE[type]||{type}))return;
     const frame = (c = PAL.woodShade) => { px(ctx, 1, 1, 18, 15, c); px(ctx, 2, 2, 16, 13, PAL.linenHi); };
     if (WALL_BY_TYPE[type]?.form) return drawWallForm(ctx, WALL_BY_TYPE[type]);
     switch (type) {

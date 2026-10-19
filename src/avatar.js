@@ -93,6 +93,12 @@ function drawAvatar(ctx, look, dir, frame, pose) {
     rect(12, bodyTop, 2, 2, look.outfitStyle === 1 ? PAL.linen : outfit);
   }
 
+  // Small seams and padded sleeves echo the soft furniture and animal shapes.
+  rect(4,bodyTop+2,1,4,shade(outfit,.16));
+  rect(11,bodyTop+2,1,4,outfitShade);
+  if(look.outfitStyle===1){rect(6,bodyTop+2,1,1,PAL.woodHi);rect(9,bodyTop+2,1,1,PAL.woodHi);rect(7,bodyTop+4,2,1,shade(outfit,.2));}
+  if(look.outfitStyle===0||look.outfitStyle===3){rect(6,bodyTop+1,4,1,shade(outfit,.18));rect(5,bodyTop+5,1,1,outfitShade);}
+
   // Head
   const headTop = 2 + top;
   rect(4, headTop + 1, 8, 9, skin);
@@ -150,9 +156,13 @@ function drawHair(rect, style, dir, top, hair, dark, side) {
     if (back) rect(4, top + 2, 8, 3, dark);
     return;
   }
-  rect(3, top - 1, 10, 3, hair);
+  rect(3,top,10,2,hair);
+  rect(4,top-1,8,1,hair);
+  rect(5,top-2,6,1,hair);
+  rect(3,top+1,1,3,hair);
+  rect(12,top+1,1,3,dark);
   rect(4, top - 2, 8, 1, hair);
-  rect(5, top - 1, 4, 1, shade(hair, 0.25));
+  rect(5,top-1,4,1,shade(hair,.25));rect(4,top+1,2,1,shade(hair,.16));rect(10,top,2,1,dark);
   if (back) {
     rect(3, top + 2, 10, style === 2 ? 11 : style === 1 ? 7 : 5, hair);
     rect(3, top + 2, 10, 1, dark);
@@ -161,8 +171,8 @@ function drawHair(rect, style, dir, top, hair, dark, side) {
     rect(8, top + 2, 4, 1, hair);
   } else {
     // fringe and sides
-    rect(4, top + 2, 3, 2, hair);
-    rect(9, top + 2, 3, 1, hair);
+    rect(4,top+2,2,2,hair);rect(6,top+2,2,1,hair);rect(8,top+1,2,2,hair);
+    rect(10,top+2,2,2,hair);rect(12,top+3,1,2,dark);
     if (style === 1) {
       rect(3, top + 2, 2, 6, hair);
       rect(11, top + 2, 2, 6, hair);

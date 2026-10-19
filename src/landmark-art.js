@@ -1,3 +1,6 @@
+import {paintLandmark} from './landmark-details.js';
+import {paintNature} from './nature-art.js';
+import {roof,box} from './art-style.js';
 // Placeholder art for the wider world (regions.js): landmarks and the
 // scenery scattered through each region. Real art goes in as
 // `landmark_<art>` and `scenery_<art>`.
@@ -14,6 +17,7 @@ export function landmarkSprite(art, w = 1, h = 1) {
 }
 
 function drawLandmark(ctx, art, W, H) {
+  if(paintLandmark(ctx,art,W,H))return;
   const P = (x, y, w, h, c) => px(ctx, Math.round(x), Math.round(y), Math.round(w), Math.round(h), c);
   const stone = '#B9B4A8', stoneD = '#8E897E', wood = PAL.wood, woodD = PAL.woodShade, roof = '#B5653A';
   const roofLine = (x0, x1, top, base, col) => { for (let y = top; y < base; y++) { const t = (y - top) / (base - top); P(x0 + (x1 - x0) / 2 - t * (x1 - x0) / 2, y, t * (x1 - x0), 1, y % 3 ? col : shade(col, -0.2)); } };
@@ -146,6 +150,7 @@ export function scenerySprite(art, season = 'spring') {
 }
 
 function drawScenery(ctx, art, H, season) {
+  if(paintNature(ctx,art,16,H,season))return;
   const P = (x, y, w, h, c) => px(ctx, x, y, w, h, c);
   const leaf = season === 'autumn' ? '#C9783A' : season === 'winter' ? '#9AB0A0' : PAL.leaf, leafD = shade(leaf, -0.25);
   const B = H - 16;

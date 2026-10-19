@@ -1,3 +1,4 @@
+import { R, oval, box, roof, windowPane, plank, leaf, finishPixels } from './art-style.js';
 // Placeholder art for the museum: the building, dig sites, and the skeletons
 // you piece together. Each skeleton is drawn from its body plan, one piece at
 // a time, so missing pieces show as a faint outline.
@@ -5,19 +6,16 @@ import { px, disc, sprite } from './sprites.js';
 
 export function museumSprite() {
   return sprite('museum', 48, 44, ctx => {
-    // steps
-    px(ctx, 2, 40, 44, 4, '#B9B4A8'); px(ctx, 4, 37, 40, 3, '#CFCAC0');
-    // walls and columns
-    px(ctx, 6, 16, 36, 21, '#E9E3D6');
-    for (const x of [8, 16, 29, 37]) { px(ctx, x, 16, 4, 21, '#F7F2E8'); px(ctx, x + 3, 16, 1, 21, '#CFCAC0'); }
-    // door
-    px(ctx, 21, 24, 7, 13, '#7A5A3A'); px(ctx, 22, 25, 5, 12, '#9C7046'); px(ctx, 26, 31, 1, 1, '#E8C25A');
-    // roof
-    for (let y = 0; y < 10; y++) px(ctx, 24 - y * 2.3, 4 + y, y * 4.6 + 1, 1, y % 3 === 2 ? '#B9B4A8' : '#DCD6CA');
-    px(ctx, 2, 14, 44, 3, '#CFCAC0');
-    // a bone over the door
-    px(ctx, 20, 9, 9, 2, '#F7F2E8'); disc(ctx, 20, 9, 1.5, '#F7F2E8'); disc(ctx, 20, 11, 1.5, '#F7F2E8');
-    disc(ctx, 29, 9, 1.5, '#F7F2E8'); disc(ctx, 29, 11, 1.5, '#F7F2E8');
+    const c=ctx;
+    box(c,2,39,44,5,'#8E897E');R(c,3,40,42,1,'#C4BFB3');
+    box(c,5,17,38,22,'#D5C5A4');R(c,6,18,35,2,'#F3E9CF');R(c,39,19,3,19,'#B9AD92');
+    roof(c,0,2,48,14,'#A96E75');R(c,1,16,46,3,'#775B46');R(c,2,16,44,1,'#D9B783');
+    for(const x of[7,16,29,38]){box(c,x,20,3,18,'#F3E9CF');R(c,x,21,1,15,'#FFF7E4');R(c,x-1,37,5,2,'#C4BFB3');}
+    windowPane(c,11,23,5,8);windowPane(c,33,23,5,8);
+    box(c,21,24,8,15,'#775B46');R(c,22,26,5,12,'#B88D60');R(c,23,27,1,9,'#D9B783');R(c,26,32,1,1,'#E8C25A');
+    oval(c,24,11,5,3,'#F3E9CF');R(c,21,10,7,2,'#FFF7E4');R(c,23,10,1,2,'#A96E75');
+    for(const x of[3,42]){box(c,x-1,34,5,5,'#B88D60');leaf(c,x+1,33,3,2);R(c,x,32,1,1,'#E4B4A3');}
+    R(c,20,39,10,2,'#D5C5A4');R(c,19,42,12,2,'#C4BFB3');
   });
 }
 
@@ -110,7 +108,7 @@ function drawPiece(ctx, plan, key) {
     case 'sail': for (let x = back + 2; x < front - 1; x += 2) line(ctx, x, by - bh + 1, x, by - bh - Math.round(Math.sin((x - back) / (bw * 2) * Math.PI) * 11), 1); return;
     case 'plates': for (let x = back; x < front; x += 4) { const h = 4 + Math.round(Math.sin((x - back) / (bw * 2) * Math.PI) * 4); for (let k = 0; k < h; k++) ctx.fillRect(x + Math.floor(k / 3), by - bh - k, Math.max(1, 3 - Math.floor(k / 2)), 1); } return;
     case 'armor': for (let x = back; x <= front; x += 3) for (let y = by - bh - 1; y < by; y += 3) if (Math.abs(x - bx) / bw + Math.abs(y - by) / (bh + 2) < 1.1) ctx.fillRect(x, y, 2, 2); return;
-    case 'shell': ctx.save(); ctx.beginPath(); ctx.ellipse(bx, by, bw, bh, 0, Math.PI, 0); ctx.lineWidth = 2; ctx.strokeStyle = ctx.fillStyle; ctx.stroke(); ctx.restore(); for (let x = back + 4; x < front - 2; x += 4) line(ctx, x, by - bh + 2, x, by - 1, 1); return;
+    case 'shell': { const col=ctx.fillStyle;for(let x=-bw;x<=bw;x++){const y=by-Math.sqrt(Math.max(0,1-x*x/(bw*bw)))*bh;R(ctx,bx+x,y,1,2,col);} } for (let x = back + 4; x < front - 2; x += 4) line(ctx, x, by - bh + 2, x, by - 1, 1); return;
     case 'flippers': for (const x of [front - 3, back + 3]) { line(ctx, x, by + bh - 2, x + 5, by + bh + 4, 2); line(ctx, x, by + bh - 2, x - 4, by + bh + 5, 1); } return;
     case 'fin': line(ctx, bx - 2, by - bh, bx + 3, by - bh - 7, 1); line(ctx, bx + 3, by - bh - 7, bx + 7, by - bh, 1); line(ctx, tx, ty, tx - 4, ty - 6, 1); line(ctx, tx, ty, tx - 4, ty + 6, 1); return;
     default: return;
@@ -125,11 +123,16 @@ export function skeletonCanvas(plan, keys, have, highlight = null) {
   const ctx = c.getContext('2d');
   if (!PLANS[plan]) return c;
   // the stand
-  px(ctx, 6, 37, 52, 2, '#9C7046'); px(ctx, 30, 30, 2, 8, 'rgba(120,90,60,0.6)');
+  plank(ctx,5,37,54,3,'#B88D60');R(ctx,8,37,47,1,'#D9B783');R(ctx,30,28,1,9,'#775B46');R(ctx,31,30,1,7,'#B88D60');
   for (const key of keys) {
     ctx.fillStyle = key === highlight ? '#E8B83A' : have(key) ? '#EFE6D2' : 'rgba(239,230,210,0.22)';
-    drawPiece(ctx, plan, key);
+    const col=ctx.fillStyle,layer=document.createElement('canvas');layer.width=64;layer.height=40;
+    const lc=layer.getContext('2d');lc.fillStyle=col;drawPiece(lc,plan,key);
+    if(have(key)||key===highlight){const mask=lc.getImageData(0,0,64,40);for(let i=0;i<mask.data.length;i+=4)if(mask.data[i+3]){mask.data[i]=157;mask.data[i+1]=135;mask.data[i+2]=104;}
+      const shadow=document.createElement('canvas');shadow.width=64;shadow.height=40;shadow.getContext('2d').putImageData(mask,0,0);ctx.drawImage(shadow,1,1);}
+    ctx.drawImage(layer,0,0);
   }
+  finishPixels(c,'skeleton');
   return c;
 }
 
