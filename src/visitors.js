@@ -141,7 +141,7 @@ export function visitorOn(seed, day) {
   return order[dayInWeek(day)];
 }
 
-export const VISITOR_SPOTS = [{ c: 9, r: 7 }, { c: 6, r: 6 }, { c: 5, r: 3 }, { c: 13, r: 3 }, { c: 10, r: 9 }, { c: 2, r: 4 }, { c: 15, r: 10 }];
+export const VISITOR_SPOTS = [{ c: 9, r: 7 }, { c: 6, r: 6 }, { c: 5, r: 3 }, { c: 13, r: 3 }, { c: 10, r: 9 }, { c: 2, r: 4 }, { c: 15, r: 10 }, { c: 22, r: 5 }, { c: 26, r: 3 }, { c: 31, r: 6 }];
 
 export function visitorSpot(seed, day, taken) {
   const rand = rngFor(seed, 'visitor-spot', day);

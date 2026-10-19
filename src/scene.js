@@ -1,5 +1,5 @@
 // Draws the jar, its world and the mine onto the game canvas.
-import { COLS, ROWS, TILE, OBJECTS, BEDS } from './world.js';
+import { COLS, MEADOW_COLS, ROWS, TILE, OBJECTS, BEDS } from './world.js';
 import { EVENT_SPOT, SNOWMAN_SPOT, meteorAt } from './events.js';
 import { LIGHT_DECOR } from './outdoor-data.js';
 import { bedStage, bandOf, MINE_ENTRY } from './rules.js';
@@ -24,6 +24,8 @@ export const H = 384;
 export const GX = 24;
 export const GY = 100;
 export const SOIL_TOP = GY + ROWS * TILE;
+// The meadow is wider than the screen; the view slides with you (see g.camX).
+export const MEADOW_W = GX * 2 + MEADOW_COLS * TILE;
 const JAR = { x: 12, y: 40, w: 296, h: 332, r: 24 };
 
 export function tileCenter(c, r) {
@@ -59,34 +61,53 @@ export function drawScene(ctx, g) {
   if (g.scene === 'mine') drawMine(ctx, g);
   else if (g.scene === 'home') drawHome(ctx, g);
   else if (g.scene === 'map') drawMapWorld(ctx, g);
-  else drawJarWorld(ctx, g);
-  drawEffects(ctx, g);
+  if (g.scene === 'jar') {
+    // The meadow is drawn in world space and slid by the camera.
+    ctx.save();
+    ctx.translate(-Math.round(g.camX || 0), 0);
+    drawJarWorld(ctx, g);
+    drawEffects(ctx, g);
+    ctx.restore();
+  } else drawEffects(ctx, g);
   ctx.restore();
   drawGlass(ctx, g);
+  if (g.scene === 'jar') drawEdgeHints(ctx, g);
   if (g.fishing) drawFishingUi(ctx, g);
+}
+
+// Little arrows at the glass when there's more meadow to that side.
+function drawEdgeHints(ctx, g) {
+  const max = MEADOW_W - W, cam = g.camX || 0;
+  const y = GY + (ROWS * TILE) / 2, pulse = Math.floor(g.t * 2) % 2;
+  ctx.fillStyle = 'rgba(255,250,235,0.7)';
+  const chevron = (x, dir) => { for (let i = 0; i < 5; i++) ctx.fillRect(x + dir * (i < 3 ? i : 4 - i), y - 4 + i * 2, 2, 2); };
+  if (cam > 2) chevron(18 - pulse, -1);
+  if (cam < max - 2) chevron(300 + pulse, 1);
 }
 
 // ---------- the forest jar ----------
 
 function drawJarWorld(ctx, g) {
   const { season } = g;
-  px(ctx, 0, 0, W, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
-  drawBackdrop(ctx, g);
+  const WW = MEADOW_W, cam = Math.round(g.camX || 0);
+  px(ctx, 0, 0, WW, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  drawBackdrop(ctx, g, WW);
 
   // Grass, including the strips beside the tile grid.
   const [base, dark] = [grassTile(season, 0), grassTile(season, 1)];
-  for (let x = 0; x < W; x += TILE) {
+  for (let x = 0; x < WW; x += TILE) {
     for (let y = GY - 8; y < SOIL_TOP; y += TILE) ctx.drawImage((x + y) % 32 ? base : dark, x, y);
   }
   for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
+    for (let c = 0; c < MEADOW_COLS; c++) {
       const v = hashString(c + ':' + r) % 4;
       ctx.drawImage(grassTile(season, v), GX + c * TILE, GY + r * TILE);
     }
   }
-  px(ctx, 0, GY - 9, W, 2, shade(SEASON_EDGE[season], -0.2));
+  px(ctx, 0, GY - 9, WW, 2, shade(SEASON_EDGE[season], -0.2));
 
   drawPond(ctx, g);
+  drawPond(ctx, g, 'pond2');
   const cave = OBJECTS.find(o => o.id === 'cave');
   ctx.drawImage(caveSprite(), GX + cave.c * TILE, GY + cave.r * TILE);
   BEDS.forEach((b, i) => {
@@ -142,6 +163,7 @@ function drawJarWorld(ctx, g) {
     if (o.id === 'well') at(o, wellSprite(g.wellLights), 0, -1);
     if (o.id === 'easel') at(o, easelSprite(), 0, -2);
     if (o.id === 'door') at(o, doorSprite(), 0, -1);
+    if (o.kind === 'tree') at(o, decorSprite(o.tree, g.season), 0, -1);
   }
   for (const d of g.decor) {
     if (FLAT_DECOR.has(d.type)) continue;
@@ -228,10 +250,17 @@ function drawJarWorld(ctx, g) {
   items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
   if (g.fishing) drawLine(ctx, g);
 
-  drawSoil(ctx, g);
+  drawSoil(ctx, g, WW);
+  // Weather, the night sky and shooting stars stay put on screen.
+  ctx.save();
+  ctx.translate(cam, 0);
   drawWeather(ctx, g);
+  ctx.restore();
   if (g.night) drawNight(ctx, g);
+  ctx.save();
+  ctx.translate(cam, 0);
   drawEventSky(ctx, g);
+  ctx.restore();
 }
 
 // Lanterns drifting up and shooting stars, drawn over the night tint so they glow.
@@ -265,13 +294,13 @@ function drawEventSky(ctx, g) {
 
 const SEASON_EDGE = { spring: PAL.grass, summer: '#9DB86E', autumn: '#C2B070', winter: '#E6EDEE' };
 
-function drawBackdrop(ctx, g) {
+function drawBackdrop(ctx, g, width = W) {
   // Small pines and hills behind the meadow, inside the glass.
   const winter = g.season === 'winter';
   const far = winter ? '#B9C7C9' : g.season === 'autumn' ? '#A88F5E' : '#8EA889';
   const near = winter ? '#8FA3A4' : g.season === 'autumn' ? '#8A6F45' : PAL.leaf;
-  for (let x = 6; x < W; x += 22) disc(ctx, x, GY - 2, 16, far);
-  for (let i = 0; i < 14; i++) {
+  for (let x = 6; x < width; x += 22) disc(ctx, x, GY - 2, 16, far);
+  for (let i = 0; i < Math.ceil(width / 21) - 1; i++) {
     const x = 18 + i * 21 + (hashString('pine' + i) % 9);
     const h = 18 + (hashString('h' + i) % 14);
     for (let y = 0; y < h; y++) {
@@ -282,8 +311,8 @@ function drawBackdrop(ctx, g) {
   }
 }
 
-function drawPond(ctx, g) {
-  const pond = OBJECTS.find(o => o.id === 'pond');
+function drawPond(ctx, g, id = 'pond') {
+  const pond = OBJECTS.find(o => o.id === id);
   const x = GX + pond.c * TILE, y = GY + pond.r * TILE, w = pond.w * TILE, h = pond.h * TILE;
   const frozen = g.season === 'winter';
   const water = frozen ? '#A9C9CE' : PAL.water;
@@ -299,12 +328,13 @@ function drawPond(ctx, g) {
   }
   // lily pads and the marimo moss ball
   if (!frozen) {
-    for (const [lx, ly] of [[x + 12, y + 14], [x + 54, y + 40]]) {
+    for (const [lx, ly] of id === 'pond' ? [[x + 12, y + 14], [x + 54, y + 40]] : [[x + 14, y + 12], [x + 46, y + 30], [x + 30, y + 22]]) {
       disc(ctx, lx, ly, 4, PAL.leaf);
       px(ctx, lx, ly - 4, 1, 4, PAL.water);
       if (g.season === 'summer') disc(ctx, lx + 2, ly - 1, 1.5, PAL.roseHi);
     }
   }
+  if (id !== 'pond') return;
   const mx = x + 40 + Math.sin(g.t * 0.6) * 6, my = y + 30;
   disc(ctx, mx, my, 4, frozen ? shade('#4F7A44', 0.2) : '#4F7A44');
   px(ctx, mx - 2, my - 2, 2, 1, '#79A35F');
@@ -379,16 +409,16 @@ function drawLine(ctx, g) {
   }
 }
 
-function drawSoil(ctx, g) {
+function drawSoil(ctx, g, width = W) {
   const bands = [['#8A6A4A', 22], ['#7F7A70', 26], ['#5E6A7A', 40]];
   let y = SOIL_TOP;
-  px(ctx, 0, y, W, 3, PAL.leafShade);
+  px(ctx, 0, y, width, 3, PAL.leafShade);
   y += 3;
   bands.forEach(([color, h], i) => {
-    px(ctx, 0, y, W, h, color);
-    for (let k = 0; k < 26; k++) {
+    px(ctx, 0, y, width, h, color);
+    for (let k = 0; k < Math.round(26 * width / W); k++) {
       const hx = hashString('soil' + i + ':' + k);
-      px(ctx, hx % W, y + ((hx >>> 9) % (h - 2)), 2, 1, shade(color, k % 2 ? -0.18 : 0.15));
+      px(ctx, hx % width, y + ((hx >>> 9) % (h - 2)), 2, 1, shade(color, k % 2 ? -0.18 : 0.15));
     }
     if (i === 2) {
       for (let k = 0; k < 7; k++) {
@@ -440,8 +470,10 @@ function drawWeather(ctx, g) {
 }
 
 function drawNight(ctx, g) {
+  // In the meadow the camera has moved the drawing; the dark and the moon stay on screen.
+  const ox = g.scene === 'jar' ? Math.round(g.camX || 0) : 0;
   ctx.fillStyle = 'rgba(22,30,58,0.48)';
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(ox, 0, W, H);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const glow = (x, y, r, a) => {
@@ -451,14 +483,14 @@ function drawNight(ctx, g) {
     ctx.fillStyle = grad;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
   };
-  glow(160, 46, 70, 0.28);
+  glow(ox + 160, 46, 70, 0.28);
   const tent = OBJECTS.find(o => o.id === 'tent');
   glow(GX + (tent.c + 2.2) * TILE, GY + tent.r * TILE + 20, 26, 0.35);
   // Lamps, torches and lanterns you've made glow at night.
   if (g.scene === 'jar') for (const d of g.decor) if (LIGHT_DECOR.has(d.type)) glow(GX + d.c * TILE + 8, GY + d.r * TILE - 2, 22, 0.4);
   if (g.season === 'summer' || g.season === 'spring') {
     for (let i = 0; i < 9; i++) {
-      const fx = 40 + ((i * 37 + Math.sin(g.t * 0.7 + i) * 18) % 250);
+      const fx = ox + 40 + ((i * 37 + Math.sin(g.t * 0.7 + i) * 18) % 250);
       const fy = GY + 20 + ((i * 29 + Math.cos(g.t * 0.5 + i * 2) * 14) % 130);
       if (Math.floor(g.t * 3 + i) % 3) glow(fx, fy, 4, 0.9);
     }

@@ -21,6 +21,9 @@ Any static file server works. There is no build step.
 
 ## What's in the jar
 
+**A wider meadow:** the meadow is twice as wide as the jar. Walk toward the glass on either side and the view slides with you; little arrows at the edges show there's more that way. The left half is the meadow you know. The east half has a lily pond you can fish in, an oak, a birch, a willow and a pine, the door to the other jars on the far wall, and lots of open room for your decorations, farm buildings and crafts. Your home, the mine and the other jars still fit on one screen.
+
+
 | Tap | What happens |
 |---|---|
 | The ground | Walk there |
@@ -32,7 +35,8 @@ Any static file server works. There is no build step.
 | Workbench | Upgrade the fishing rod and pickaxe with ore |
 | Fruit tree | Shake once a day for fruit |
 | Glints on the ground | Forage, new spots every day |
-| Door (right side) | The jar shelf: open and visit the other jars |
+| Door (far east wall) | The jar shelf: open and visit the other jars |
+| Lily pond (east meadow) | A second place to fish in the meadow |
 | Tent / your home | Go inside. **Build** inside furnishes the room you're in |
 | Bench | **Today**: the daily question (answer, later or skip), mood check-in, the weekly ritual |
 | Mailbox | Notes and appreciation cards between you, plus tips |

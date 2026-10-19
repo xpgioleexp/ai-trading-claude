@@ -1,7 +1,10 @@
 // The jar's layout: a small grid of ground tiles and the objects on it.
 // Pure data and helpers so the server can share it later.
 
+// COLS is how many columns fit on screen (and the size of the mine and the
+// other jars). The meadow is wider: the view slides as you walk.
 export const COLS = 17;
+export const MEADOW_COLS = 34;
 export const ROWS = 12;
 export const TILE = 16;
 
@@ -20,7 +23,13 @@ export const OBJECTS = [
   { id: 'easel', name: 'Calendar', c: 12, r: 10, w: 1, h: 1 },
   { id: 'picnic', name: 'Picnic blanket', c: 3, r: 10, w: 2, h: 1, walkable: true },
   { id: 'cave', name: 'Cave', c: 8, r: 11, w: 1, h: 1, walkable: true },
-  { id: 'door', name: 'Door to the other jars', c: 16, r: 3, w: 1, h: 1, walkable: true },
+  // The east meadow, past the edge of the first screen.
+  { id: 'pond2', name: 'Lily pond', c: 25, r: 6, w: 4, h: 3 },
+  { id: 'oak1', kind: 'tree', tree: 'oak', name: 'Old oak', c: 19, r: 1, w: 1, h: 1 },
+  { id: 'oak2', kind: 'tree', tree: 'birch', name: 'Birch', c: 30, r: 2, w: 1, h: 1 },
+  { id: 'oak3', kind: 'tree', tree: 'willow', name: 'Willow', c: 29, r: 10, w: 1, h: 1 },
+  { id: 'oak4', kind: 'tree', tree: 'pine', name: 'Pine', c: 21, r: 10, w: 1, h: 1 },
+  { id: 'door', name: 'Door to the other jars', c: 33, r: 3, w: 1, h: 1, walkable: true },
 ];
 
 // Garden beds, rows of three. The first six are open; the garden upgrades open the rest.
@@ -47,8 +56,8 @@ function buildBlocked() {
 
 export const BLOCKED = buildBlocked();
 
-export function inBounds(c, r) {
-  return c >= 0 && r >= 0 && c < COLS && r < ROWS;
+export function inBounds(c, r, cols = MEADOW_COLS) {
+  return c >= 0 && r >= 0 && c < cols && r < ROWS;
 }
 
 export function isWalkable(c, r, extraBlocked) {
@@ -61,7 +70,7 @@ export function isWalkable(c, r, extraBlocked) {
 export function forageTiles() {
   const out = [];
   for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
+    for (let c = 0; c < MEADOW_COLS; c++) {
       if (!isWalkable(c, r)) continue;
       if (OBJECTS.some(o => o.walkable && c >= o.c && c < o.c + o.w && r >= o.r && r < o.r + o.h)) continue;
       if (c === START_TILE.c && r === START_TILE.r) continue;

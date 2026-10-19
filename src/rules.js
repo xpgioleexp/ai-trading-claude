@@ -232,7 +232,8 @@ export function forageSpots(seed, day) {
   const rand = rngFor(seed, 'forage', day);
   const season = seasonOf(day);
   const pool = FORAGE.filter(f => f.season === season);
-  return shuffle(rand, forageTiles()).slice(0, 4).map(t => ({
+  // The meadow is twice as wide now, so there's a little more to find.
+  return shuffle(rand, forageTiles()).slice(0, 6).map(t => ({
     c: t.c, r: t.r, id: pickWeighted(rand, pool, f => (f.rare ? 1 : 6)).id,
   }));
 }
