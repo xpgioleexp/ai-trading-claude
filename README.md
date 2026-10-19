@@ -91,9 +91,9 @@ The daily visitor strolls around their spot in their own way.
 | Door (far east wall) | The jar shelf: open and visit the other jars |
 | Lily pond, reed pond, forest pool | More places to fish in the meadow |
 | Tent / your home | Go inside. **Build** inside furnishes the room you're in |
-| Bench | **Today**: the daily question (answer, later or skip), mood check-in, the weekly ritual |
+| Bench | **Today**: the daily question (answer, later or skip) with a streak of days you've both answered, mood check-in, the weekly ritual |
 | Mailbox | Notes and appreciation cards between you, plus tips |
-| Notice board | This week's mission, which you both mark done, and a pinboard of what's coming up |
+| Notice board | Pick one of three missions for the week (at least one works apart; swap until one of you starts), mark it done together, and a pinboard of what's coming up |
 | Calendar | Plan dates from 160 ideas or your own, both confirm, and add them to your phone's calendar |
 | Wishing well | Dreams with stages and steps, and a light you each leave |
 | Picnic blanket | Hangout: live chat, a shared drawing pad, a timer and conversation questions |
@@ -104,9 +104,9 @@ The daily visitor strolls around their spot in their own way.
 
 | App | What's in it |
 |---|---|
-| Today | The daily question (answer, later or skip), mood check-in, the weekly ritual |
+| Today | The daily question (answer, later or skip), your answer streak, mood check-in, the weekly ritual |
 | Questions | 306 question packs, answered the same sealed way |
-| Missions | This week's mission (you both mark it done) and the pinboard |
+| Missions | Pick this week's mission from three (you both mark it done) and the pinboard |
 | Mail | Notes, appreciation cards and gifts |
 | Dates | Plan dates from 160 ideas or your own, and add them to your calendar |
 | Dreams | Dreams with stages and steps, and the well light |
@@ -120,6 +120,20 @@ The daily visitor strolls around their spot in their own way.
 | Friends | Today's visitor and their request, the merchant, your meadow animals, jar friends' hearts and visitors you know |
 | Mine | How deep you've been, zones, bosses beaten, health and gear |
 | Settings | Your partner, the jar's name and time zone, reminders, rain, download everything, start over |
+
+**Pebbles for doing things together:** each of you gets these once per thing.
+
+| What | Pebbles |
+|---|---|
+| Answer the daily question | 40 |
+| Every 7 days in a row you've both answered | 100 bonus |
+| Finish the weekly ritual (you both agree on the intention) | 100 |
+| Finish the week's mission (you both mark it done) | 150 |
+| Have a planned date and mark it done | 60 |
+| A shared (or your own) dream comes true | 120 |
+| Your first note of the day | 15 |
+
+If your partner hasn't joined yet, finishing a ritual or mission on your own counts.
 
 Things you do in a place stay in that place: fishing, mining, the garden, foraging, bugs, the shipping crate, visitors' deliveries, the merchant, the jar shops, jar animals and spots, and farm buildings.
 
@@ -360,6 +374,7 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 | `src/shared.js` | Live shared state: the jar, people, garden, sealed answers, discoveries, rain |
 | `src/content.js` | Loads `content/` and picks the day's question and the week's mission |
 | `src/together.js` | Today, check-ins, rituals, notice board, mailbox, calendar, dreams, journal |
+| `src/couple.js` | The weekly mission choice, the answer streak and the rewards for doing things together |
 | `src/places.js` | Build mode, animal care and settings |
 | `src/home.js` | Your home: house levels, room types, furniture, wall items, wallpapers, floors and placement rules |
 | `src/home-ui.js` | Home panels: upgrade, rooms, furnishing, walls, wallpaper and floors |

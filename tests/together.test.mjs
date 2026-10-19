@@ -94,3 +94,28 @@ test('calendar files escape text and fold long lines', () => {
   assert.ok(ics.includes('DTSTART:20261020T180000Z'));
   assert.ok(ics.includes('DTEND:20261020T193000Z'));
 });
+
+test('each week offers three different missions, the first being the week\'s usual one, and one works apart', async () => {
+  const { missionChoices, chosenMission } = await import('../src/couple.js');
+  for (let week = 3000; week < 3100; week++) {
+    const ch = missionChoices('jar-seed', 20000, week);
+    assert.equal(ch.length, 3);
+    assert.equal(ch[0].id, missionFor('jar-seed', 20000, week).id);
+    assert.equal(new Set(ch.map(m => m.id)).size, 3);
+    assert.ok(ch.some(m => m.location !== 'together' || m.apart), `week ${week}`);
+  }
+  const ch = missionChoices('jar-seed', 20000, 3000);
+  assert.equal(chosenMission({}, ch, 3000, ['a', 'b']), null);
+  assert.equal(chosenMission({ '3000--pick': { missionId: ch[2].id } }, ch, 3000, ['a', 'b']).id, ch[2].id);
+  // A mission someone already started wins over the pick.
+  assert.equal(chosenMission({ '3000--pick': { missionId: ch[2].id }, '3000--b': { missionId: ch[1].id } }, ch, 3000, ['a', 'b']).id, ch[1].id);
+});
+
+test('the answer streak counts days in a row you both answered', async () => {
+  const { answerStreak, streakBonusDue } = await import('../src/couple.js');
+  const days = new Set([10, 9, 8, 6]);
+  assert.equal(answerStreak(d => days.has(d), 10), 3);
+  assert.equal(answerStreak(d => days.has(d), 11), 3, 'today not answered yet keeps yesterday\'s streak');
+  assert.equal(answerStreak(d => days.has(d), 12), 0);
+  assert.ok(streakBonusDue(7) && streakBonusDue(14) && !streakBonusDue(8) && !streakBonusDue(0));
+});

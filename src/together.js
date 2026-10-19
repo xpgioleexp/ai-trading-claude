@@ -9,6 +9,7 @@ import { addItem } from './rules.js';
 import { iconURL } from './sprites.js';
 import { RECIPE_BY_ID } from './cooking.js';
 import { MAPS } from './maps.js';
+import { missionChoices, chosenMission, answerStreak, streakBonusDue, ANSWER_REWARD, RITUAL_REWARD, MISSION_REWARD, STREAK_BONUS, DATE_REWARD, DREAM_REWARD, NOTE_REWARD } from './couple.js';
 
 // ---------- names (looked up from the platform, never stored) ----------
 
@@ -126,9 +127,11 @@ export function openToday(g) {
     .filter(a => a.uid === partnerId() && a.state === 'answered' && a.key.startsWith('day-') && a.key !== key && answerFor(a.key, cloud.me)?.state !== 'answered')
     .slice(0, 5);
   const ritual = ritualFor(week);
+  const streak = streakNow(g);
   const html = `
     <section>
       <h3>Today's question</h3>
+      ${partnerId() ? `<p class="detail small">${streak ? `${streak} day${streak === 1 ? '' : 's'} in a row you've both answered.` : 'Answer on the same day as your partner to start a streak.'} Every 7 days in a row: +${STREAK_BONUS} pebbles.</p>` : ''}
       ${answerBlock(key, q.text, { meta: `${q.category} · ${q.topic}` })}
     </section>
     ${saved.length || waitingOnMe.length ? `<section><h3>Earlier questions</h3>
@@ -146,7 +149,10 @@ export function openToday(g) {
     </section>`;
   openSheet('Today', html, body => {
     bindAnswers(body, g, k => ({ prompt: k === key ? q.text : (answerFor(k, cloud.me)?.prompt || answerFor(k, partnerId())?.prompt || '') }), k => {
-      if (k.startsWith('day-')) reward(g, 'q-' + k, 25, 'Answered.');
+      if (!k.startsWith('day-')) return;
+      reward(g, 'q-' + k, ANSWER_REWARD, 'Answered.');
+      const n = streakNow(g);
+      if (k === key && streakBonusDue(n)) reward(g, 'streak-' + day, STREAK_BONUS, `${n} days in a row!`);
     });
     body.querySelector('#open-ritual').addEventListener('click', () => openRitual(g));
     body.querySelector('#open-board').addEventListener('click', () => openBoard(g));
@@ -156,7 +162,16 @@ export function openToday(g) {
       setTimeout(() => openToday(g), 300);
     });
     renderCheckin(body.querySelector('#checkin-slot'), g);
+    if (streakBonusDue(streak) && answerFor(key, cloud.me)?.state === 'answered' && answerFor(key, partnerId())?.state === 'answered') reward(g, 'streak-' + day, STREAK_BONUS, `${streak} days in a row!`);
   }, null, () => openToday(g));
+}
+
+// Days in a row you've both answered (an answer to an older day counts too).
+function streakNow(g) {
+  const p = partnerId();
+  if (!p) return 0;
+  const both = d => answerFor('day-' + d, cloud.me)?.state === 'answered' && answerFor('day-' + d, p)?.state === 'answered';
+  return answerStreak(both, g.today);
 }
 
 // ---------- mood check-in ----------
@@ -259,7 +274,7 @@ export function openRitual(g) {
       await updateDoc(`rituals/${week}`, { confirms: { [cloud.me]: version } }).catch(() => {});
       openRitual(g);
     });
-    if (bothConfirmed) reward(g, 'ritual-' + week, 40, 'Ritual complete.');
+    if (bothConfirmed || (!partner && version && confirms[cloud.me] === version)) reward(g, 'ritual-' + week, RITUAL_REWARD, 'Ritual complete.');
   }, null, () => openRitual(g));
 }
 
@@ -268,33 +283,42 @@ export function openRitual(g) {
 export function openBoard(g) {
   const w = world();
   const week = weekOf(g.today);
-  const m = missionFor(w.seed, w.startDay, week);
   const partner = partnerId();
+  const choices = missionChoices(w.seed, w.startDay, week);
+  const m = chosenMission(S.missions, choices, week, couple());
   const mine = S.missions[`${week}--${cloud.me}`];
   const theirs = partner ? S.missions[`${week}--${partner}`] : null;
-  const both = mine?.state === 'done' && theirs?.state === 'done';
+  const both = mine?.state === 'done' && (!partner || theirs?.state === 'done');
+  const anyStarted = !!(mine || theirs);
   const status = who => who?.state === 'done' ? 'done' : who?.state === 'started' ? 'started' : 'not started';
   const past = Object.values(S.missions).filter(x => x.uid === cloud.me && x.week !== week && x.state === 'done').sort((a, b) => b.week - a.week).slice(0, 8);
   const next = Object.values(S.dates).filter(d => !d.done && new Date(d.when) > new Date()).sort((a, b) => new Date(a.when) - new Date(b.when))[0];
   const dream = Object.values(S.dreams).find(d => d.stage === 'doing' || d.stage === 'next');
   const memory = Object.values(S.scrapbook).sort((a, b) => b.at - a.at)[0];
-  const html = `
+  const facts = x => `<ul class="facts"><li>${x.minutes} minutes</li><li>${esc(x.cost === 'free' ? 'No extra cost' : 'Small budget')}</li><li>${esc(x.where || '')}</li>${x.supplies ? `<li>${esc(x.supplies)}</li>` : ''}</ul>`;
+  const where = x => (x.location === 'apart' ? 'Made for when you\'re apart' : x.location === 'together' ? (x.apart ? 'Best together, works apart' : 'Best together') : 'Together or apart');
+  const missionHtml = !m ? `
+    <section><p class="detail">This week's missions, from ${esc(fmtDate(mondayOf(week) * 86400000))}. Pick one to do together this week. ${partner ? `${esc(partnerName())} sees your pick too.` : ''} Finish it for +${MISSION_REWARD} pebbles each.</p>
+      ${choices.map(c => `<article class="qcard mission"><p class="meta">${esc(c.category)} · ${esc(where(c))}</p><p class="prompt">${esc(c.title)}</p><p>${esc(c.description)}</p>${facts(c)}
+        <div class="row-actions"><button class="btn" data-pick="${esc(c.id)}">Pick this one</button></div></article>`).join('')}
+    </section>` : `
     <section class="qcard mission">
-      <p class="meta">This week's mission · ${esc(m.category)} · from ${esc(fmtDate(mondayOf(week) * 86400000))}</p>
+      <p class="meta">This week's mission · ${esc(m.category)} · ${esc(where(m))} · from ${esc(fmtDate(mondayOf(week) * 86400000))}</p>
       <p class="prompt">${esc(m.title)}</p>
       <p>${esc(m.description)}</p>
-      <ul class="facts"><li>${m.minutes} minutes</li><li>${esc(m.cost === 'free' ? 'No extra cost' : 'Small budget')}</li><li>${esc(m.where || '')}</li><li>${esc(m.supplies)}</li></ul>
+      ${facts(m)}
       <ol class="steps">${m.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
       <p><strong>Finish:</strong> ${esc(m.finish)}</p>
       ${m.apart ? `<p class="detail"><strong>Apart:</strong> ${esc(m.apart)}</p>` : ''}
       <p class="detail">You: ${status(mine)}${partner ? ` · ${esc(partnerName())}: ${status(theirs)}` : ''}</p>
       ${mine?.state !== 'done' ? `
-        <div class="row-actions">${mine?.state !== 'started' ? '<button class="btn ghost" id="m-start">We\'re doing this</button>' : ''}</div>
+        <div class="row-actions">${mine?.state !== 'started' ? '<button class="btn ghost" id="m-start">We\'re doing this</button>' : ''}${!anyStarted ? '<button class="btn ghost" id="m-swap">Pick a different one</button>' : ''}</div>
         <label class="sr" for="m-memory">A memory</label>
         <textarea id="m-memory" rows="2" maxlength="600" placeholder="How did it go? (optional)"></textarea>
         <div class="row-actions"><button class="btn" id="m-done">We did it</button></div>`
-      : `<p class="detail done">${both ? 'You both finished it!' : `Waiting for ${esc(partnerName())} to mark it done.`}</p>${mine.memory ? `<p class="note">${esc(mine.memory)}</p>` : ''}${theirs?.memory ? `<p class="note">${esc(theirs.memory)}</p>` : ''}`}
-    </section>
+      : `<p class="detail done">${both ? (partner ? 'You both finished it!' : 'Finished!') : `Waiting for ${esc(partnerName())} to mark it done.`}</p>${mine.memory ? `<p class="note">${esc(mine.memory)}</p>` : ''}${theirs?.memory ? `<p class="note">${esc(theirs.memory)}</p>` : ''}`}
+    </section>`;
+  const html = `${missionHtml}
     <section><h3>On the board</h3>
       <ul class="pins">
         <li><span class="label">Our next date</span>${next ? `${esc(next.title)} · ${esc(fmtWhen(next.when))}` : 'Nothing planned yet'}</li>
@@ -305,6 +329,19 @@ export function openBoard(g) {
     </section>
     ${past.length ? `<section><h3>Missions you've done</h3><ul class="list">${past.map(p => `<li><span class="name">${esc(p.title)}<small>${esc(p.memory || '')}</small></span></li>`).join('')}</ul></section>` : ''}`;
   openSheet('Notice board', html, body => {
+    body.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', async () => {
+      const pick = { week, missionId: b.dataset.pick, by: cloud.me, at: now() };
+      S.missions = { ...S.missions, [`${week}--pick`]: pick };
+      await setDoc(`missions/${week}--pick`, pick).catch(() => {});
+      openBoard(g);
+    }));
+    body.querySelector('#m-swap')?.addEventListener('click', async () => {
+      const rest = { ...S.missions };
+      delete rest[`${week}--pick`];
+      S.missions = rest;
+      await deleteDoc(`missions/${week}--pick`).catch(() => {});
+      openBoard(g);
+    });
     body.querySelector('#m-start')?.addEventListener('click', async () => {
       await setDoc(`missions/${week}--${cloud.me}`, { week, uid: cloud.me, state: 'started', title: m.title, missionId: m.id, at: now() }).catch(() => {});
       toast('Good luck!');
@@ -314,7 +351,7 @@ export function openBoard(g) {
       await setDoc(`missions/${week}--${cloud.me}`, { week, uid: cloud.me, state: 'done', title: m.title, missionId: m.id, memory, at: now() }).catch(() => {});
       toast(partner ? `Marked done. When ${partnerName()} does too, you both get pebbles.` : 'Marked done.');
     });
-    if (both) reward(g, 'mission-' + week, 20, 'Mission complete.');
+    if (both) reward(g, 'mission-' + week, MISSION_REWARD, 'Mission complete.');
   }, null, () => openBoard(g));
 }
 
@@ -366,6 +403,7 @@ export function openMailbox(g, letters) {
       if (!t) return toast('Write something first.');
       await setDoc(`notes/${newId()}`, { by: cloud.me, kind: style ? 'card' : 'note', style, text: t, at: now() }).catch(() => toast('Could not send. Try again.'));
       toast(partnerId() ? 'Sent to the mailbox.' : 'Saved. Your partner will see it when they join.');
+      reward(g, 'note-' + g.today, NOTE_REWARD, 'Your first note today.');
       openMailbox(g, letters);
     });
     body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => deleteDoc(`notes/${b.dataset.del}`)));
@@ -413,8 +451,10 @@ export function openCalendar(g, view = 'list', editing = null) {
     body.querySelector('#new-date').addEventListener('click', () => dateForm(g, null));
     body.querySelector('#surprise').addEventListener('click', () => {
       const idea = C.dateIdeas[Math.floor(Math.random() * C.dateIdeas.length)];
-      dateForm(g, { title: idea.title, ideaId: idea.id, minutes: idea.minutes, note: idea.description });
+      dateForm(g, ideaDate(idea));
     });
+    // Pebbles for each date you've had together, once each (only recent ones, so old dates don't pile up).
+    for (const d of done) if (d.doneAt && now() - d.doneAt < 14 * 86400000) reward(g, 'date-' + d.id, DATE_REWARD, `${d.title}: a date well spent.`);
     body.querySelectorAll('[data-confirm]').forEach(b => b.addEventListener('click', () => {
       updateDoc(`dates/${b.dataset.confirm}`, { confirms: { [cloud.me]: +b.dataset.v } }).catch(() => {});
     }));
@@ -430,6 +470,9 @@ export function openCalendar(g, view = 'list', editing = null) {
     }));
   }, null, () => openCalendar(g));
 }
+
+// A date idea as a draft date: apart-only ideas start unticked for "together".
+const ideaDate = idea => ({ title: idea.title, ideaId: idea.id, minutes: idea.minutes, note: idea.description, together: !/^apart/i.test(idea.where || '') });
 
 function dateForm(g, d) {
   const base = d || {};
@@ -460,8 +503,7 @@ function dateForm(g, d) {
   openSheet(base.id ? 'Edit date' : 'Plan a date', html, body => {
     body.querySelector('#d-cancel').addEventListener('click', () => openCalendar(g));
     body.querySelectorAll('[data-idea]').forEach(b => b.addEventListener('click', () => {
-      const idea = C.dateIdeas.find(i => i.id === b.dataset.idea);
-      dateForm(g, { title: idea.title, ideaId: idea.id, minutes: idea.minutes, note: idea.description });
+      dateForm(g, ideaDate(C.dateIdeas.find(i => i.id === b.dataset.idea)));
     }));
     body.querySelector('#date-form').addEventListener('submit', async e => {
       e.preventDefault();
@@ -594,6 +636,7 @@ export function openDreams(g, openId = null) {
       dreamDetail(g, id);
     });
     body.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => dreamDetail(g, b.dataset.open)));
+    for (const d of list) if (d.stage === 'done' && (d.owner === 'shared' || d.owner === cloud.me)) reward(g, 'dream-' + d.id, DREAM_REWARD, `A dream come true: ${d.title}.`);
   }, null, () => openDreams(g));
 }
 
@@ -616,7 +659,7 @@ function dreamDetail(g, id) {
   openSheet(d.title, html, body => {
     body.querySelector('#dr-stage').addEventListener('change', e => {
       save({ stage: e.target.value });
-      if (e.target.value === 'done') toast('A dream come true.');
+      if (e.target.value === 'done' && !((d.owner === 'shared' || d.owner === cloud.me) && reward(g, 'dream-' + id, DREAM_REWARD, 'A dream come true.'))) toast('A dream come true.');
     });
     body.querySelector('#dr-target').addEventListener('change', e => save({ target: e.target.value }));
     body.querySelectorAll('[data-step]').forEach(b => b.addEventListener('change', () => {
