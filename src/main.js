@@ -485,7 +485,7 @@ async function enterHome(roomId) {
   if (!g.state.homeTip) {
     g.state.homeTip = true;
     save();
-    UI.toast('Welcome home! Tap Build to add furniture, walls and rooms.');
+    UI.toast('Welcome home! Tap Build to add furniture, walls and rooms. Tap the door mat to go outside.');
   }
 }
 

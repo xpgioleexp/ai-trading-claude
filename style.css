@@ -134,7 +134,7 @@ body {
 #toasts {
   position: fixed;
   left: 50%;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  top: calc(64px + env(safe-area-inset-top, 0px));
   transform: translateX(-50%);
   display: grid;
   gap: 6px;

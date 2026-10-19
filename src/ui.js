@@ -98,7 +98,8 @@ export function updateHud(g) {
       ? `${g.room?.name || 'Home'} · ${when}`
       : `${cap(g.season)} ${dayOfSeason(g.today)} · ${weather} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`;
   const leave = $('#btn-leave');
-  leave.hidden = g.scene === 'jar';
+  // Inside your home you leave through the door mat; in the cave there's also a button.
+  leave.hidden = g.scene !== 'mine';
   leave.textContent = g.scene === 'home' ? 'Go outside' : 'Leave cave';
 }
 
