@@ -107,8 +107,12 @@ export function mapObjectAt(map, c, r) {
   return map.objects.find(o => c >= o.c && c < o.c + o.w && r >= o.r && r < o.r + o.h) || null;
 }
 
+// Each jar can be wider than the screen: columns run from -map.west to map.cols - 1.
+export const mapLeft = map => -(map.west || 0);
+export const mapRight = map => map.cols || COLS;
+
 export function mapWalkable(map, c, r, blocked) {
-  if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return false;
+  if (c < mapLeft(map) || r < 0 || c >= mapRight(map) || r >= ROWS) return false;
   if (blocked && blocked.has(c + ',' + r)) return false;
   const o = mapObjectAt(map, c, r);
   return !o || !!o.walkable;
@@ -116,7 +120,7 @@ export function mapWalkable(map, c, r, blocked) {
 
 export function mapOpenTiles(map) {
   const out = [];
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+  for (let r = 0; r < ROWS; r++) for (let c = mapLeft(map); c < mapRight(map); c++) {
     if (mapWalkable(map, c, r) && !mapObjectAt(map, c, r)) out.push({ c, r });
   }
   return out;
@@ -135,7 +139,7 @@ export function mapForageSpots(seed, day, mapId) {
   const own = MAP_FORAGE[mapId].map(([id, , , , , rare]) => ({ id, rare: !!rare }));
   const seasonal = FORAGE.filter(f => f.season === map.season).map(f => ({ id: f.id, rare: f.rare }));
   const pool = [...own, ...own, ...seasonal];
-  return shuffle(rand, mapOpenTiles(map)).slice(0, 5).map(t => ({ c: t.c, r: t.r, id: pickWeighted(rand, pool, f => (f.rare ? 1 : 6)).id }));
+  return shuffle(rand, mapOpenTiles(map)).slice(0, map.west ? 8 : 5).map(t => ({ c: t.c, r: t.r, id: pickWeighted(rand, pool, f => (f.rare ? 1 : 6)).id }));
 }
 
 export function mapCatch(rand, mapId, hour) {

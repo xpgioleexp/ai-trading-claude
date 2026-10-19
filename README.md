@@ -23,6 +23,21 @@ Any static file server works. There is no build step.
 
 **A wider meadow:** the meadow is four screens wide, with the one you started on second from the left. Walk toward the glass on either side and the view slides with you; little arrows at the edges show there's more that way. **West woods:** a forest pool to fish in and six trees. **East meadow:** a lily pond, a reed pond, eight trees, and the door to the other jars on the far east wall. There's lots of open room for decorations, farm buildings and crafts. Your home, the mine and the other jars still fit on one screen.
 
+**Wider jars:** every jar is three screens wide too, with the jar you know in the middle and its door on the far west wall. Each side has scenery that fits the jar and an extra place to fish:
+
+| Jar | Extra pond | Scenery |
+|---|---|---|
+| Beach | rock pool | five more palms, two with coconuts; the sea runs the whole way along |
+| Snow | little frozen pond | six snowy pines |
+| Flower | lotus pond | cherry trees, a willow, ferns |
+| Desert | small oasis | four cacti (two with fruit), two date palms |
+| Rainforest | jungle pool | another giant tree (with passion fruit), lots of ferns |
+| Mushroom glade | glowing pool | four giant mushrooms, ferns |
+| Hot springs | koi stream | bamboo groves and stone lanterns |
+| Starlight isle | moon pool | more clouds |
+
+Wider jars have 8 forage spots a day instead of 5.
+
 **For testing:** every jar on the shelf is open for now (`PREVIEW_ALL_JARS` in `src/travel.js`). Set it to `false` to make jars cost pebbles again.
 
 

@@ -2,10 +2,10 @@
 import * as R from './rules.js';
 import { ITEMS, ROD_ZONE, MINE_LAYERS, FORAGE, DAILY_BITES } from './data.js';
 import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay, deviceTimeZone } from './clock.js';
-import { COLS, MEADOW_COLS } from './world.js';
+import { COLS, MEADOW_COLS, TILE } from './world.js';
 import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
-import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W, CAM_MIN, CAM_MAX } from './scene.js';
+import { drawScene, tileCenter, pointToTile, W, H, GX, MEADOW_W, CAM_MIN, CAM_MAX } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
 import { DIRS } from './avatar.js';
 import * as UI from './ui.js';
@@ -268,8 +268,8 @@ function habitats() {
       const open = mapOpenTiles(map);
       mapTiles[map.id] = {
         flower: open, ground: open,
-        tree: mapNear(map, ['palm', 'pine', 'hive', 'arch', 'cactus', 'bigtree', 'bamboo', 'bigshroom', 'fern'], 2),
-        pond: mapNear(map, ['water', 'water2'], 1),
+        tree: mapNear(map, ['palm', 'pine', 'hive', 'arch', 'cactus', 'bigtree', 'bamboo', 'bigshroom', 'fern', 'decotree'], 2),
+        pond: mapNear(map, ['water', 'water2', 'water3'], 1),
       };
     }
     return mapTiles[map.id];
@@ -933,7 +933,8 @@ function enterMap(id) {
   stopPlacing();
   g.scene = 'map';
   g.mapId = id;
-  placePlayer(1, 5);
+  const door = MAPS[id].objects.find(o => o.id === 'door');
+  placePlayer(door.c + 1, door.r);
   g.player.dir = DIRS.right;
   refreshClock();
   syncCritters(g);
@@ -988,7 +989,7 @@ function tapMap(c, r, x, y) {
 function useMapObject(map, o) {
   const day = g.mapDaily;
   if (o.id === 'door') return ready() && openTravel(g);
-  if (o.id === 'water' || o.id === 'water2') return startFishing(o);
+  if (/^water/.test(o.id)) return startFishing(o);
   if (o.kind === 'shop') return openJarShop(g, map.id);
   if (o.kind === 'spot') return ready() && runSpot(g, o);
   if (o.fruit) {
@@ -1386,7 +1387,7 @@ function onPointerDown(e) {
   const screen = canvasPoint(e);
   if (g.scene === 'jar' && g.meteors.length && tapMeteor(screen.x, screen.y)) return;
   // In the meadow the view may have slid: turn the tap into a spot in the world.
-  const x = screen.x + (g.scene === 'jar' ? Math.round(g.camX) : 0), y = screen.y;
+  const x = screen.x + (g.scene === 'jar' || g.scene === 'map' ? Math.round(g.camX) : 0), y = screen.y;
   const { c, r } = pointToTile(x, y);
   if (g.scene === 'mine') tapMine(c, r, x, y);
   else if (g.scene === 'home') tapHome(c, r);
@@ -1504,14 +1505,18 @@ function frame(now) {
 // wider than the screen. Elsewhere (home, mine, other jars) it stays still.
 const EDGE = 110;
 function updateCamera(dt) {
-  if (g.scene !== 'jar') {
+  if (g.scene !== 'jar' && !(g.scene === 'map' && MAPS[g.mapId]?.west)) {
     g.camX = 0;
     return;
   }
+  // The meadow, or a jar that's wider than the screen.
+  const map = g.scene === 'map' ? MAPS[g.mapId] : null;
+  const min = map ? -map.west * TILE : CAM_MIN;
+  const max = map ? GX * 2 + map.cols * TILE - W : CAM_MAX;
   let target = g.camX;
   if (g.player.x - target < EDGE) target = g.player.x - EDGE;
   if (g.player.x - target > W - EDGE) target = g.player.x - (W - EDGE);
-  target = Math.max(CAM_MIN, Math.min(CAM_MAX, target));
+  target = Math.max(min, Math.min(max, target));
   // Arriving from far away (a new scene, a jump): snap instead of gliding.
   if (Math.abs(target - g.camX) > W / 2) g.camX = target;
   else g.camX += (target - g.camX) * Math.min(1, dt * 6);

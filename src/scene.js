@@ -64,7 +64,16 @@ export function drawScene(ctx, g) {
   ctx.clip();
   if (g.scene === 'mine') drawMine(ctx, g);
   else if (g.scene === 'home') drawHome(ctx, g);
-  else if (g.scene === 'map') drawMapWorld(ctx, g);
+  if (g.scene === 'map' && MAPS[g.mapId]?.west) {
+    ctx.save();
+    ctx.translate(-Math.round(g.camX || 0), 0);
+    drawMapWorld(ctx, g);
+    drawEffects(ctx, g);
+    ctx.restore();
+  } else if (g.scene === 'map') {
+    drawMapWorld(ctx, g);
+    drawEffects(ctx, g);
+  }
   if (g.scene === 'jar') {
     // The meadow is drawn in world space and slid by the camera.
     ctx.save();
@@ -72,21 +81,23 @@ export function drawScene(ctx, g) {
     drawJarWorld(ctx, g);
     drawEffects(ctx, g);
     ctx.restore();
-  } else drawEffects(ctx, g);
+  } else if (g.scene !== 'map') drawEffects(ctx, g);
   ctx.restore();
   drawGlass(ctx, g);
-  if (g.scene === 'jar') drawEdgeHints(ctx, g);
+  if (g.scene === 'jar' || (g.scene === 'map' && MAPS[g.mapId]?.west)) drawEdgeHints(ctx, g);
   if (g.fishing) drawFishingUi(ctx, g);
 }
 
 // Little arrows at the glass when there's more meadow to that side.
 function drawEdgeHints(ctx, g) {
   const cam = g.camX || 0;
+  const map = g.scene === 'map' ? MAPS[g.mapId] : null;
+  const min = map ? -map.west * TILE : CAM_MIN, max = map ? GX * 2 + map.cols * TILE - W : CAM_MAX;
   const y = GY + (ROWS * TILE) / 2, pulse = Math.floor(g.t * 2) % 2;
   ctx.fillStyle = 'rgba(255,250,235,0.7)';
   const chevron = (x, dir) => { for (let i = 0; i < 5; i++) ctx.fillRect(x + dir * (i < 3 ? i : 4 - i), y - 4 + i * 2, 2, 2); };
-  if (cam > CAM_MIN + 2) chevron(18 - pulse, -1);
-  if (cam < CAM_MAX - 2) chevron(300 + pulse, 1);
+  if (cam > min + 2) chevron(18 - pulse, -1);
+  if (cam < max - 2) chevron(300 + pulse, 1);
 }
 
 // ---------- the forest jar ----------
@@ -474,7 +485,7 @@ function drawWeather(ctx, g) {
 
 function drawNight(ctx, g) {
   // In the meadow the camera has moved the drawing; the dark and the moon stay on screen.
-  const ox = g.scene === 'jar' ? Math.round(g.camX || 0) : 0;
+  const ox = Math.round(g.camX || 0);
   ctx.fillStyle = 'rgba(22,30,58,0.48)';
   ctx.fillRect(ox, 0, W, H);
   ctx.save();
@@ -517,11 +528,13 @@ const WATER = {
 
 function drawMapWorld(ctx, g) {
   const map = MAPS[g.mapId];
-  px(ctx, 0, 0, W, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
-  drawBackdrop(ctx, g);
+  // Wide jars are drawn in world space; drawScene slides them by the camera.
+  const X0 = -(map.west || 0) * TILE, WW = GX * 2 + (map.cols || COLS) * TILE - X0, cam = Math.round(g.camX || 0);
+  px(ctx, X0, 0, WW, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  drawBackdrop(ctx, g, WW, X0);
   const ground = map.ground;
-  for (let x = 0; x < W; x += TILE) for (let y = GY - 8; y < SOIL_TOP; y += TILE) ctx.drawImage(grassTile(ground, (x + y) % 32 ? 0 : 1), x, y);
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) ctx.drawImage(grassTile(ground, hashString(map.id + c + ':' + r) % 4), GX + c * TILE, GY + r * TILE);
+  for (let x = X0; x < X0 + WW; x += TILE) for (let y = GY - 8; y < SOIL_TOP; y += TILE) ctx.drawImage(grassTile(ground, (x + y) % 32 ? 0 : 1), x, y);
+  for (let r = 0; r < ROWS; r++) for (let c = -(map.west || 0); c < (map.cols || COLS); c++) ctx.drawImage(grassTile(ground, hashString(map.id + c + ':' + r) % 4), GX + c * TILE, GY + r * TILE);
   // water
   for (const o of map.objects) {
     const kind = o.spot === 'hot_spring' ? 'spring' : o.kind;
@@ -529,15 +542,15 @@ function drawMapWorld(ctx, g) {
     const [base, deep, hi] = WATER[kind];
     const x = GX + o.c * TILE, y = GY + o.r * TILE, w = o.w * TILE, h = o.h * TILE;
     if (o.kind === 'sea') {
-      px(ctx, 0, y, W, SOIL_TOP - y, base);
-      px(ctx, 0, y, W, 3, hi);
-      px(ctx, 0, y + h - 14, W, 14, deep);
+      px(ctx, X0, y, WW, SOIL_TOP - y, base);
+      px(ctx, X0, y, WW, 3, hi);
+      px(ctx, X0, y + h - 14, WW, 14, deep);
     } else {
       roundRect(ctx, x - 2, y - 2, w + 4, h + 4, 10, shade(base, -0.3));
       roundRect(ctx, x, y, w, h, 9, base);
     }
     for (let i = 0; i < 5; i++) {
-      const rx = (o.kind === 'sea' ? 10 : x + 6) + ((i * 37 + Math.floor(g.t * 6)) % Math.max(20, (o.kind === 'sea' ? W : w) - 20));
+      const rx = (o.kind === 'sea' ? X0 + 10 : x + 6) + ((i * 37 + Math.floor(g.t * 6)) % Math.max(20, (o.kind === 'sea' ? WW : w) - 20));
       px(ctx, rx, y + 6 + ((i * 11) % Math.max(8, h - 12)), 6, 1, hi);
     }
   }
@@ -575,6 +588,7 @@ function drawMapWorld(ctx, g) {
     if (o.kind === 'palm' && o.fruit) at(o, palmSprite(!daily?.shaken?.[o.id]));
     if (['cactus', 'bigtree'].includes(o.kind)) at(o, jarThingSprite(o.kind, o.fruit && !daily?.shaken?.[o.id] ? 1 : 0));
     if (['fern', 'bigshroom', 'bamboo', 'lantern', 'cloud'].includes(o.kind)) at(o, jarThingSprite(o.kind));
+    if (o.kind === 'decotree') at(o, decorSprite(o.tree, map.season));
     if (o.kind === 'shop') {
       const shop = SHOPS[map.id];
       at(o, jarStallSprite(shop.color));
@@ -621,7 +635,7 @@ function drawMapWorld(ctx, g) {
   for (const o of g.others) if (o.scene === 'map' && o.mapId === g.mapId) items.push({ y: o.y, draw: () => drawAvatarAt(ctx, o, o.look, false, g.t) });
   items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
   if (g.fishing) drawLine(ctx, g);
-  px(ctx, 0, SOIL_TOP, W, H - SOIL_TOP, map.soil || (map.id === 'beach' ? '#C9B07A' : map.id === 'snow' ? '#8E9AA0' : '#8A6A4A'));
+  px(ctx, X0, SOIL_TOP, WW, H - SOIL_TOP, map.soil || (map.id === 'beach' ? '#C9B07A' : map.id === 'snow' ? '#8E9AA0' : '#8A6A4A'));
   // Steam over the hot spring.
   for (const o of map.objects) {
     if (o.spot !== 'hot_spring') continue;
@@ -631,8 +645,14 @@ function drawMapWorld(ctx, g) {
       ctx.fillRect(sx + Math.sin(g.t + i) * 3, sy, 5, 5);
     }
   }
+  // Weather, night, stars and mist stay put on screen.
+  ctx.save();
+  ctx.translate(cam, 0);
   drawWeather(ctx, g);
+  ctx.restore();
   if (g.night) drawNight(ctx, g);
+  ctx.save();
+  ctx.translate(cam, 0);
   if (map.night) {
     for (let i = 0; i < 40; i++) {
       const hx = hashString('star' + i);
@@ -647,6 +667,7 @@ function drawMapWorld(ctx, g) {
       px(ctx, (hx % 300 + g.t * 4 * ((i % 3) + 1)) % W, GY + (hx >>> 9) % 180 - Math.sin(g.t + i) * 6, 2, 2, 'rgba(180,255,200,0.8)');
     }
   }
+  ctx.restore();
 }
 
 // ---------- inside your home ----------
