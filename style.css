@@ -438,3 +438,19 @@ body {
 .slot-cell img { image-rendering: pixelated; }
 .decor.on { box-shadow: inset 0 0 0 3px var(--ink); }
 @media (max-width: 420px) { .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ---------- kitchen ---------- */
+.pot { display: flex; gap: 6px; margin: 6px 0; }
+.pot .slot { width: 56px; }
+.track { position: relative; height: 28px; background: var(--linen-deep); margin: 10px 0; }
+.track .zone { position: absolute; top: 0; bottom: 0; background: #9dba74; }
+.track .marker { position: absolute; top: -4px; bottom: -4px; width: 6px; background: var(--ink); }
+.track .marker.hit { background: #4f7a44; }
+.track .marker.miss { background: #d9533c; }
+.track.heat { background: linear-gradient(90deg, #cfdde2, #f0c94b 60%, #d9533c); }
+.meter { height: 10px; background: var(--linen-deep); }
+.meter span { display: block; height: 100%; width: 0; background: var(--moss); }
+.btn.big { width: 100%; min-height: 64px; font-size: 22px; margin-top: 8px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.result { text-align: center; display: grid; justify-items: center; }
+.icon.big { width: 64px; height: 64px; }
+.stars { font-size: 26px; color: #e0b45a; margin: 0; letter-spacing: 4px; }

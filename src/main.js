@@ -18,6 +18,7 @@ import { openBuild, placeDecor, openAnimal, openMore } from './places.js';
 import { openHangout, startHangout } from './hangout.js';
 import { DOOR, FURNITURE_BY_TYPE, WALL_BY_TYPE, canPlace, blockedTiles, roomWalkable, tilesOf } from './home.js';
 import { openFurnish, ensureFirstRoom, roomsList, placeFurniture } from './home-ui.js';
+import { openKitchen, maybeStartPart, maybeFinish, noticeInvite } from './kitchen.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -340,6 +341,7 @@ function tapJar(c, r, x, y) {
   if (deco && !FLAT_DECOR.has(deco.type)) {
     walkNextTo([{ c, r }], () => {
       if (deco.type === 'log') T.noticeDiscovery('hollow-log');
+      else if (deco.type === 'campfire') ready() && openKitchen(g);
       else UI.toast(C.decorByType[deco.type]?.name || 'A decoration');
     });
     return;
@@ -539,6 +541,7 @@ function useFurniture(item) {
     case 'calendar': return ready() && T.openCalendar(g);
     case 'journal': return ready() && T.openJournal(g);
     case 'bag': return UI.openBag(g);
+    case 'cook': return ready() && openKitchen(g);
     case 'music': {
       const x = GX_HOME(item), y = GY_HOME(item);
       for (let i = 0; i < 4; i++) g.effects.push({ kind: 'note', x: x + i * 5 - 6, y: y - i * 3, t0: g.t + i * 0.2 });
@@ -912,6 +915,7 @@ async function bootShared() {
     if (kind === 'people') T.refreshNames().then(() => UI.refreshSheet());
     if (['house', 'rooms', 'furniture', 'wallitems', 'ready'].includes(kind)) syncHome();
     if (kind === 'goodnights') checkGoodnight();
+    if (kind === 'kitchen') { noticeInvite(); maybeStartPart(g); maybeFinish(g); }
     refreshClock();
     UI.updateHud(g);
     UI.refreshSheet();
@@ -957,6 +961,7 @@ function start(hotData = {}) {
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
     residents: [], decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
+    openKitchen: () => ready() && openKitchen(g),
     fishing: null, action: null, effects: [], hold: false, t: 0, today,
     debugHour: null, save, startPlacing, animalReacts, resetMine,
   };

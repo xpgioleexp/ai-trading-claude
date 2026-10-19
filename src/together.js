@@ -4,6 +4,10 @@ import { C, questionFor, missionFor, ritualFor, weekOf, mondayOf } from './conte
 import { cloud, setDoc, updateDoc, deleteDoc, newId, now, namesFor, privatePath } from './cloud.js';
 import { S, partnerId, couple, answerFor, submitAnswer, setAnswerState, myPrivateAnswer, bothRevealed, discover, leaveWellLight, startRain, stopRain, rainingNow } from './shared.js';
 import { openSheet, toast, esc } from './ui.js';
+import { ITEMS } from './data.js';
+import { addItem } from './rules.js';
+import { iconURL } from './sprites.js';
+import { RECIPE_BY_ID } from './cooking.js';
 
 // ---------- names (looked up from the platform, never stored) ----------
 
@@ -317,7 +321,8 @@ export function openBoard(g) {
 
 export function unreadNotes(g) {
   const seen = g.state.mailSeen || 0;
-  return Object.values(S.notes).filter(n => n.by !== cloud.me && n.at > seen).length;
+  const gifts = Object.values(S.gifts).filter(x => x.to === cloud.me && !x.opened).length;
+  return Object.values(S.notes).filter(n => n.by !== cloud.me && n.at > seen).length + gifts;
 }
 
 export function openMailbox(g, letters) {
@@ -327,7 +332,9 @@ export function openMailbox(g, letters) {
   g.state.mailRead = g.today;
   g.save();
   const cards = C.appreciations.map(a => `<button class="chip" data-card="${a.id}">${esc(a.label)}</button>`).join('');
-  const html = `
+  const gifts = Object.entries(S.gifts).filter(([, x]) => x.to === cloud.me && !x.opened);
+  const giftHtml = gifts.length ? `<section><h3>Gifts for you</h3><ul class="list">${gifts.map(([id, x]) => `<li><img class="icon" src="${iconURL(x.item)}" alt=""><span class="name">${esc(ITEMS[x.item]?.name || 'A gift')}<small>From ${esc(nameOf(x.from))}</small></span><button class="btn small" data-open-gift="${id}">Open</button></li>`).join('')}</ul></section>` : '';
+  const html = `${giftHtml}
     <section class="compose">
       <label class="label" for="note-text">Write to ${esc(partnerName())}</label>
       <textarea id="note-text" rows="3" maxlength="1000" placeholder="A little note…"></textarea>
@@ -361,6 +368,16 @@ export function openMailbox(g, letters) {
       openMailbox(g, letters);
     });
     body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => deleteDoc(`notes/${b.dataset.del}`)));
+    body.querySelectorAll('[data-open-gift]').forEach(b => b.addEventListener('click', async () => {
+      const gift = S.gifts[b.dataset.openGift];
+      if (!gift || gift.opened || !ITEMS[gift.item]) return;
+      if (!addItem(g.state, gift.item, gift.n || 1)) return toast('Your bag is full.');
+      g.save();
+      S.gifts[b.dataset.openGift] = { ...gift, opened: true };
+      await updateDoc(`gifts/${b.dataset.openGift}`, { opened: true }).catch(() => {});
+      toast(`You got a ${ITEMS[gift.item].name.toLowerCase()}!`, gift.item);
+      openMailbox(g, letters);
+    }));
   }, null, () => openMailbox(g, letters));
 }
 
@@ -656,6 +673,7 @@ function momentsHtml(g, limit) {
   for (const d of Object.values(S.dates)) if (d.done) items.push({ at: d.doneAt || d.at, kind: 'Date', html: `<p>${esc(d.title)}</p>` });
   for (const d of Object.values(S.dreams)) if (d.stage === 'done') items.push({ at: d.at, kind: 'Dream come true', html: `<p>${esc(d.title)}</p>` });
   for (const [id, d] of Object.entries(S.discoveries)) if (d.at) items.push({ at: d.at, kind: 'Discovery', html: `<p>${esc(C.landmarks.find(l => l.id === id)?.secret || id)}</p>` });
+  for (const m of Object.values(S.meals)) items.push({ at: m.at, kind: 'Cooked together', html: `<p>You made ${esc((RECIPE_BY_ID[m.recipeId]?.name || 'a mystery stew').toLowerCase())} together.</p>` });
   const nights = {};
   for (const n of Object.values(S.goodnights)) (nights[n.day] = nights[n.day] || []).push(n);
   for (const list of Object.values(nights)) if (new Set(list.map(n => n.uid)).size >= 2) items.push({ at: Math.max(...list.map(n => n.at)), kind: 'Goodnight', html: '<p>You both said goodnight from your bedroom.</p>' });

@@ -7,6 +7,8 @@ import * as R from './rules.js';
 import { iconURL } from './sprites.js';
 import { avatarSprite } from './avatar.js';
 import { dayOfSeason } from './clock.js';
+import { S, partnerId } from './shared.js';
+import { cloud, setDoc, newId, now } from './cloud.js';
 import { rngFor } from './rng.js';
 
 const $ = s => document.querySelector(s);
@@ -122,7 +124,8 @@ export function openBag(g) {
       <div><span class="label">Pickaxe</span><strong>${TOOL_TIERS[s.tools.pick]}</strong></div>
       <div><span class="label">Bites left today</span><strong>${s.daily.bites}</strong></div>
     </div>
-    <div class="row-actions"><button class="btn" id="open-log">Collection log</button></div>`;
+    <div class="row-actions" id="bag-actions"></div>
+    <div class="row-actions"><button class="btn" id="open-log">Collection log</button><button class="btn" id="open-kitchen">Cook</button></div>`;
   openSheet('Bag', html, body => {
     body.querySelectorAll('.slot[data-i]').forEach(btn => btn.addEventListener('click', () => {
       body.querySelectorAll('.slot').forEach(b => b.classList.remove('picked'));
@@ -131,13 +134,23 @@ export function openBag(g) {
       const item = ITEMS[slot.id];
       const extra = item.cat === 'fish' && s.log.fish[item.id] ? ` · Best ${s.log.fish[item.id].best} cm` : '';
       body.querySelector('#bag-detail').textContent = `${item.name} · ${catName(item.cat)} · Sells for ${item.price} pebbles${extra}`;
+      const actions = body.querySelector('#bag-actions');
+      actions.innerHTML = partnerId() ? `<button class="btn ghost" id="give">Give 1 to your partner</button>` : '';
+      actions.querySelector('#give')?.addEventListener('click', async () => {
+        if (!R.removeItem(s, item.id, 1)) return;
+        g.save();
+        await setDoc(`gifts/${newId()}`, { from: cloud.me, to: partnerId(), item: item.id, n: 1, at: now(), opened: false }).catch(() => {});
+        toast(`Sent a ${item.name.toLowerCase()} to their mailbox.`, item.id);
+        openBag(g);
+      });
     }));
     body.querySelector('#open-log').addEventListener('click', () => openLog(g));
+    body.querySelector('#open-kitchen').addEventListener('click', () => g.openKitchen?.());
   });
 }
 
 function catName(cat) {
-  return { fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil' }[cat];
+  return { fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish' }[cat];
 }
 
 // ---------- collection log ----------

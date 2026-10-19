@@ -51,6 +51,13 @@ Any static file server works. There is no build step.
 - **Saying goodnight:** in the shared bedroom you can each get into the double bed and say goodnight. When you both do on the same day, you each get 15 pebbles, and it's kept in the journal.
 - **Shared:** the home belongs to both of you, and you see each other walking around in the same room.
 
+**Cooking:**
+- **Where:** the stove or kitchen counter in your home, a campfire decoration outside, or **Cook** in the Bag.
+- **How:** pick up to 3 ingredients: crops, fish, forage or fruit. Then chop (tap when the knife is over the green) and mind the stove (hold to keep the heat in the green).
+- **Recipes:** 25 to discover by trying combinations, kept in a recipe book you share. Undiscovered ones show a hint like "a fish, a root vegetable". Anything else becomes mystery stew.
+- **Together:** when your partner is in the jar, one of you chops while the other works the stove, live, and you see each other's progress. You each get the dish, plus an extra star, and it's kept in the journal.
+- **Dishes:** sell them in the crate or give them through the mailbox. Any item in the Bag can be given to your partner.
+
 **The rules:**
 - **Real time:** the jar follows the real clock, so mornings, nights and new days happen when they do for you.
 - **Seasons:** each season lasts one real week.
@@ -82,6 +89,8 @@ Any static file server works. There is no build step.
 | `src/places.js` | Build mode, animal care and settings |
 | `src/home.js` | Your home: house levels, room types, furniture, wall items, wallpapers, floors and placement rules |
 | `src/home-ui.js` | Home panels: upgrade, rooms, furnishing, walls, wallpaper and floors |
+| `src/cooking.js` | Recipes, ingredient kinds, matching and star ratings |
+| `src/kitchen.js` | The kitchen: picking ingredients, chopping and stove minigames, cooking together |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |
 | `src/animals.js` | Residents: needs, the 43 actions and wandering |

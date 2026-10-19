@@ -276,6 +276,14 @@ function drawShape(ctx, item) {
       px(ctx, 6, 9, 1, 1, dark);
       px(ctx, 9, 9, 1, 1, dark);
       break;
+    case 'dish':
+      px(ctx, 2, 9, 12, 4, PAL.linenHi);
+      px(ctx, 3, 13, 10, 1, PAL.linenShade);
+      disc(ctx, 8, 8.5, 5, c);
+      px(ctx, 3, 8, 10, 2, c);
+      px(ctx, 6, 6, 2, 1, light);
+      px(ctx, 2, 9, 12, 1, PAL.linenShade);
+      break;
     default:
       disc(ctx, 8, 8, 5, c);
   }
