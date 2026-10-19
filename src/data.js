@@ -146,4 +146,4 @@ export const SKIN_TONES = ['#F6D7BE', '#E8B994', '#C98E66', '#9A6544', '#6B4430'
 export const HAIR_COLORS = ['#2E2420', '#5B3A29', '#9A5B34', '#D9A55B', '#E9D7A8', '#C68F89', '#6F8FB0'];
 export const HAIR_STYLES = ['Short', 'Bob', 'Long', 'Curly', 'Bun', 'Buzz'];
 export const OUTFIT_COLORS = ['#6F925B', '#C68F89', '#79AAA4', '#B88D60', '#8C7BB0', '#E0B45A'];
-export const OUTFIT_STYLES = ['Tee', 'Overalls', 'Dress'];
+export const OUTFIT_STYLES = ['Tee', 'Overalls', 'Dress', 'Sweater'];

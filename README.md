@@ -58,6 +58,14 @@ Any static file server works. There is no build step.
 - **Together:** when your partner is in the jar, one of you chops while the other works the stove, live, and you see each other's progress. You each get the dish, plus an extra star, and it's kept in the journal.
 - **Dishes:** sell them in the crate or give them through the mailbox. Any item in the Bag can be given to your partner.
 
+**Crafting:**
+- **Where:** the workbench, or **Craft** in the Bag.
+- **Materials:** wood (2 each time you shake the fruit tree), fiber (from every forage pick and harvest), cloth (made from fiber), plus stone, ore, gems and flowers. The beetle shop also sells wood and fiber.
+- **Furniture (10) and lamps (5):** go into your bag as "Made by you". Place them for free from **Build**: home furniture inside the home, meadow pieces outside. Returning one puts it back in your bag.
+- **Toys (4):** an animal's panel then has a "Play with a toy" row, which gives a big happiness boost. Toys aren't used up.
+- **Outfits:** 4 hats and a cozy sweater, unlocked in the wardrobe once made.
+- **Gifts (6):** a bouquet, bracelet, carved heart, flower card, crystal charm or gem ring. Give them from the Bag; your partner opens them in the mailbox, and handmade gifts are kept in the journal.
+
 **The rules:**
 - **Real time:** the jar follows the real clock, so mornings, nights and new days happen when they do for you.
 - **Seasons:** each season lasts one real week.
@@ -91,6 +99,8 @@ Any static file server works. There is no build step.
 | `src/home-ui.js` | Home panels: upgrade, rooms, furnishing, walls, wallpaper and floors |
 | `src/cooking.js` | Recipes, ingredient kinds, matching and star ratings |
 | `src/kitchen.js` | The kitchen: picking ingredients, chopping and stove minigames, cooking together |
+| `src/crafting.js` | Crafting recipes, materials, and crafted furniture, toys, outfits and gifts |
+| `src/crafting-ui.js` | The crafting panel |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |
 | `src/animals.js` | Residents: needs, the 43 actions and wandering |

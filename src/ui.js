@@ -3,6 +3,7 @@ import {
   ITEMS, FISH, CROPS, FORAGE, TREE_FRUIT, MINERALS, BAG_SLOTS, TOOL_TIERS, ROD_ZONE, PICK_POWER,
   SKIN_TONES, HAIR_COLORS, HAIR_STYLES, OUTFIT_COLORS, OUTFIT_STYLES,
 } from './data.js';
+import { HATS, MATERIALS_FOR_SALE } from './crafting.js';
 import * as R from './rules.js';
 import { iconURL } from './sprites.js';
 import { avatarSprite } from './avatar.js';
@@ -125,7 +126,7 @@ export function openBag(g) {
       <div><span class="label">Bites left today</span><strong>${s.daily.bites}</strong></div>
     </div>
     <div class="row-actions" id="bag-actions"></div>
-    <div class="row-actions"><button class="btn" id="open-log">Collection log</button><button class="btn" id="open-kitchen">Cook</button></div>`;
+    <div class="row-actions"><button class="btn" id="open-log">Collection log</button><button class="btn" id="open-kitchen">Cook</button><button class="btn" id="open-craft">Craft</button></div>`;
   openSheet('Bag', html, body => {
     body.querySelectorAll('.slot[data-i]').forEach(btn => btn.addEventListener('click', () => {
       body.querySelectorAll('.slot').forEach(b => b.classList.remove('picked'));
@@ -146,11 +147,12 @@ export function openBag(g) {
     }));
     body.querySelector('#open-log').addEventListener('click', () => openLog(g));
     body.querySelector('#open-kitchen').addEventListener('click', () => g.openKitchen?.());
+    body.querySelector('#open-craft').addEventListener('click', () => g.openCrafting?.());
   });
 }
 
 function catName(cat) {
-  return { fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish' }[cat];
+  return { fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
 }
 
 // ---------- collection log ----------
@@ -196,10 +198,10 @@ function fishHint(f) {
 
 export function openShop(g) {
   const s = g.state;
-  const stock = R.shopStock(g.season);
+  const stock = [...R.shopStock(g.season), ...MATERIALS_FOR_SALE];
   const rows = stock.map(item => {
     const it = ITEMS[item.id];
-    return `<li>${icon(item.id)}<span class="name">${esc(it.name)}<small>${esc(growText(it.crop))}</small></span>
+    return `<li>${icon(item.id)}<span class="name">${esc(it.name)}<small>${esc(it.crop ? growText(it.crop) : 'For crafting')}</small></span>
       <button class="btn small" data-id="${item.id}" data-price="${item.price}" ${s.pebbles < item.price ? 'disabled' : ''}>Buy · ${item.price}</button></li>`;
   }).join('');
   openSheet('Beetle shop', `
@@ -268,7 +270,9 @@ export function openWorkbench(g) {
     <ul class="list">
       ${card('rod', 'Fishing rod', t => `Catch zone ${ROD_ZONE[s.tools.rod]} → ${ROD_ZONE[t]}`)}
       ${card('pick', 'Pickaxe', t => `Power ${PICK_POWER[s.tools.pick]} → ${PICK_POWER[t]}`)}
-    </ul>`, body => {
+    </ul>
+    <div class="row-actions"><button class="btn ghost" id="to-craft">Back to crafting</button></div>`, body => {
+    body.querySelector('#to-craft').addEventListener('click', () => g.openCrafting?.());
     body.querySelectorAll('[data-tool]').forEach(b => b.addEventListener('click', () => {
       if (R.upgradeTool(s, b.dataset.tool)) {
         g.save();
@@ -359,8 +363,11 @@ export function openWardrobe(g, firstTime = false) {
   const look = { ...s.avatar };
   const swatches = (key, colors) => colors.map((c, i) =>
     `<button class="swatch ${look[key] === i ? 'on' : ''}" data-key="${key}" data-v="${i}" style="background:${c}" aria-label="${key} option ${i + 1}" aria-pressed="${look[key] === i}"></button>`).join('');
-  const words = (key, names) => names.map((n, i) =>
-    `<button class="chip ${look[key] === i ? 'on' : ''}" data-key="${key}" data-v="${i}" aria-pressed="${look[key] === i}">${n}</button>`).join('');
+  const unlocked = s.unlocked || {};
+  const words = (key, names, allowed = () => true) => names.map((n, i) => (allowed(i)
+    ? `<button class="chip ${(look[key] || 0) === i ? 'on' : ''}" data-key="${key}" data-v="${i}" aria-pressed="${(look[key] || 0) === i}">${n}</button>` : '')).join('');
+  const hatChoices = words('hat', HATS, i => i === 0 || unlocked['hat' + i]);
+  const lockedNote = Object.keys(unlocked).length ? '' : '<p class="detail small">Craft hats and a cozy sweater at the workbench to add them here.</p>';
   const html = `
     ${firstTime ? '<p class="detail">Make your little you. You can change this any time from More, or at a wardrobe in your home.</p>' : ''}
     <div class="wardrobe">
@@ -369,7 +376,8 @@ export function openWardrobe(g, firstTime = false) {
         <div class="opt"><span class="label">Skin</span><div class="choices">${swatches('skin', SKIN_TONES)}</div></div>
         <div class="opt"><span class="label">Hair</span><div class="choices">${words('hairStyle', HAIR_STYLES)}</div></div>
         <div class="opt"><span class="label">Hair colour</span><div class="choices">${swatches('hairColor', HAIR_COLORS)}</div></div>
-        <div class="opt"><span class="label">Outfit</span><div class="choices">${words('outfitStyle', OUTFIT_STYLES)}</div></div>
+        <div class="opt"><span class="label">Outfit</span><div class="choices">${words('outfitStyle', OUTFIT_STYLES, i => i < 3 || unlocked['style' + i])}</div></div>
+        <div class="opt"><span class="label">Hat</span><div class="choices">${hatChoices}</div>${lockedNote}</div>
         <div class="opt"><span class="label">Outfit colour</span><div class="choices">${swatches('outfit', OUTFIT_COLORS)}</div></div>
       </div>
     </div>

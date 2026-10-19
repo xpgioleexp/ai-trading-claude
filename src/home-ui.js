@@ -3,6 +3,7 @@ import { cloud, setDoc, updateDoc, deleteDoc, newId, now } from './cloud.js';
 import { S } from './shared.js';
 import { openSheet, closeSheet, toast, esc } from './ui.js';
 import { ITEMS } from './data.js';
+import { addItem, removeItem } from './rules.js';
 import { nameOf } from './together.js';
 import { makeCanvas } from './sprites.js';
 import {
@@ -135,7 +136,10 @@ export function openFurnish(g, tab = 'furniture') {
   let inner = '';
   if (tab === 'furniture') {
     const cats = [...new Set(FURNITURE.map(f => f.category))];
-    inner = `<p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. Pick a piece, then tap the floor twice to place it.</p>
+    const made = g.state.bag.filter(slot => ITEMS[slot.id]?.furniture && FURNITURE_BY_TYPE[ITEMS[slot.id].furniture]);
+    inner = `${made.length ? `<h3>Made by you</h3><div class="decor-grid">${made.map(slot => `
+        <button class="decor" data-place-made="${slot.id}"><img src="${pic('f-' + ITEMS[slot.id].furniture, furnitureSprite(ITEMS[slot.id].furniture))}" alt="" width="48" height="48"><span>${esc(ITEMS[slot.id].name)}</span><small>${slot.n} in bag</small></button>`).join('')}</div>` : ''}
+      <p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. Pick a piece, then tap the floor twice to place it.</p>
       ${cats.map(cat => `<h3>${esc(cat)}</h3><div class="decor-grid">${FURNITURE.filter(f => f.category === cat).map(f => `
         <button class="decor" data-buy="${f.type}" ${g.state.pebbles < f.price ? 'disabled' : ''}>
           <img src="${pic('f-' + f.type, furnitureSprite(f.type))}" alt="" width="48" height="48"><span>${esc(f.name)}</span><small>${f.price}</small></button>`).join('')}</div>`).join('')}`;
@@ -177,13 +181,20 @@ export function openFurnish(g, tab = 'furniture') {
       closeSheet();
       g.startPlacing({ type: S.furniture[b.dataset.move].type, furniture: true, moveId: b.dataset.move });
     }));
+    body.querySelectorAll('[data-place-made]').forEach(b => b.addEventListener('click', () => {
+      closeSheet();
+      g.startPlacing({ type: ITEMS[b.dataset.placeMade].furniture, furniture: true, fromBag: b.dataset.placeMade });
+    }));
     body.querySelectorAll('[data-return]').forEach(b => b.addEventListener('click', () => {
       const f = S.furniture[b.dataset.return];
-      const price = f.starter ? 0 : FURNITURE_BY_TYPE[f.type]?.price || 0;
-      g.state.pebbles += price;
+      if (f.made && addItem(g.state, f.made, 1)) toast('Back in your bag.');
+      else {
+        const price = f.starter ? 0 : FURNITURE_BY_TYPE[f.type]?.price || 0;
+        g.state.pebbles += price;
+        toast(`Returned. +${price} pebbles`);
+      }
       g.save();
       deleteDoc(`furniture/${b.dataset.return}`);
-      toast(`Returned. +${price} pebbles`);
       setTimeout(() => openFurnish(g, 'here'), 200);
     }));
     body.querySelectorAll('[data-hang]').forEach(b => b.addEventListener('click', async () => {
@@ -235,9 +246,15 @@ function tileOf(tile) {
   return c;
 }
 
-export function placeFurniture(g, { type, moveId }, c, r) {
+export function placeFurniture(g, { type, moveId, fromBag }, c, r) {
   if (moveId) {
     updateDoc(`furniture/${moveId}`, { c, r }).catch(() => {});
+    return true;
+  }
+  if (fromBag) {
+    if (!removeItem(g.state, fromBag, 1)) return false;
+    g.save();
+    setDoc(`furniture/${newId()}`, { room: g.roomId, type, c, r, by: cloud.me, at: now(), made: fromBag }).catch(() => {});
     return true;
   }
   const price = FURNITURE_BY_TYPE[type]?.price || 0;

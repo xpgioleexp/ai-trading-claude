@@ -35,7 +35,7 @@ const EFFECTS = {
   call: { happy: 5 }, forage: { full: 8, happy: 6 }, inspect: { happy: 8 }, friend: { happy: 14 }, tunnel: { happy: 12, rested: -4 },
   bask: { rested: 12, happy: 6 }, dig: { happy: 10, clean: -8 }, swim: { clean: 15, happy: 10 }, splash: { happy: 12, clean: 6 },
   croak: { happy: 8 }, shell: { happy: 8 }, cave: { happy: 10 }, return: { happy: 4 },
-  roll: { happy: 10 }, current: { happy: 10, clean: 8 }, pond: { happy: 8 }, bowl: { happy: 6 },
+  roll: { happy: 10 }, toy: { happy: 30, rested: -6 }, current: { happy: 10, clean: 8 }, pond: { happy: 8 }, bowl: { happy: 6 },
 };
 
 // The little thing each action makes the animal do in the jar.
@@ -44,7 +44,7 @@ const MOTION = {
   swim: 'water', splash: 'water', pond: 'water', current: 'water', bowl: 'land',
   rest: 'sleep', nap: 'sleep', shade: 'sleep',
   hide: 'hide', tunnel: 'hide', cave: 'hide', peekaboo: 'hide',
-  sing: 'notes', croak: 'notes', bubbles: 'bubbles', return: 'land',
+  sing: 'notes', croak: 'notes', bubbles: 'bubbles', return: 'land', toy: 'zoom',
 };
 
 export const COOLDOWN_MS = 8000;

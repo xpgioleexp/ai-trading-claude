@@ -375,7 +375,7 @@ export function openMailbox(g, letters) {
       g.save();
       S.gifts[b.dataset.openGift] = { ...gift, opened: true };
       await updateDoc(`gifts/${b.dataset.openGift}`, { opened: true }).catch(() => {});
-      toast(`You got a ${ITEMS[gift.item].name.toLowerCase()}!`, gift.item);
+      toast(ITEMS[gift.item].cat === 'gift' ? `${nameOf(gift.from)} made you a ${ITEMS[gift.item].name.toLowerCase()}!` : `You got a ${ITEMS[gift.item].name.toLowerCase()}!`, gift.item);
       openMailbox(g, letters);
     }));
   }, null, () => openMailbox(g, letters));
@@ -673,6 +673,7 @@ function momentsHtml(g, limit) {
   for (const d of Object.values(S.dates)) if (d.done) items.push({ at: d.doneAt || d.at, kind: 'Date', html: `<p>${esc(d.title)}</p>` });
   for (const d of Object.values(S.dreams)) if (d.stage === 'done') items.push({ at: d.at, kind: 'Dream come true', html: `<p>${esc(d.title)}</p>` });
   for (const [id, d] of Object.entries(S.discoveries)) if (d.at) items.push({ at: d.at, kind: 'Discovery', html: `<p>${esc(C.landmarks.find(l => l.id === id)?.secret || id)}</p>` });
+  for (const x of Object.values(S.gifts)) if (x.opened && ITEMS[x.item]?.cat === 'gift') items.push({ at: x.at, kind: 'Handmade gift', html: `<p>${esc(nameOf(x.from))} made ${esc(nameOf(x.to) === 'You' ? 'you' : nameOf(x.to))} a ${esc(ITEMS[x.item].name.toLowerCase())}.</p>` });
   for (const m of Object.values(S.meals)) items.push({ at: m.at, kind: 'Cooked together', html: `<p>You made ${esc((RECIPE_BY_ID[m.recipeId]?.name || 'a mystery stew').toLowerCase())} together.</p>` });
   const nights = {};
   for (const n of Object.values(S.goodnights)) (nights[n.day] = nights[n.day] || []).push(n);

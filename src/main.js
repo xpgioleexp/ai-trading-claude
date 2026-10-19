@@ -19,6 +19,7 @@ import { openHangout, startHangout } from './hangout.js';
 import { DOOR, FURNITURE_BY_TYPE, WALL_BY_TYPE, canPlace, blockedTiles, roomWalkable, tilesOf } from './home.js';
 import { openFurnish, ensureFirstRoom, roomsList, placeFurniture } from './home-ui.js';
 import { openKitchen, maybeStartPart, maybeFinish, noticeInvite } from './kitchen.js';
+import { openCrafting } from './crafting-ui.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -256,7 +257,7 @@ function readOthers() {
 
 function cleanLook(l) {
   const n = (v, max) => Math.max(0, Math.min(max, v | 0));
-  return { skin: n(l.skin, 4), hairStyle: n(l.hairStyle, 5), hairColor: n(l.hairColor, 6), outfit: n(l.outfit, 5), outfitStyle: n(l.outfitStyle, 2) };
+  return { skin: n(l.skin, 4), hairStyle: n(l.hairStyle, 5), hairColor: n(l.hairColor, 6), outfit: n(l.outfit, 5), outfitStyle: n(l.outfitStyle, 3), hat: n(l.hat, 4) };
 }
 
 function updateOthers(dt) {
@@ -323,6 +324,7 @@ function tapJar(c, r, x, y) {
     walkTo(c, r, () => {
       const id = R.pickForage(g.state, fi);
       if (id) {
+        R.addItem(g.state, 'fiber', 1);
         save();
         gained(id);
         if (id === 'morel' || id === 'chanterelle') T.noticeDiscovery('mushroom-ring');
@@ -368,6 +370,7 @@ function useBed(i) {
   } else if (stage === 3) {
     const id = R.harvestBed(g.state, i, g.today);
     if (id) {
+      R.addItem(g.state, 'fiber', 1);
       save();
       saveSharedBed(i);
       gained(id);
@@ -396,7 +399,7 @@ function useObject(o) {
     case 'tent': return ready() && enterHome();
     case 'mailbox': return ready() && T.openMailbox(g, UI.letters(g));
     case 'crate': return UI.openCrate(g);
-    case 'workbench': return UI.openWorkbench(g);
+    case 'workbench': return openCrafting(g);
     case 'stall': return UI.openShop(g);
     case 'board': return ready() && T.openBoard(g);
     case 'well': return ready() && T.openDreams(g);
@@ -410,6 +413,8 @@ function useObject(o) {
     case 'tree': {
       const got = R.shakeTree(g.state, g.today);
       if (got) {
+        R.addItem(g.state, 'wood', 2);
+        UI.toast('+2 Wood', 'wood');
         save();
         gained(got.id, got.n);
       } else UI.toast(g.state.daily.shook ? 'No more fruit today. It grows back overnight.' : 'Your bag is full.');
@@ -962,6 +967,8 @@ function start(hotData = {}) {
     residents: [], decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
     openKitchen: () => ready() && openKitchen(g),
+    openCrafting: () => openCrafting(g),
+    openTools: () => UI.openWorkbench(g),
     fishing: null, action: null, effects: [], hold: false, t: 0, today,
     debugHour: null, save, startPlacing, animalReacts, resetMine,
   };

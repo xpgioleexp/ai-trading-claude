@@ -8,6 +8,13 @@ import { nameOf, saveFile, reminderIcs } from './together.js';
 import { decorSprite } from './sprites-more.js';
 import { makeCanvas } from './sprites.js';
 import { openHome } from './home-ui.js';
+import { ITEMS } from './data.js';
+import { addItem, removeItem } from './rules.js';
+
+// Toys you've crafted (they aren't used up).
+function toysIn(g) {
+  return [...new Set(g.state.bag.filter(s => ITEMS[s.id]?.cat === 'toy').map(s => s.id))];
+}
 
 const decorIcons = new Map();
 function decorIcon(type, season) {
@@ -29,7 +36,10 @@ export function openBuild(g, tab = 'shop') {
   let inner = '';
   if (tab === 'shop') {
     const cats = [...new Set(C.decorations.map(d => d.category))];
-    inner = `<p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. Pick something, then tap a free spot in the jar.</p>
+    const made = g.state.bag.filter(slot => ITEMS[slot.id]?.decor && C.decorByType[ITEMS[slot.id].decor]);
+    inner = `${made.length ? `<h3>Made by you</h3><div class="decor-grid">${made.map(slot => `
+        <button class="decor" data-place-made="${slot.id}"><img src="${decorIcon(ITEMS[slot.id].decor, g.season)}" alt="" width="48" height="51"><span>${esc(ITEMS[slot.id].name)}</span><small>${slot.n} in bag</small></button>`).join('')}</div>` : ''}
+      <p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. Pick something, then tap a free spot in the jar.</p>
       ${cats.map(cat => `<h3>${esc(cat)}</h3><div class="decor-grid">${C.decorations.filter(d => d.category === cat).map(d => `
         <button class="decor" data-buy="${d.type}" ${g.state.pebbles < d.price ? 'disabled' : ''}>
           <img src="${decorIcon(d.type, g.season)}" alt="" width="48" height="51"><span>${esc(d.name)}</span><small>${d.price}</small></button>`).join('')}</div>`).join('')}`;
@@ -59,12 +69,19 @@ export function openBuild(g, tab = 'shop') {
       closeSheet();
       g.startPlacing({ type: S.decor[b.dataset.move].type, moveId: b.dataset.move });
     }));
+    body.querySelectorAll('[data-place-made]').forEach(b => b.addEventListener('click', () => {
+      closeSheet();
+      g.startPlacing({ type: ITEMS[b.dataset.placeMade].decor, fromBag: b.dataset.placeMade });
+    }));
     body.querySelectorAll('[data-return]').forEach(b => b.addEventListener('click', () => {
       const d = S.decor[b.dataset.return];
-      g.state.pebbles += C.decorByType[d.type]?.price || 0;
+      if (d.made && addItem(g.state, d.made, 1)) toast('Back in your bag.');
+      else {
+        g.state.pebbles += C.decorByType[d.type]?.price || 0;
+        toast(`Returned. +${C.decorByType[d.type]?.price || 0} pebbles`);
+      }
       g.save();
       deleteDoc(`decor/${b.dataset.return}`);
-      toast(`Returned. +${C.decorByType[d.type]?.price || 0} pebbles`);
       setTimeout(() => openBuild(g, 'placed'), 200);
     }));
     body.querySelectorAll('[data-adopt]').forEach(b => b.addEventListener('click', async () => {
@@ -77,9 +94,15 @@ export function openBuild(g, tab = 'shop') {
   }, null, () => openBuild(g, tab));
 }
 
-export function placeDecor(g, { type, moveId }, c, r) {
+export function placeDecor(g, { type, moveId, fromBag }, c, r) {
   if (moveId) {
     updateDoc(`decor/${moveId}`, { c, r }).catch(() => {});
+    return true;
+  }
+  if (fromBag) {
+    if (!removeItem(g.state, fromBag, 1)) return false;
+    g.save();
+    setDoc(`decor/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, { type, c, r, by: cloud.me, at: now(), made: fromBag }).catch(() => {});
     return true;
   }
   const price = C.decorByType[type]?.price || 0;
@@ -111,12 +134,19 @@ export function openAnimal(g, resident, group = 'care') {
       const wait = cooldownLeft(doc, a.id);
       return `<button class="btn small" data-act="${a.id}" ${wait ? 'disabled' : ''}>${esc(a.label)}</button>`;
     }).join('')}</div>
+    ${sp !== 'marimo' && toysIn(g).length ? `<span class="label">Play with a toy</span><div class="actions">${toysIn(g).map(id => `<button class="btn small" data-toy="${id}" ${cooldownLeft(doc, 'toy') ? 'disabled' : ''}>${esc(ITEMS[id].name)}</button>`).join('')}</div>` : ''}
     <form id="rename" class="inline"><label class="sr" for="pet-name">Name</label><input id="pet-name" maxlength="24" value="${esc(doc.name)}"><button class="btn small ghost" type="submit">Rename</button></form>`;
   openSheet(`${doc.name} the ${SPECIES_INFO[sp].label.toLowerCase()}`, html, body => {
     body.querySelectorAll('[data-group]').forEach(b => b.addEventListener('click', () => openAnimal(g, resident, b.dataset.group)));
     body.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
       const motion = care(sp, b.dataset.act);
       g.animalReacts(resident, motion, b.dataset.act);
+      openAnimal(g, resident, group);
+    }));
+    body.querySelectorAll('[data-toy]').forEach(b => b.addEventListener('click', () => {
+      const motion = care(sp, 'toy');
+      g.animalReacts(resident, motion, 'toy');
+      toast(`${doc.name} loves the ${ITEMS[b.dataset.toy].name.toLowerCase()}!`);
       openAnimal(g, resident, group);
     }));
     body.querySelector('#rename').addEventListener('submit', e => {

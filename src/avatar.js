@@ -9,7 +9,7 @@ export const AVATAR_H = 24;
 
 // pose: 'walk' (frames 0-3), 'sit', 'cast', 'swing' (frames 0-1), 'crouch'
 export function avatarSprite(look, dir, frame, pose = 'walk') {
-  const key = `avatar_${look.skin}_${look.hairStyle}_${look.hairColor}_${look.outfit}_${look.outfitStyle}_${dir}_${pose}_${frame}`;
+  const key = `avatar_${look.skin}_${look.hairStyle}_${look.hairColor}_${look.outfit}_${look.outfitStyle}_${look.hat || 0}_${dir}_${pose}_${frame}`;
   return sprite(key, AVATAR_W, AVATAR_H, ctx => drawAvatar(ctx, look, dir, frame, pose));
 }
 
@@ -62,6 +62,12 @@ function drawAvatar(ctx, look, dir, frame, pose) {
     rect(5, bodyTop, 1, 2, outfit);
     rect(10, bodyTop, 1, 2, outfit);
     rect(6, bodyTop + 3, 4, 1, outfitShade);
+  } else if (look.outfitStyle === 3) {
+    // cozy sweater with stripes
+    rect(4, bodyTop, 8, 7, outfit);
+    rect(4, bodyTop + 2, 8, 1, PAL.linenHi);
+    rect(4, bodyTop + 5, 8, 1, PAL.linenHi);
+    rect(6, bodyTop, 4, 1, outfitShade);
   } else {
     rect(4, bodyTop, 8, 7, outfit);
     rect(4, bodyTop + 6, 8, 1, outfitShade);
@@ -108,6 +114,31 @@ function drawAvatar(ctx, look, dir, frame, pose) {
 
   // Hair
   drawHair(rect, look.hairStyle, dir, headTop, hair, hairShade, side);
+  drawHat(rect, look.hat || 0, headTop);
+}
+
+// Crafted hats sit over the hair.
+function drawHat(rect, hat, top) {
+  if (hat === 1) {
+    // flower crown
+    rect(3, top, 10, 1, PAL.leaf);
+    for (const [x, c] of [[3, PAL.rose], [6, '#E8C25A'], [9, PAL.roseHi], [12, '#9C82C9']]) rect(x, top - 1, 2, 2, c);
+  } else if (hat === 2) {
+    // straw hat
+    rect(1, top + 1, 14, 2, '#E3C27A');
+    rect(4, top - 3, 8, 4, '#E9CF8A');
+    rect(4, top, 8, 1, PAL.rose);
+  } else if (hat === 3) {
+    // beanie
+    rect(3, top - 3, 10, 5, PAL.rose);
+    rect(3, top + 1, 10, 1, PAL.roseShade);
+    rect(7, top - 5, 2, 2, PAL.linenHi);
+  } else if (hat === 4) {
+    // bow
+    rect(9, top - 2, 2, 2, PAL.roseShade);
+    rect(7, top - 3, 2, 3, PAL.rose);
+    rect(11, top - 3, 2, 3, PAL.rose);
+  }
 }
 
 function drawHair(rect, style, dir, top, hair, dark, side) {

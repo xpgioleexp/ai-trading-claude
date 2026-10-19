@@ -454,3 +454,8 @@ body {
 .result { text-align: center; display: grid; justify-items: center; }
 .icon.big { width: 64px; height: 64px; }
 .stars { font-size: 26px; color: #e0b45a; margin: 0; letter-spacing: 4px; }
+
+/* ---------- crafting ---------- */
+.needs-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.need-chip { font-size: 14px; padding: 0 5px; background: #ead7d2; color: var(--ink); }
+.need-chip.ok { background: #d3e3bf; }
