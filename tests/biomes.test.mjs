@@ -25,7 +25,8 @@ test('eight jars, each with two animals, one shop and two special spots', () => 
     assert.equal(m.objects.filter(o => o.kind === 'spot').length + (m.digs ? 1 : 0), 2, id);
     assert.ok(mapCatch(Math.random, id, 12).id);
   }
-  assert.equal(CRITTERS.length, 16);
+  assert.equal(CRITTERS.filter(c => c.jar !== 'forest').length, 16);
+  assert.ok(CRITTERS.filter(c => c.jar === 'forest').length >= 14);
 });
 
 test('every spot, shop, tree and pond in every jar can be reached from the door', () => {

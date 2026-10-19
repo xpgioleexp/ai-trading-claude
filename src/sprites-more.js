@@ -681,6 +681,47 @@ export function critterSprite(shape, color, accent, frame) {
         px(ctx, 5, 9 - up, 6, 7, '#F2EDE4'); e(6, 12); e(9, 12);
         px(ctx, 5, 16, 2, 2, '#E9DFC0'); px(ctx, 9, 16, 2, 2, '#E9DFC0');
         break;
+      case 'squirrel':
+        disc(ctx, 4, 8 - up, 4, color); disc(ctx, 3, 5 - up, 3, l);
+        disc(ctx, 10, 12, 3.5, color); disc(ctx, 11, 8 - up, 2.6, color);
+        px(ctx, 10, 5 - up, 1, 2, color); e(12, 8);
+        px(ctx, 8, 15, 2, 2, d); px(ctx, 11, 15, 2, 2, d);
+        break;
+      case 'duck': case 'duckling': {
+        const sm = shape === 'duckling' ? 0.7 : 1;
+        disc(ctx, 8, 12, 5 * sm, color); disc(ctx, 11, 7 + (1 - sm) * 4 - up, 3 * sm, shape === 'duck' ? '#4F8A4A' : color);
+        px(ctx, 13, 7 + (1 - sm) * 4 - up, 3, 2, '#E8A03A'); e(11, 6 + (1 - sm) * 4);
+        px(ctx, 3, 11, 3, 2, d);
+        break;
+      }
+      case 'hedgehog':
+        disc(ctx, 7, 12 - up * 0.5, 5, d);
+        for (let x = 3; x < 12; x += 2) px(ctx, x, 7 - up + (x % 4 ? 1 : 0), 2, 3, d);
+        disc(ctx, 12, 12, 2.5, '#D9C9A0'); e(12, 11); px(ctx, 14, 12, 1, 1, PAL.inkDeep);
+        break;
+      case 'cat':
+        disc(ctx, 8, 12 - up * 0.5, 4.5, color); disc(ctx, 8, 6 - up, 3.5, color);
+        px(ctx, 5, 2 - up, 2, 2, color); px(ctx, 9, 2 - up, 2, 2, color); e(7, 6); e(9, 6);
+        px(ctx, 12, 9, 3, 1, color); px(ctx, 14, 7, 1, 3, color);
+        if (accent) px(ctx, 6, 9 - up, 4, 1, accent);
+        break;
+      case 'turtle':
+        disc(ctx, 8, 11, 6, accent || '#8E7A4E'); px(ctx, 4, 8, 8, 1, shade(accent || '#8E7A4E', 0.3));
+        disc(ctx, 13, 7 - up, 3, color); e(14, 6); px(ctx, 3, 15, 2, 2, color); px(ctx, 11, 15, 2, 2, color);
+        px(ctx, 10, 2 - up, 6, 2, '#5F7FB5');
+        break;
+      case 'mole':
+        disc(ctx, 8, 11 - up * 0.5, 5.5, color); disc(ctx, 12, 9 - up, 2.5, color);
+        px(ctx, 14, 9 - up, 2, 2, accent || '#E07A9B'); e(11, 8);
+        px(ctx, 4, 14, 3, 2, '#E9C9B0'); px(ctx, 10, 14, 3, 2, '#E9C9B0');
+        px(ctx, 6, 3 - up, 6, 2, '#D9B47A');
+        break;
+      case 'pelican':
+        disc(ctx, 7, 11 - up, 5, color); disc(ctx, 9, 4 - up, 2.5, color); e(9, 3);
+        px(ctx, 11, 4 - up, 5, 2, accent || '#E8B83A'); px(ctx, 11, 6 - up, 4, 2, shade(accent || '#E8B83A', -0.15));
+        px(ctx, 5, 16, 2, 2, '#E8A03A'); px(ctx, 8, 16, 2, 2, '#E8A03A');
+        px(ctx, 2, 9 - up, 4, 3, '#5F7FB5');
+        break;
       case 'snail':
         px(ctx, 1, 13, 14, 3, '#D9C9A0'); disc(ctx, 7, 9, 5, color); disc(ctx, 7, 9, 2.5, d);
         px(ctx, 12, 8 - up, 1, 5, '#D9C9A0'); e(12, 7);

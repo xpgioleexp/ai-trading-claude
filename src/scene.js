@@ -100,6 +100,35 @@ function drawEdgeHints(ctx, g) {
   if (cam < max - 2) chevron(300 + pulse, 1);
 }
 
+// The animals and people who live in a jar (see behaviors.js): hops and flights
+// get a shadow, sleepers get a z, hiders and climbers vanish for a moment.
+function drawCritters(ctx, g, items) {
+  for (const a of g.critters || []) {
+    if (a.hidden || a.pose === 'climb') continue;
+    const frame = a.pose === 'sleep' ? 0 : Math.floor(g.t * (a.z > 0 ? 6 : 2) + a.phase) % 2;
+    const img = critterSprite(a.def.shape, a.def.color, a.def.accent, frame);
+    const z = Math.round(a.z || 0);
+    items.push({ y: a.y, draw: () => {
+      const x = Math.round(a.x), y = Math.round(a.y);
+      if (z > 0) { ctx.fillStyle = 'rgba(40,30,20,0.25)'; ctx.fillRect(x - 4, y - 1, 8, 2); }
+      if (a.pose === 'hide') { px(ctx, x - 3, y - 3, 6, 3, shade(a.def.color, -0.2)); return; }
+      ctx.save();
+      const top = y - img.height + 2 - z + (a.pose === 'crouch' || a.pose === 'slide' ? 3 : 0);
+      if (a.flip) { ctx.translate(x, 0); ctx.scale(-1, 1); ctx.drawImage(img, -8, top); }
+      else ctx.drawImage(img, x - 8, top);
+      ctx.restore();
+      if (a.pose === 'sleep' && Math.floor(g.t) % 2 === 0) ctx.drawImage(zzzSprite(), x + 4, top - 6);
+      if (a.pose === 'dig') for (let i = 0; i < 3; i++) px(ctx, x - 6 + i * 5 + Math.round(Math.sin(g.t * 9 + i) * 2), y - 3 - (Math.floor(g.t * 8 + i) % 3), 2, 2, '#C9A272');
+      if (a.pose === 'fish') {
+        ctx.strokeStyle = PAL.woodShade;
+        ctx.beginPath(); ctx.moveTo(x + 4, top + 6); ctx.lineTo(x + 16, top - 4); ctx.lineTo(x + 20, y + 10); ctx.stroke();
+      }
+      if (a.pose === 'paint') ctx.drawImage(easelSprite(), x + 8, y - 26);
+      if (a.pose === 'busy' && a.def.id === 'poppy') px(ctx, x + 6, top + 8, 3, 3, '#5FA8C9');
+    } });
+  }
+}
+
 // ---------- the forest jar ----------
 
 function drawJarWorld(ctx, g) {
@@ -230,12 +259,13 @@ function drawJarWorld(ctx, g) {
       if (b.alert > 0.4) px(ctx, bx, by - 12, 2, 4 + Math.round(b.alert * 2), b.alert > 0.75 ? '#D9533C' : '#E8C25A');
     } });
   }
+  drawCritters(ctx, g, items);
   if (g.eventsToday?.length) at({ ...EVENT_SPOT, w: 1, h: 1 }, eventStandSprite(), 0, -1);
   if (g.snowman) at({ ...SNOWMAN_SPOT, w: 1, h: 1 }, snowmanSprite(), 0, -1);
   for (const v of g.visitors || []) {
     const frame = Math.floor(g.t * 1.2 + v.phase) % 2;
     const img = v.kind === 'merchant' ? merchantSprite(frame) : visitorSprite(v.def.species, v.def.color, frame);
-    const x = Math.round(v.x - img.width / 2), y = Math.round(v.y - img.height + 1);
+    const x = Math.round(v.x - img.width / 2), y = Math.round(v.y - img.height + 1 - (v.z || 0));
     items.push({ y: v.y, draw: () => {
       ctx.drawImage(img, x, y);
       if (v.ask) ctx.drawImage(requestMarkSprite(), x + img.width - 4, y - 8 - (Math.floor(g.t * 2) % 2));
@@ -611,18 +641,7 @@ function drawMapWorld(ctx, g) {
     px(ctx, x, y, falls.w * TILE, (falls.r + 2) * TILE + 20, '#9FD3E0');
     for (let i = 0; i < 6; i++) px(ctx, x + 4 + i * 7, y + ((g.t * 60 + i * 13) % ((falls.r + 2) * TILE + 16)), 2, 6, '#F2FAFF');
   }
-  for (const a of g.critters || []) {
-    const img = critterSprite(a.def.shape, a.def.color, a.def.accent, Math.floor(g.t * 2 + a.c) % 2);
-    items.push({ y: a.y, draw: () => {
-      ctx.save();
-      if (a.flip) {
-        ctx.translate(Math.round(a.x), 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(img, -8, Math.round(a.y - img.height + 2));
-      } else ctx.drawImage(img, Math.round(a.x) - 8, Math.round(a.y - img.height + 2));
-      ctx.restore();
-    } });
-  }
+  drawCritters(ctx, g, items);
   for (const b of g.bugs) {
     const def = BUG_BY_ID[b.id];
     const flap = Math.floor(g.t * 6 + b.phase) % 2;

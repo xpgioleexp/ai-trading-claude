@@ -126,7 +126,7 @@ export function openFriends(g) {
   const req = requestFor(s.seed, g.today, v);
   const done = S.deliveries?.[String(g.today)];
   const residents = g.residents || [];
-  const jarFriends = CRITTERS.filter(c => jarUnlocked(c.jar));
+  const jarFriends = CRITTERS.filter(c => c.jar === 'forest' || jarUnlocked(c.jar));
   UI.openSheet('Friends', `
     <h3>Visiting today</h3>
     <ul class="list">
@@ -138,8 +138,8 @@ export function openFriends(g) {
     ${residents.length ? `<ul class="list">${residents.map((a, i) => `<li><span class="name">${esc(S.animals?.[a.species]?.name || C.species?.[a.species]?.name || a.species)}<small>Lives in your meadow</small></span>
       <button class="btn small" data-resident="${i}">Visit</button></li>`).join('')}</ul>`
       : '<p class="detail">No animals yet. Invite one from Build → Residents.</p>'}
-    <h3>Friends in the jars</h3>
-    ${jarFriends.length ? `<ul class="list">${jarFriends.map(c => `<li><span class="name">${esc(c.name)} the ${esc(c.species)}<small>${esc(MAPS[c.jar].name)}</small></span>
+    <h3>Neighbours and wild friends</h3>
+    ${jarFriends.length ? `<ul class="list">${jarFriends.map(c => `<li><span class="name">${esc(c.name)} the ${esc(c.species)}<small>${esc(c.jar === 'forest' ? 'Your meadow' : MAPS[c.jar].name)}${c.person ? ' · a neighbour' : ''}</small></span>
       <span class="detail small">${hearts(heartsOf(pointsFor(S.critters || {}, c.id)), MAX_HEARTS)}</span></li>`).join('')}</ul>`
       : '<p class="detail">Open another jar from the Jars app to meet the animals who live there.</p>'}
     <h3>Visitors you know</h3>

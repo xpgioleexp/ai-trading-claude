@@ -179,6 +179,10 @@ The waterfall, hot spring steam, starry sky and glade mist are drawn in code in 
 
 The phone and its 24 app icons are styled in CSS (`style.css`, "the phone"). The icons are emoji placeholders, set in `APPS` in `src/phone.js`. For real icons, make 24 square icons (52 × 52 shown, drawn at 26 × 26 or 52 × 52), one per app id, and send them to Claude to wire up.
 
+### Meadow neighbours and wildlife
+
+New critter shapes: squirrel, duck, duckling, hedgehog, cat, turtle, mole and pelican. They're drawn by `critterSprite` in `src/sprites-more.js`, at 16 × 18, in two frames. Behaviour poses are drawn in code in `drawCritters` (`src/scene.js`): sleeping, digging dust, hiding, the fishing rod and the painting easel. Real art could add a sleep frame and a dig frame for each.
+
 ### Visitors and the merchant
 
 | Name | Size | What it is |

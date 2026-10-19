@@ -3,7 +3,7 @@
 import { cloud, setDoc, newId, now } from './cloud.js';
 import { S, partnerId } from './shared.js';
 import { openSheet, toast, esc, updateHud } from './ui.js';
-import { ITEMS } from './data.js';
+import { ITEMS, FISH } from './data.js';
 import * as R from './rules.js';
 import { iconURL } from './sprites.js';
 import { MAPS, mapOpenTiles } from './maps.js';
@@ -14,6 +14,21 @@ import {
   useSpot, SPOT_TEXT, dig, CONSTELLATIONS,
 } from './biomes.js';
 import { rngFor, shuffle } from './rng.js';
+import { makeActor, updateActor, BEHAVIOR_TEXT } from './behaviors.js';
+import { OBJECTS, forageTiles } from './world.js';
+import { pathTo, pathNextTo } from './path.js';
+
+// Extra things people tell you.
+const INFO = {
+  captain: g => {
+    const bite = FISH.filter(f => R.fishAvailable(f, g.season, g.hour, g.weather));
+    const rare = bite.filter(f => ['rare', 'legend'].includes(f.rarity)).map(f => f.name);
+    return `“Biting right now: ${esc(bite.slice(0, 5).map(f => f.name.toLowerCase()).join(', '))}${rare.length ? `. And if you're lucky: ${esc(rare.join(', ').toLowerCase())}` : ''}.”`;
+  },
+  poppy: g => (g.state.daily.poppy ? '“I watered one of your beds this morning.”' : '“I\'ll give your beds a drink on my rounds.”'),
+  pelican: g => (g.unreadMail ? '“You\'ve got mail waiting in your mailbox!”' : '“All delivered for today.”'),
+  iris: g => `“Today I'm painting ${esc(['the forest pool', 'the old oak', 'your garden', 'the mist', 'the willow', 'two little figures by the pond'][g.today % 6])}.”`,
+};
 
 const icon = id => `<img class="icon" src="${iconURL(id)}" alt="" width="32" height="32">`;
 const FEET = 5;
@@ -35,42 +50,68 @@ function saveMoment(g, text) {
 
 // ---------- the animals ----------
 
-// Each animal starts the day somewhere different, then wanders a little.
-export function syncCritters(g) {
-  const map = MAPS[g.mapId];
-  if (!map) { g.critters = []; return; }
-  const open = mapOpenTiles(map).filter(t => t.c > 1);
-  const spots = shuffle(rngFor(g.state.seed, 'critters', g.mapId, g.today), open);
-  g.critters = crittersIn(g.mapId).map((def, i) => {
-    const t = spots[i];
-    const p = tileCenter(t.c, t.r);
-    return { def, c: t.c, r: t.r, x: p.x, y: p.y + FEET, stepAt: g.t + 1 + Math.random() * 3, flip: false };
-  });
+// Each animal starts the day somewhere different (or at its favourite spot),
+// then behaves in its own way (see behaviors.js). Works in the meadow ('forest') and the jars.
+export function critterJar(g) {
+  return g.scene === 'jar' ? 'forest' : g.scene === 'map' ? g.mapId : null;
 }
 
-export function updateCritters(g, dt, walkable) {
-  for (const a of g.critters || []) {
-    const t = tileCenter(a.c, a.r);
-    a.x += (t.x - a.x) * Math.min(1, dt * 4);
-    a.y += (t.y + FEET - a.y) * Math.min(1, dt * 4);
-    if (g.t < a.stepAt) continue;
-    a.stepAt = g.t + 2 + Math.random() * 4;
-    // Mostly they stay put; sometimes they wander toward you.
-    const near = Math.abs(a.c - g.player.c) + Math.abs(a.r - g.player.r) <= 5;
-    const steps = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dc, dr]) => ({ c: a.c + dc, r: a.r + dr }))
-      .filter(s => walkable(s.c, s.r) && !(s.c === g.player.c && s.r === g.player.r) && !g.critters.some(o => o !== a && o.c === s.c && o.r === s.r));
-    if (!steps.length || Math.random() < 0.35) continue;
-    const next = near && Math.random() < 0.5
-      ? steps.sort((p, q) => (Math.abs(p.c - g.player.c) + Math.abs(p.r - g.player.r)) - (Math.abs(q.c - g.player.c) + Math.abs(q.r - g.player.r)))[0]
-      : steps[Math.floor(Math.random() * steps.length)];
-    a.flip = next.c < a.c ? true : next.c > a.c ? false : a.flip;
-    a.c = next.c;
-    a.r = next.r;
+function objectsHere(g) {
+  return g.scene === 'jar' ? OBJECTS : MAPS[g.mapId]?.objects || [];
+}
+
+function tilesOf(o) {
+  const out = [];
+  for (let c = o.c; c < o.c + (o.w || 1); c++) for (let r = o.r; r < o.r + (o.h || 1); r++) out.push({ c, r });
+  return out;
+}
+
+const TREE_KINDS = new Set(['tree', 'palm', 'pine', 'bigtree', 'cactus', 'decotree', 'bamboo', 'fern', 'bigshroom']);
+
+export function syncCritters(g) {
+  const jar = critterJar(g);
+  if (!jar) { g.critters = []; return; }
+  const open = jar === 'forest' ? forageTiles() : mapOpenTiles(MAPS[jar]).filter(t => t.c > 1);
+  const spots = shuffle(rngFor(g.state.seed, 'critters', jar, g.today), open);
+  const objs = objectsHere(g);
+  g.critterTrees = objs.filter(o => TREE_KINDS.has(o.kind) || o.id === 'tree').flatMap(tilesOf);
+  g.critters = crittersIn(jar).map((def, i) => {
+    let tile = def.home && open.some(t => t.c === def.home.c && t.r === def.home.r) ? def.home : spots[i % spots.length];
+    const a = makeActor(def, tile, g.t);
+    if (def.water) {
+      a.waterTiles = objs.filter(o => o.id === def.water).flatMap(tilesOf);
+      if (a.waterTiles.length) {
+        const w = a.waterTiles[(i * 3) % a.waterTiles.length];
+        Object.assign(a, makeActor(def, w, g.t), { waterTiles: a.waterTiles });
+      }
+    }
+    if (def.home) a.home = { ...def.home };
+    return a;
+  });
+  g.critterKey = jar + '|' + g.today;
+}
+
+// onEvent(actor, event): what a creature did this frame (dug, delivered mail...).
+export function updateCritters(g, dt, walkable, onEvent) {
+  const jar = critterJar(g);
+  if (!jar) return;
+  if (g.critterKey !== jar + '|' + g.today) syncCritters(g);
+  const env = {
+    t: g.t, dt, hour: g.hour, night: g.night, walkable, actors: g.critters,
+    player: { c: g.player.c, r: g.player.r, x: g.player.x, y: g.player.y, moving: g.player.path.length > 0, sneaking: !!g.player.slow },
+    anchors: { trees: g.critterTrees || [], water: [] },
+    friend: def => pointsFor(S.critters, def.id) >= POINTS_PER_HEART || !!g.state.daily?.critters?.[def.id]?.pet,
+    route: (from, goal, near) => (near ? pathNextTo(walkable, from, [goal]) : pathTo(walkable, from, goal)),
+  };
+  for (const a of g.critters) {
+    env.anchors.water = a.waterTiles || [];
+    for (const ev of updateActor(a, env)) onEvent?.(a, ev);
   }
 }
 
 export function critterAt(g, x, y) {
-  return (g.critters || []).find(a => Math.abs(x - a.x) < 10 && y > a.y - 20 && y < a.y + 4);
+  return (g.critters || []).find(a => !a.hidden && !['hide', 'climb'].includes(a.pose)
+    && Math.abs(x - a.x) < 10 && y > a.y - (a.z || 0) - 20 && y < a.y - (a.z || 0) + 4);
 }
 
 export function openCritter(g, a) {
@@ -88,13 +129,15 @@ export function openCritter(g, a) {
   const plush = hearts >= MAX_HEARTS && !s.keepsakes?.[def.id];
   openSheet(`${def.name} the ${def.species}`, `
     <p class="detail">${esc(line)}</p>
+    ${INFO[def.id] ? `<p class="detail">${INFO[def.id](g)}</p>` : ''}
+    <p class="detail small">${esc(def.name)} ${esc(BEHAVIOR_TEXT[def.behavior] || 'potters about')}.</p>
     <p class="detail">Friendship: ${'♥'.repeat(hearts)}${'♡'.repeat(MAX_HEARTS - hearts)}${toNext}. You both make it grow.</p>
     ${together ? `<p class="detail small">${esc(nameOf(partnerId()))} is here too. Everything counts a little more together.</p>` : ''}
     <div class="row-actions">
-      <button class="btn" data-act="pet" ${done.pet ? 'disabled' : ''}>Pet</button>
-      <button class="btn" data-act="play" ${done.play ? 'disabled' : ''}>Play</button>
+      <button class="btn" data-act="pet" ${done.pet ? 'disabled' : ''}>${def.person ? 'Chat' : 'Pet'}</button>
+      <button class="btn" data-act="play" ${done.play ? 'disabled' : ''}>${def.person ? (def.tag ? 'Play tag' : 'Help out') : 'Play'}</button>
     </div>
-    <h3>Give a treat${done.treat ? ' (done for today)' : ''}</h3>
+    <h3>${def.person ? 'Give a gift' : 'Give a treat'}${done.treat ? ' (done for today)' : ''}</h3>
     <p class="detail small">${esc(def.name)} loves ${def.likes.map(id => esc(ITEMS[id]?.name.toLowerCase() || id)).join(' and ')}.</p>
     ${done.treat ? '' : food.length ? `<div class="bag-grid">${food.slice(0, 12).map(id => `<button class="slot" data-treat="${id}" aria-label="${esc(ITEMS[id].name)}">${icon(id)}${def.likes.includes(id) ? '<span class="count">♥</span>' : ''}</button>`).join('')}</div>` : '<p class="detail">You have nothing to eat in your bag.</p>'}
     ${gift ? `<div class="row-actions"><button class="btn" id="gift">${esc(def.name)} has something for you</button></div>` : ''}
@@ -107,7 +150,7 @@ export function openCritter(g, a) {
       S.critters[key] = doc;
       setDoc(`critters/${key}`, doc).catch(() => {});
       g.save();
-      const words = { pet: `You pet ${def.name}.`, play: `You play with ${def.name}.`, treat: res.liked ? `${def.name} loves it!` : `${def.name} nibbles it politely.` };
+      const words = { pet: def.person ? `You chat with ${def.name}.` : `You pet ${def.name}.`, play: def.person ? `You spend some time with ${def.name}.` : `You play with ${def.name}.`, treat: res.liked ? `${def.name} loves it!` : `${def.name} nibbles it politely.` };
       toast(`${words[action]} +${res.points} friendship`);
       g.effects.push({ kind: 'heart', x: a.x, y: a.y - 18, t0: g.t });
       const newHearts = heartsOf(pointsFor(S.critters, def.id));

@@ -23,7 +23,7 @@ Any static file server works. There is no build step.
 
 **A wider meadow:** the meadow is four screens wide, with the one you started on second from the left. Walk toward the glass on either side and the view slides with you; little arrows at the edges show there's more that way. **West woods:** a forest pool to fish in and six trees. **East meadow:** a lily pond, a reed pond, eight trees, and the door to the other jars on the far east wall. There's lots of open room for decorations, farm buildings and crafts. Your home, the mine and the other jars still fit on one screen.
 
-**Wider jars:** every jar is three screens wide too, with the jar you know in the middle and its door on the far west wall. Each side has scenery that fits the jar and an extra place to fish:
+**Wider jars:** every jar is three screens wide too, with the jar you know in the middle (door and all), so each one opens up to the left and the right. Each side has scenery that fits the jar and an extra place to fish:
 
 | Jar | Extra pond | Scenery |
 |---|---|---|
@@ -37,6 +37,36 @@ Any static file server works. There is no build step.
 | Starlight isle | moon pool | more clouds |
 
 Wider jars have 8 forage spots a day instead of 5.
+
+**Neighbours and wildlife in the meadow:** they each have their own way of moving and their own hours. Tap any of them to chat, pet, play or give a gift. Friendship works like the jar animals': 5 hearts, a daily present at 3, and a plush at 5.
+
+| Who | What they do |
+|---|---|
+| Nutmeg the squirrel | Dashes from tree to tree and scampers up them |
+| Mama Duck, Pip-pip and Puddle | Paddle round the lily pond, the ducklings in a line behind her |
+| Rosie the robin | Hops about, flies off if you rush at her, lands somewhere else |
+| Willow the deer | West woods, mornings and evenings. Runs off if you move fast; walk slowly to get close |
+| Prickles the hedgehog | Night only. Hides when you come near, then peeks out |
+| Mittens the cat | Follows you around once you've petted her |
+| Hoot the owl | Night only, perched in the west woods |
+| Croaky the frog | Hops around the reed pond |
+| Captain Shellby (turtle) | Fishes at the reed pond 7am–7pm and tells you what's biting right now, rare fish too |
+| Poppy (mole) | Morning garden rounds: waters one of your beds each day, then visits the woods |
+| Percy (pelican) | Walks in from the east wall each morning with the mail |
+| Iris (cat) | Paints in the west woods in the afternoon, a different scene each day |
+| Bo and Bea (bunnies) | Play tag in the east meadow in the afternoon |
+
+The jar animals each have their own behaviour too:
+- **Beach:** Pinch scuttles sideways and Sky flies off.
+- **Snow:** Pebble belly-slides and Frost stalks and pounces.
+- **Flower:** Bumble flits about and Fawn is shy.
+- **Desert:** Sahara digs and Humphrey naps.
+- **Rainforest:** Tico flies between trees and Mo the sloth barely moves.
+- **Mushroom glade:** Puff hides when you come near and Luna circles the pond.
+- **Hot springs:** Mochi paddles in the hot spring and Yuki follows you.
+- **Starlight isle:** Comet hops and Nova circles the telescope.
+
+The daily visitor strolls around their spot in their own way.
 
 **For testing:** every jar on the shelf is open for now (`PREVIEW_ALL_JARS` in `src/travel.js`). Set it to `false` to make jars cost pebbles again.
 
@@ -288,6 +318,7 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 | `src/furniture-data.js` | The furniture sets and wall items, each drawn from a shape and two colours |
 | `src/outdoor-data.js` | Outdoor crafts and the craftable home pieces |
 | `src/phone.js` | The phone: every panel as an app, plus the Friends and Mine apps |
+| `src/behaviors.js` | How animals and people move: scuttling, hopping, flying, shy, following, napping, sliding, digging, pouncing, hiding, swimming, climbing, tag, sitting and daily routines |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |

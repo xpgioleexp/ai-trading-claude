@@ -219,7 +219,7 @@ for (const [id, objs] of Object.entries(MORE_OBJECTS)) {
 // ---------- wider jars ----------
 
 // Every jar is three screens wide, like the meadow: its west side, the jar as
-// it was in the middle, and its east side. The door sits on the far west wall.
+// it was in the middle (door and all), and its east side.
 export const JAR_WEST = 17;
 export const JAR_COLS = 34;
 const WIDE = {
@@ -279,7 +279,6 @@ for (const [id, extras] of Object.entries(WIDE)) {
   map.west = JAR_WEST;
   map.cols = JAR_COLS;
   const door = map.objects.find(o => o.id === 'door');
-  if (door) door.c = -JAR_WEST;
   // The sea runs the whole width of the beach.
   for (const o of map.objects) if (o.kind === 'sea') { o.c = -JAR_WEST; o.w = JAR_WEST + JAR_COLS; }
   for (const o of extras) map.objects.push({ w: 1, h: 1, ...o });
@@ -336,6 +335,75 @@ export const CRITTERS = [
   { id: 'nova', name: 'Nova', species: 'moon moth', jar: 'stars', shape: 'moth', color: '#9C82C9', likes: ['moon_pie', 'honey'], gifts: ['moon_moss', 'stardust'],
     lines: ['Nova traces little circles in the starlight.', 'Nova glows softly when you\'re near.', 'Nova lands on the telescope and looks through it too.'] },
 ];
+// How each jar animal moves (see behaviors.js).
+const JAR_BEHAVIOR = {
+  pinch: 'scuttle', sky: 'flyer', pebble: 'slider', frost: 'pouncer', bumble: 'flitter', fawn: 'shy', sahara: 'digger', humphrey: 'lazy',
+  tico: 'flyer', mo: 'lazy', puff: 'peeker', luna: 'orbit', mochi: 'swimmer', yuki: 'follower', comet: 'hopper', nova: 'orbit',
+};
+for (const c of CRITTERS) c.behavior = JAR_BEHAVIOR[c.id] || 'wander';
+// Mochi soaks in the hot spring; Nova circles the telescope; Luna the glowing pond.
+CRITTERS.find(c => c.id === 'mochi').water = 'onsen';
+CRITTERS.find(c => c.id === 'nova').home = { c: 13, r: 3 };
+CRITTERS.find(c => c.id === 'luna').home = { c: 12, r: 6 };
+CRITTERS.find(c => c.id === 'luna').night = false;
+
+// ---------- the meadow's own animals and people ----------
+
+// jar: 'forest' is your meadow. hours: when they're out ([from, to) in 24h).
+// person: they talk rather than get petted. route: a daily walk for people.
+export const FOREST_CRITTERS = [
+  { id: 'nutmeg', name: 'Nutmeg', species: 'squirrel', jar: 'forest', shape: 'squirrel', color: '#B5653A', behavior: 'darter', day: true, home: { c: 20, r: 2 },
+    likes: ['acorn', 'blackberry'], gifts: ['acorn', 'pinecone', 'maple_leaf'],
+    lines: ['Nutmeg chitters at you from behind the tree.', 'Nutmeg is stuffing her cheeks. Very busy.', 'Nutmeg buries something, then forgets where.'] },
+  { id: 'mama_duck', name: 'Mama Duck', species: 'duck', jar: 'forest', shape: 'duck', color: '#F2EDE4', behavior: 'swimmer', day: true, water: 'pond2',
+    likes: ['wheat', 'oats'], gifts: ['feather', 'clover'],
+    lines: ['Mama Duck quacks proudly at her ducklings.', 'Mama Duck paddles over to say hello.', 'Mama Duck keeps one eye on her little ones.'] },
+  { id: 'duckling1', name: 'Pip-pip', species: 'duckling', jar: 'forest', shape: 'duckling', color: '#F0DA6A', behavior: 'swimmer', day: true, water: 'pond2', follows: 'mama_duck', order: 1,
+    likes: ['wheat', 'oats'], gifts: ['feather'], lines: ['Pip-pip peeps!', 'Pip-pip tries to paddle faster than Mama.'] },
+  { id: 'duckling2', name: 'Puddle', species: 'duckling', jar: 'forest', shape: 'duckling', color: '#F0DA6A', behavior: 'swimmer', day: true, water: 'pond2', follows: 'mama_duck', order: 2,
+    likes: ['wheat', 'oats'], gifts: ['feather'], lines: ['Puddle peeps very loudly.', 'Puddle got distracted by a lily pad.'] },
+  { id: 'robin', name: 'Rosie', species: 'robin', jar: 'forest', shape: 'bird', color: '#8A6448', accent: '#E07A3A', behavior: 'flyer', day: true, home: { c: 9, r: 6 },
+    likes: ['blueberry', 'raspberry'], gifts: ['feather', 'radish_seed'],
+    lines: ['Rosie sings a little song.', 'Rosie tilts her head and listens to the ground.', 'Rosie puffs up her red chest.'] },
+  { id: 'bramble_deer', name: 'Willow', species: 'deer', jar: 'forest', shape: 'deer', color: '#B88D60', behavior: 'shy', hours: [[5, 10], [16, 21]], home: { c: -10, r: 8 },
+    likes: ['apple', 'carrot'], gifts: ['clover', 'chamomile'],
+    lines: ['Willow watches you with big dark eyes.', 'Willow lets you come close. Slowly.', 'Willow nibbles the grass by the pool.'] },
+  { id: 'prickles', name: 'Prickles', species: 'hedgehog', jar: 'forest', shape: 'hedgehog', color: '#8A6448', behavior: 'peeker', night: true, home: { c: -5, r: 6 },
+    likes: ['blackberry', 'chanterelle'], gifts: ['chanterelle', 'acorn'],
+    lines: ['Prickles snuffles about in the dark.', 'Prickles curls up, then uncurls to look at you.', 'Prickles found a beetle. Prickles is delighted.'] },
+  { id: 'mittens', name: 'Mittens', species: 'cat', jar: 'forest', shape: 'cat', color: '#E0A04A', behavior: 'follower', home: { c: 5, r: 4 },
+    likes: ['sardine', 'minnow', 'milk'], gifts: ['minnow', 'feather', 'button'],
+    lines: ['Mittens rubs against your legs.', 'Mittens purrs like a little engine.', 'Mittens brought you a... leaf. Thank you, Mittens.'] },
+  { id: 'hoot', name: 'Hoot', species: 'owl', jar: 'forest', shape: 'owl', color: '#9C8266', behavior: 'sitter', night: true, home: { c: -7, r: 3 },
+    likes: ['cricket', 'moth'], gifts: ['feather', 'star_fragment'],
+    lines: ['Hoot. Hoot hoot.', 'Hoot blinks one eye, then the other.', 'Hoot knows things. Hoot isn\'t telling.'] },
+  { id: 'croaky', name: 'Croaky', species: 'frog', jar: 'forest', shape: 'toad', color: '#7FAF5B', behavior: 'hopper', day: true, home: { c: 38, r: 7 },
+    likes: ['cricket', 'dragonfly'], gifts: ['lilypad_flower', 'clover'],
+    lines: ['Croaky says: ribbit.', 'Croaky hops onto your foot.', 'Croaky is very proud of this pond.'] },
+  // people
+  { id: 'captain', name: 'Captain Shellby', species: 'turtle', jar: 'forest', shape: 'turtle', color: '#7A9A5A', accent: '#C9A272', behavior: 'sitter', pose: 'fish', person: true,
+    hours: [[7, 19]], home: { c: 38, r: 3 }, likes: ['coffee', 'fish_stew'], gifts: ['sardine_bait', 'carp', 'tiny_boot'],
+    lines: ['“Patience, young one. The fish come to those who wait.”', '“Caught a carp THIS big once. Well. This big.”', '“The reed pond\'s the best kept secret in the jar.”'] },
+  { id: 'poppy', name: 'Poppy', species: 'mole', jar: 'forest', shape: 'mole', color: '#5A4A4A', accent: '#E07A9B', behavior: 'routine', person: true, hours: [[6, 12]],
+    route: [{ c: 2, r: 7, near: true, action: 'water', stay: 3 }, { c: 1, r: 9, near: true, action: 'water', stay: 3 }, { c: -4, r: 6, stay: 6 }, { c: 4, r: 8, stay: 4 }],
+    likes: ['carrot', 'potato'], gifts: ['fertilizer', 'speed_gro', 'carrot_seed'],
+    lines: ['“Morning! Your soil is looking lovely.”', '“I give the beds a little drink on my rounds.”', '“Worms are a gardener\'s best friend, you know.”'] },
+  { id: 'pelican', name: 'Percy', species: 'pelican', jar: 'forest', shape: 'pelican', color: '#F2F4F6', accent: '#E8B83A', behavior: 'routine', person: true, hours: [[7, 11]],
+    route: [{ c: 49, r: 4, stay: 2 }, { c: 4, r: 2, action: 'mail', stay: 3 }, { c: 49, r: 4, stay: 30 }],
+    likes: ['sardine', 'mackerel'], gifts: ['message_bottle', 'old_coin'],
+    lines: ['“Special delivery! Well, regular delivery.”', '“Rain or shine, the mail gets through.”', '“My beak holds more than my bag, honestly.”'] },
+  { id: 'iris', name: 'Iris', species: 'cat', jar: 'forest', shape: 'cat', color: '#9C82C9', accent: '#F2EDE4', behavior: 'sitter', pose: 'paint', person: true, hours: [[11, 18]], home: { c: -9, r: 7 },
+    likes: ['flower_tea', 'peach'], gifts: ['gift_card', 'daisy'],
+    lines: ['“Hold still! You\'d make a lovely painting.”', '“The light in the woods is just right today.”', '“I\'m painting the pool. Again. It\'s different every day.”'] },
+  { id: 'bo', name: 'Bo', species: 'bunny', jar: 'forest', shape: 'bunny', color: '#F2EDE4', behavior: 'chaser', tag: 'kids', person: true, hours: [[13, 18]], home: { c: 23, r: 9 },
+    likes: ['carrot', 'strawberry'], gifts: ['toy_ball', 'clover'], lines: ['“You\'re it! No wait, I\'m it!”', '“Bea is SO slow.”'] },
+  { id: 'bea', name: 'Bea', species: 'bunny', jar: 'forest', shape: 'bunny', color: '#C9A272', behavior: 'chaser', tag: 'kids', person: true, hours: [[13, 18]], home: { c: 26, r: 9 },
+    likes: ['carrot', 'strawberry'], gifts: ['toy_ball', 'daisy'], lines: ['“Bo cheats at tag.”', '“Wanna play? You can be it!”'] },
+];
+for (const f of FOREST_CRITTERS) CRITTERS.push(f);
+ITEMS.sardine_bait = ITEMS.sardine_bait || { id: 'sardine_bait', name: 'Lucky bait', cat: 'potion', shape: 'bottle', color: '#C9A272', price: 40, use: 'luck', text: 'Five extra fishing bites today, wherever you fish.' };
+ITEMS.lilypad_flower = ITEMS.lilypad_flower || { id: 'lilypad_flower', name: 'Lily pad flower', cat: 'forage', shape: 'flower', color: '#F2C4D0', price: 30 };
+
 export const CRITTER_BY_ID = Object.fromEntries(CRITTERS.map(c => [c.id, c]));
 export const crittersIn = jar => CRITTERS.filter(c => c.jar === jar);
 

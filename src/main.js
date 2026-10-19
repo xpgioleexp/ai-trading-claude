@@ -27,6 +27,7 @@ import { openTravel } from './travel.js';
 import { openPhone, closePhone, phoneOpen, phoneHasNews } from './phone.js';
 import './biomes.js';
 import { syncCritters, updateCritters, critterAt, openCritter, openJarShop, runSpot, digAt } from './jar-life.js';
+import { makeActor, updateActor } from './behaviors.js';
 import { visitorOn, visitorSpot, merchantHere, MERCHANT_SPOT } from './visitors.js';
 import { openVisitor, openMerchant } from './visitors-ui.js';
 import {
@@ -243,6 +244,45 @@ function syncVisitors() {
   }
   const open = !S.deliveries[String(g.today)];
   for (const v of g.visitors) v.ask = v.kind === 'visitor' && open;
+}
+
+// What the meadow's animals and people do: Poppy waters a bed, Percy brings the mail.
+function onCritterEvent(a, ev) {
+  if (ev.type === 'dig') g.effects.push({ kind: 'sparkle', x: a.x, y: a.y - 4, t0: g.t });
+  if (ev.type !== 'arrive' || g.scene !== 'jar') return;
+  const s = g.state;
+  if (ev.action === 'water' && !s.daily.poppy) {
+    const i = s.garden.findIndex((bed, k) => R.bedOpen(s, k) && bed.crop && bed.last !== g.today && R.bedStage(bed, g.today) < 3);
+    if (i < 0) return;
+    R.waterBed(s, i, g.today);
+    s.daily.poppy = true;
+    saveSharedBed(i);
+    save();
+    if (Math.abs(a.x - g.player.x) < 200) UI.toast('Poppy the mole watered one of your garden beds.');
+  }
+  if (ev.action === 'mail' && !s.daily.percy) {
+    s.daily.percy = true;
+    save();
+    UI.toast('Percy the pelican dropped off the mail.');
+  }
+}
+
+// Visitors don't stand still: each strolls near their spot in their own way.
+const VISITOR_WAYS = { pip: 'digger', maple: 'pouncer', bram: 'lazy', lulu: 'wander', juniper: 'wander', otis: 'sitter', fern: 'hopper', dot: 'scuttle' };
+function updateVisitorStroll(dt) {
+  for (const v of g.visitors) {
+    if (v.kind !== 'visitor') continue;
+    if (!v.actor) v.actor = makeActor({ ...v.def, behavior: VISITOR_WAYS[v.def.id] || 'wander' }, { c: v.c, r: v.r }, g.t);
+    const a = v.actor;
+    const home = { c: v.home?.c ?? v.c, r: v.home?.r ?? v.r };
+    v.home = home;
+    updateActor(a, {
+      t: g.t, dt, hour: g.hour, night: false, actors: [], anchors: { trees: [], water: [] }, friend: () => false,
+      player: { c: g.player.c, r: g.player.r, x: g.player.x, y: g.player.y, moving: g.player.path.length > 0, sneaking: !!g.player.slow },
+      walkable: (c, r) => walkable(c, r) && !objectAt(c, r) && Math.abs(c - home.c) <= 2 && Math.abs(r - home.r) <= 2,
+    });
+    Object.assign(v, { c: a.c, r: a.r, x: a.x, y: a.y, z: a.z, flip: a.flip, pose: a.pose });
+  }
 }
 
 function visitorAt(x, y) {
@@ -597,6 +637,8 @@ function tapJar(c, r, x, y) {
   if (bug) return sneakTo(bug);
   const visitor = visitorAt(x, y);
   if (visitor) return talkTo(visitor);
+  const critter = critterAt(g, x, y);
+  if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => ready() && openCritter(g, critter));
   if (eventStandAt(x, y)) return walkNextTo([EVENT_SPOT], () => ready() && openEventStand(g));
   if (tapMushroom(c, r)) return;
   // Animals
@@ -1480,10 +1522,12 @@ function frame(now) {
   updatePlayer(dt);
   updateCamera(dt);
   updateOthers(dt);
-  if (g.scene === 'map') {
-    updateBugs(dt);
-    // Animals keep off the spots, stalls and paths of things you tap.
-    updateCritters(g, dt, (c, r) => walkable(c, r) && !mapObjectAt(MAPS[g.mapId], c, r));
+  if (g.scene === 'map') updateBugs(dt);
+  if (g.scene === 'jar' || g.scene === 'map') {
+    // Animals and people keep off the spots, stalls and doors you tap.
+    const objAt = g.scene === 'map' ? (c, r) => mapObjectAt(MAPS[g.mapId], c, r) : objectAt;
+    updateCritters(g, dt, (c, r) => walkable(c, r) && !objAt(c, r), onCritterEvent);
+    if (g.scene === 'jar') updateVisitorStroll(dt);
   }
   if (g.scene === 'jar') {
     const ctxRes = { night: g.night, player: { c: g.player.c, r: g.player.r }, blocked: g.decorBlocked };
