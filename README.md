@@ -66,6 +66,12 @@ Any static file server works. There is no build step.
 - **Outfits:** 4 hats and a cozy sweater, unlocked in the wardrobe once made.
 - **Gifts (6):** a bouquet, bracelet, carved heart, flower card, crystal charm or gem ring. Give them from the Bag; your partner opens them in the mailbox, and handmade gifts are kept in the journal.
 
+**Bug catching:**
+- **What:** 27 bugs, including butterflies, moths, bees, beetles, fireflies, glow-worms, dragonflies and crickets. Each has its seasons, time of day, weather and favorite place: flowers, ground, the fruit tree or the pond.
+- **Spawns:** four are out at a time. They change every two hours, and both of you see the same ones.
+- **Sneaking:** tap a bug to creep up on it slowly, then swing the net when you reach it. A bug gets nervous when you move near it. A yellow mark means careful and red means about to go. Walk normally nearby and it flies off to somewhere else.
+- **Collecting:** caught bugs go in the bag (sell them in the crate) and in the **Bugs** tab of the collection log.
+
 **The rules:**
 - **Real time:** the jar follows the real clock, so mornings, nights and new days happen when they do for you.
 - **Seasons:** each season lasts one real week.
@@ -101,6 +107,7 @@ Any static file server works. There is no build step.
 | `src/kitchen.js` | The kitchen: picking ingredients, chopping and stove minigames, cooking together |
 | `src/crafting.js` | Crafting recipes, materials, and crafted furniture, toys, outfits and gifts |
 | `src/crafting-ui.js` | The crafting panel |
+| `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |
 | `src/animals.js` | Residents: needs, the 43 actions and wandering |

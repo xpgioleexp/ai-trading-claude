@@ -276,6 +276,14 @@ function drawShape(ctx, item) {
       px(ctx, 6, 9, 1, 1, dark);
       px(ctx, 9, 9, 1, 1, dark);
       break;
+    case 'bug':
+      if (item.kind === 'butterfly') { px(ctx, 7, 4, 2, 8, PAL.inkDeep); px(ctx, 2, 3, 5, 5, c); px(ctx, 9, 3, 5, 5, c); px(ctx, 3, 8, 4, 3, dark); px(ctx, 9, 8, 4, 3, dark); }
+      else if (item.kind === 'dragonfly') { px(ctx, 2, 8, 12, 2, c); px(ctx, 12, 7, 3, 4, dark); px(ctx, 5, 4, 3, 3, PAL.linenHi); px(ctx, 9, 4, 3, 3, PAL.linenHi); px(ctx, 5, 11, 3, 3, PAL.linenHi); px(ctx, 9, 11, 3, 3, PAL.linenHi); }
+      else if (item.kind === 'firefly') { px(ctx, 7, 4, 2, 5, PAL.inkDeep); disc(ctx, 8, 11, 3, c); px(ctx, 4, 4, 3, 3, PAL.linenHi); px(ctx, 9, 4, 3, 3, PAL.linenHi); }
+      else if (item.kind === 'bee') { disc(ctx, 8, 9, 4, c); px(ctx, 6, 6, 1, 6, PAL.inkDeep); px(ctx, 9, 6, 1, 6, PAL.inkDeep); px(ctx, 3, 3, 4, 3, PAL.linenHi); px(ctx, 9, 3, 4, 3, PAL.linenHi); }
+      else if (item.kind === 'beetle') { disc(ctx, 8, 9, 5, c); px(ctx, 8, 4, 1, 10, dark); px(ctx, 6, 3, 5, 1, PAL.inkDeep); px(ctx, 5, 7, 2, 2, light); }
+      else { px(ctx, 3, 8, 10, 3, c); px(ctx, 11, 6, 3, 3, dark); for (const x of [4, 7, 10]) px(ctx, x, 11, 1, 3, PAL.inkDeep); }
+      break;
     case 'dish':
       px(ctx, 2, 9, 12, 4, PAL.linenHi);
       px(ctx, 3, 13, 10, 1, PAL.linenShade);

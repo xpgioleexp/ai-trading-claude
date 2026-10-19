@@ -2,7 +2,7 @@
 import * as R from './rules.js';
 import { ITEMS, ROD_ZONE, MINE_LAYERS, FORAGE } from './data.js';
 import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay, deviceTimeZone } from './clock.js';
-import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS } from './world.js';
+import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
 import { drawScene, tileCenter, pointToTile, W, H } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
@@ -20,6 +20,7 @@ import { DOOR, FURNITURE_BY_TYPE, WALL_BY_TYPE, canPlace, blockedTiles, roomWalk
 import { openFurnish, ensureFirstRoom, roomsList, placeFurniture } from './home-ui.js';
 import { openKitchen, maybeStartPart, maybeFinish, noticeInvite } from './kitchen.js';
 import { openCrafting } from './crafting-ui.js';
+import { BUG_BY_ID, spawnBugs, timeBlock, alertRate, NOTICE_TILES, catchBug } from './bugs.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -77,6 +78,85 @@ function refreshClock() {
   const week = weekOf(g.today);
   g.boardNew = C.ready && S.missions[`${week}--${cloud.me}`]?.state !== 'done';
   g.wellLights = Math.min(2, Object.keys(S.discoveries['old-well']?.lights || {}).length);
+  syncBugs();
+}
+
+// ---------- bugs ----------
+
+let bugTiles = null;
+function habitats() {
+  if (bugTiles) return bugTiles;
+  const open = forageTiles();
+  const near = (o, d) => open.filter(t => t.c >= o.c - d && t.c < o.c + o.w + d && t.r >= o.r - d && t.r < o.r + o.h + d);
+  bugTiles = {
+    flower: open, ground: open,
+    tree: near(OBJECTS.find(o => o.id === 'tree'), 2),
+    pond: near(OBJECTS.find(o => o.id === 'pond'), 1),
+  };
+  return bugTiles;
+}
+
+function syncBugs() {
+  if (!g.state.daily) return;
+  const key = [g.state.seed, g.today, timeBlock(g.hour), g.season, g.weather].join('|');
+  if (key === g.bugKey) return;
+  g.bugKey = key;
+  const caught = new Set(g.state.daily.bugs || []);
+  g.bugs = spawnBugs(g.state.seed, g.today, g.hour, g.season, g.weather, habitats())
+    .filter(b => !caught.has(b.sid))
+    .map(b => {
+      const p = tileCenter(b.c, b.r);
+      return { ...b, x: p.x, y: p.y + 4, alert: 0, phase: Math.random() * 6 };
+    });
+}
+
+function bugAt(x, y) {
+  return g.bugs.find(b => Math.hypot(x - b.x, y - (b.y - 6)) < 12);
+}
+
+function sneakTo(bug) {
+  walkNextTo([{ c: bug.c, r: bug.r }], () => {
+    if (!g.bugs.includes(bug)) return;
+    g.player.pose = 'swing';
+    g.player.frame = 0;
+    g.poseUntil = g.t + 0.35;
+    const def = BUG_BY_ID[bug.id];
+    if (catchBug(g.state, bug.sid, bug.id)) {
+      g.bugs = g.bugs.filter(b => b !== bug);
+      save();
+      popItem(bug.id, bug.x, bug.y - 12);
+      const first = (g.state.log.bugs[bug.id]?.count || 0) === 1;
+      UI.toast(`You caught a ${def.name.toLowerCase()}!${first ? ' New to your log!' : ''}`, bug.id);
+      if (bug.id === 'firefly') T.noticeDiscovery('firefly-grove');
+    } else UI.toast('Your bag is full.');
+  });
+  g.player.slow = true;
+  g.sneak = bug;
+  if (g.player.path.length) UI.toast('Sneaking… go slowly.');
+}
+
+function updateBugs(dt) {
+  const p = g.player;
+  const moving = p.path.length > 0;
+  for (const b of [...g.bugs]) {
+    const def = BUG_BY_ID[b.id];
+    const d = Math.hypot(p.c - b.c, p.r - b.r);
+    if (moving && d <= NOTICE_TILES) b.alert += alertRate(def, g.sneak === b) * dt * (1.2 - d / (NOTICE_TILES + 1));
+    else b.alert = Math.max(0, b.alert - dt * 0.6);
+    if (b.alert < 1) continue;
+    // Too close, too fast: it flies off somewhere else.
+    const spots = habitats()[def.where] || habitats().ground;
+    const spot = spots[Math.floor(Math.random() * spots.length)];
+    const t = tileCenter(spot.c, spot.r);
+    Object.assign(b, { c: spot.c, r: spot.r, x: t.x, y: t.y + 4, alert: 0 });
+    if (g.sneak === b) {
+      p.path = [];
+      p.onArrive = null;
+      p.slow = false;
+      g.sneak = null;
+      UI.toast(`The ${def.name.toLowerCase()} got away. Sneak up more slowly.`);
+    }
+  }
 }
 
 function checkNewDay() {
@@ -144,6 +224,8 @@ function walkPath(path, onArrive) {
   g.player.path = path;
   g.player.onArrive = onArrive || null;
   g.player.pose = 'walk';
+  g.player.slow = false;
+  g.sneak = null;
   if (!path.length && onArrive) {
     g.player.onArrive = null;
     onArrive();
@@ -181,7 +263,7 @@ function updatePlayer(dt) {
   const tx = target.x, ty = target.y + FEET;
   const dx = tx - p.x, dy = ty - p.y;
   const dist = Math.hypot(dx, dy);
-  const step = SPEED * dt;
+  const step = SPEED * (p.slow ? 0.45 : 1) * dt;
   if (Math.abs(dx) > Math.abs(dy) + 0.5) p.dir = dx < 0 ? DIRS.left : DIRS.right;
   else if (Math.abs(dy) > 0.5) p.dir = dy < 0 ? DIRS.up : DIRS.down;
   p.walked = (p.walked || 0) + Math.min(step, dist);
@@ -311,6 +393,8 @@ function residentAt(x, y) {
 
 function tapJar(c, r, x, y) {
   if (g.build) return placeTap(c, r);
+  const bug = bugAt(x, y);
+  if (bug) return sneakTo(bug);
   // Animals
   const a = residentAt(x, y);
   if (a) {
@@ -879,13 +963,14 @@ function frame(now) {
   }
   if (g.poseUntil && g.t > g.poseUntil) {
     g.poseUntil = 0;
-    if (g.player.pose === 'crouch') g.player.pose = 'walk';
+    if (g.player.pose === 'crouch' || g.player.pose === 'swing') g.player.pose = 'walk';
   }
   updatePlayer(dt);
   updateOthers(dt);
   if (g.scene === 'jar') {
     const ctxRes = { night: g.night, player: { c: g.player.c, r: g.player.r }, blocked: g.decorBlocked };
     for (const a of g.residents) updateResident(a, dt, g.t, ctxRes);
+    updateBugs(dt);
   }
   updateFishing(dt);
   updateAction(dt);
@@ -964,7 +1049,7 @@ function start(hotData = {}) {
     state: R.migrate(saved, seed, today),
     scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(),
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
-    residents: [], decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
+    residents: [], bugs: [], bugKey: '', sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
     openKitchen: () => ready() && openKitchen(g),
     openCrafting: () => openCrafting(g),

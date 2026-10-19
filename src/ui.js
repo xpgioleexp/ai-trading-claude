@@ -4,6 +4,7 @@ import {
   SKIN_TONES, HAIR_COLORS, HAIR_STYLES, OUTFIT_COLORS, OUTFIT_STYLES,
 } from './data.js';
 import { HATS, MATERIALS_FOR_SALE } from './crafting.js';
+import { BUGS, BUG_BY_ID } from './bugs.js';
 import * as R from './rules.js';
 import { iconURL } from './sprites.js';
 import { avatarSprite } from './avatar.js';
@@ -152,7 +153,7 @@ export function openBag(g) {
 }
 
 function catName(cat) {
-  return { fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
+  return { fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', bug: 'Bug', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
 }
 
 // ---------- collection log ----------
@@ -161,6 +162,7 @@ export function openLog(g, tab = 'fish') {
   const s = g.state;
   const groups = {
     fish: FISH.map(f => f.id),
+    bugs: BUGS.map(b => b.id),
     finds: MINERALS.map(m => m.id),
     nature: [...CROPS.map(c => c.id), ...FORAGE.map(f => f.id), ...Object.values(TREE_FRUIT).map(f => f.id)],
   };
@@ -172,10 +174,11 @@ export function openLog(g, tab = 'fish') {
     let note = '';
     if (tab === 'fish' && have) note = `${s.log.fish[id]?.best ?? '?'} cm`;
     else if (tab === 'fish') note = fishHint(item);
+    else if (tab === 'bugs') note = have ? `${s.log.bugs?.[id]?.count || 1} caught` : fishHint(BUG_BY_ID[id]);
     else if (!have) note = item.season ? cap(item.season) : '';
     return `<li class="${have ? 'got' : 'missing'}">${icon(id, have ? '' : 'silhouette')}<span class="name">${have ? esc(item.name) : '???'}</span><span class="note">${esc(note)}</span></li>`;
   }).join('');
-  const tabs = [['fish', 'Fish'], ['finds', 'Mine finds'], ['nature', 'Garden & forage']]
+  const tabs = [['fish', 'Fish'], ['bugs', 'Bugs'], ['finds', 'Mine finds'], ['nature', 'Garden & forage']]
     .map(([id, label]) => `<button class="tab ${id === tab ? 'on' : ''}" data-tab="${id}" aria-pressed="${id === tab}">${label}</button>`).join('');
   openSheet('Collection log', `
     <div class="tabs">${tabs}</div>

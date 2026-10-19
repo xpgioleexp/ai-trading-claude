@@ -353,3 +353,33 @@ export function decorSprite(type, season) {
   const [w, h] = isTree ? TREE_SIZE : [16, 16];
   return sprite(`decor_${type}${seasonal ? '_' + season : ''}`, w, h, ctx => drawDecor(ctx, type, season));
 }
+
+// ---------- bugs ----------
+
+export function bugSprite(kind, color, frame) {
+  return sprite(`bug_${kind}_${color}_${frame}`, 10, 8, ctx => {
+    const up = frame === 1;
+    if (kind === 'butterfly') {
+      px(ctx, 4, 2, 2, 5, PAL.inkDeep);
+      const h = up ? 3 : 4;
+      px(ctx, 0, up ? 0 : 1, 4, h, color); px(ctx, 6, up ? 0 : 1, 4, h, color);
+      px(ctx, 1, 5, 3, 2, shade(color, -0.15)); px(ctx, 6, 5, 3, 2, shade(color, -0.15));
+    } else if (kind === 'bee') {
+      disc(ctx, 5, 5, 2.6, color); px(ctx, 4, 4, 1, 3, PAL.inkDeep); px(ctx, 6, 4, 1, 3, PAL.inkDeep);
+      px(ctx, 2, up ? 1 : 2, 3, 2, 'rgba(255,255,255,0.8)'); px(ctx, 6, up ? 1 : 2, 3, 2, 'rgba(255,255,255,0.8)');
+    } else if (kind === 'beetle') {
+      disc(ctx, 5, 5, 3, color); px(ctx, 5, 2, 1, 6, shade(color, -0.35)); px(ctx, 4, 1, 3, 1, PAL.inkDeep);
+      px(ctx, 3, 4, 1, 1, shade(color, 0.4));
+    } else if (kind === 'firefly') {
+      px(ctx, 4, 3, 2, 3, PAL.inkDeep); disc(ctx, 5, 6, 2, up ? color : shade(color, -0.2));
+      px(ctx, 2, 2, 2, 2, 'rgba(255,255,255,0.6)'); px(ctx, 6, 2, 2, 2, 'rgba(255,255,255,0.6)');
+    } else if (kind === 'dragonfly') {
+      px(ctx, 1, 4, 8, 1, color); px(ctx, 8, 3, 2, 3, shade(color, -0.2));
+      px(ctx, 3, up ? 1 : 2, 2, 2, 'rgba(255,255,255,0.75)'); px(ctx, 5, up ? 1 : 2, 2, 2, 'rgba(255,255,255,0.75)');
+      px(ctx, 3, up ? 6 : 5, 2, 2, 'rgba(255,255,255,0.75)'); px(ctx, 5, up ? 6 : 5, 2, 2, 'rgba(255,255,255,0.75)');
+    } else {
+      px(ctx, 2, 4, 6, 2, color); px(ctx, 7, 3, 2, 2, shade(color, -0.2));
+      px(ctx, 2, 6, 1, 2, PAL.inkDeep); px(ctx, 5, 6, 1, 2, PAL.inkDeep); px(ctx, 1, up ? 2 : 3, 2, 1, PAL.inkDeep);
+    }
+  });
+}

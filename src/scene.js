@@ -7,7 +7,8 @@ import {
   ladderUpSprite, bunnySprite, heartSprite,
 } from './sprites.js';
 import { avatarSprite, DIRS } from './avatar.js';
-import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR } from './sprites-more.js';
+import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR, bugSprite } from './sprites-more.js';
+import { BUG_BY_ID } from './bugs.js';
 import { hashString } from './rng.js';
 import { houseSprite, wallpaperTile, floorTile, furnitureSprite, wallItemSprite, sleeperSprite } from './home-art.js';
 import { ROOM, DOOR, WALL_SLOTS, FURNITURE_BY_TYPE } from './home.js';
@@ -150,6 +151,21 @@ function drawJarWorld(ctx, g) {
         if (g.selected === a) px(ctx, Math.round(a.x) - 1, top - 5, 3, 3, PAL.rose);
       },
     });
+  }
+  for (const b of g.bugs) {
+    const def = BUG_BY_ID[b.id];
+    const flap = Math.floor(g.t * (def.kind === 'beetle' || def.kind === 'small' ? 2 : 8) + b.phase) % 2;
+    const flying = ['butterfly', 'bee', 'dragonfly', 'firefly'].includes(def.kind);
+    const bx = Math.round(b.x + (flying ? Math.sin(g.t * 1.3 + b.phase) * 3 : 0));
+    const by = Math.round(b.y - (flying ? 8 + Math.sin(g.t * 2 + b.phase) * 2 : 0));
+    items.push({ y: b.y, draw: () => {
+      if (def.kind === 'firefly' && g.night && flap) {
+        ctx.fillStyle = 'rgba(255,240,150,0.35)';
+        ctx.fillRect(bx - 4, by - 3, 10, 8);
+      }
+      ctx.drawImage(bugSprite(def.kind, def.color, flap), bx - 5, by - 6);
+      if (b.alert > 0.4) px(ctx, bx, by - 12, 2, 4 + Math.round(b.alert * 2), b.alert > 0.75 ? '#D9533C' : '#E8C25A');
+    } });
   }
   for (const o of g.others) {
     if (o.scene !== 'jar') continue;
