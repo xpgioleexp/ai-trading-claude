@@ -9,6 +9,8 @@ import {
 import { avatarSprite, DIRS } from './avatar.js';
 import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR, bugSprite } from './sprites-more.js';
 import { BUG_BY_ID } from './bugs.js';
+import { doorSprite, palmSprite, hiveSprite, pineSprite, snowmanSprite, archSprite } from './sprites-more.js';
+import { MAPS } from './maps.js';
 import { hashString } from './rng.js';
 import { houseSprite, wallpaperTile, floorTile, furnitureSprite, wallItemSprite, sleeperSprite } from './home-art.js';
 import { ROOM, DOOR, WALL_SLOTS, FURNITURE_BY_TYPE } from './home.js';
@@ -52,6 +54,7 @@ export function drawScene(ctx, g) {
   ctx.clip();
   if (g.scene === 'mine') drawMine(ctx, g);
   else if (g.scene === 'home') drawHome(ctx, g);
+  else if (g.scene === 'map') drawMapWorld(ctx, g);
   else drawJarWorld(ctx, g);
   drawEffects(ctx, g);
   ctx.restore();
@@ -115,6 +118,7 @@ function drawJarWorld(ctx, g) {
     if (o.id === 'board') at(o, boardSprite(g.boardNew), 0, -2);
     if (o.id === 'well') at(o, wellSprite(g.wellLights), 0, -1);
     if (o.id === 'easel') at(o, easelSprite(), 0, -2);
+    if (o.id === 'door') at(o, doorSprite(), 0, -1);
   }
   for (const d of g.decor) {
     if (FLAT_DECOR.has(d.type)) continue;
@@ -394,6 +398,78 @@ function drawNight(ctx, g) {
     }
   }
   ctx.restore();
+}
+
+// ---------- the other jars ----------
+
+const WATER = {
+  sea: ['#5F9FB5', '#3F7F95', '#B7E0E8'],
+  pool: ['#79AAA4', '#507F83', '#B7D4BD'],
+  ice: ['#B9D9E2', '#93B8C4', '#F2FAFF'],
+  pond: ['#79AAA4', '#507F83', '#B7D4BD'],
+};
+
+function drawMapWorld(ctx, g) {
+  const map = MAPS[g.mapId];
+  px(ctx, 0, 0, W, H, g.weather === 'fog' ? shade(SKY[g.part], 0.3) : SKY[g.part]);
+  drawBackdrop(ctx, g);
+  const ground = map.ground;
+  for (let x = 0; x < W; x += TILE) for (let y = GY - 8; y < SOIL_TOP; y += TILE) ctx.drawImage(grassTile(ground, (x + y) % 32 ? 0 : 1), x, y);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) ctx.drawImage(grassTile(ground, hashString(map.id + c + ':' + r) % 4), GX + c * TILE, GY + r * TILE);
+  // water
+  for (const o of map.objects) {
+    if (!WATER[o.kind]) continue;
+    const [base, deep, hi] = WATER[o.kind];
+    const x = GX + o.c * TILE, y = GY + o.r * TILE, w = o.w * TILE, h = o.h * TILE;
+    if (o.kind === 'sea') {
+      px(ctx, 0, y, W, SOIL_TOP - y, base);
+      px(ctx, 0, y, W, 3, hi);
+      px(ctx, 0, y + h - 14, W, 14, deep);
+    } else {
+      roundRect(ctx, x - 2, y - 2, w + 4, h + 4, 10, shade(base, -0.3));
+      roundRect(ctx, x, y, w, h, 9, base);
+    }
+    for (let i = 0; i < 5; i++) {
+      const rx = (o.kind === 'sea' ? 10 : x + 6) + ((i * 37 + Math.floor(g.t * 6)) % Math.max(20, (o.kind === 'sea' ? W : w) - 20));
+      px(ctx, rx, y + 6 + ((i * 11) % Math.max(8, h - 12)), 6, 1, hi);
+    }
+  }
+  // forage
+  const daily = g.mapDaily;
+  daily?.forage.forEach((f, i) => {
+    if (daily.picked.includes(i)) return;
+    const p = tileCenter(f.c, f.r);
+    ctx.drawImage(itemIcon(f.id), p.x - 8, p.y - 10);
+  });
+  const items = [];
+  const at = (o, img) => {
+    const x = GX + (o.c + o.w / 2) * TILE - img.width / 2;
+    const yb = GY + (o.r + o.h) * TILE;
+    items.push({ y: yb, draw: () => ctx.drawImage(img, x, yb - img.height) });
+  };
+  for (const o of map.objects) {
+    if (o.id === 'door') at(o, doorSprite());
+    if (o.id === 'palm') at(o, palmSprite(!daily?.shook));
+    if (o.id === 'hive') at(o, hiveSprite(!daily?.shook));
+    if (o.kind === 'pine') at(o, pineSprite());
+    if (o.id === 'snowman') at(o, snowmanSprite());
+    if (o.id === 'arch') at(o, archSprite());
+  }
+  for (const b of g.bugs) {
+    const def = BUG_BY_ID[b.id];
+    const flap = Math.floor(g.t * 6 + b.phase) % 2;
+    items.push({ y: b.y, draw: () => {
+      ctx.drawImage(bugSprite(def.kind, def.color, flap), Math.round(b.x) - 5, Math.round(b.y) - 12);
+      if (b.alert > 0.4) px(ctx, Math.round(b.x), Math.round(b.y) - 18, 2, 5, b.alert > 0.75 ? '#D9533C' : '#E8C25A');
+    } });
+  }
+  items.push({ y: g.player.y, draw: () => drawPlayer(ctx, g) });
+  for (const o of g.others) if (o.scene === 'map' && o.mapId === g.mapId) items.push({ y: o.y, draw: () => drawAvatarAt(ctx, o, o.look, false, g.t) });
+  items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
+  if (g.fishing) drawLine(ctx, g);
+  px(ctx, 0, SOIL_TOP, W, H - SOIL_TOP, map.id === 'beach' ? '#C9B07A' : map.id === 'snow' ? '#8E9AA0' : '#8A6A4A');
+  drawWeather(ctx, g);
+  if (g.night) drawNight(ctx, g);
 }
 
 // ---------- inside your home ----------

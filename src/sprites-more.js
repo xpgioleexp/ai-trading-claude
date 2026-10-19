@@ -383,3 +383,61 @@ export function bugSprite(kind, color, frame) {
     }
   });
 }
+
+// ---------- the other jars ----------
+
+export function doorSprite() {
+  return sprite('jar_door', 16, 26, ctx => {
+    px(ctx, 1, 2, 14, 24, PAL.woodShade);
+    px(ctx, 3, 4, 10, 22, '#B7D4BD');
+    px(ctx, 3, 4, 10, 2, 'rgba(255,255,255,0.7)');
+    px(ctx, 7, 4, 2, 22, PAL.woodShade);
+    px(ctx, 10, 15, 2, 2, '#E8C25A');
+    px(ctx, 0, 0, 16, 3, PAL.wood);
+  });
+}
+
+export function palmSprite(hasFruit) {
+  return sprite('palm_' + (hasFruit ? 1 : 0), 32, 44, ctx => {
+    for (let y = 16; y < 44; y++) px(ctx, 15 + Math.round(Math.sin(y / 9) * 2), y, 3, 1, y % 4 ? PAL.wood : PAL.woodShade);
+    for (const [dx, dy] of [[-12, 4], [12, 4], [-9, -2], [9, -2], [0, -5]]) {
+      for (let i = 0; i < 12; i++) px(ctx, 16 + Math.round(dx * i / 12), 16 + Math.round(dy * i / 12) + Math.round((i * i) / 30), 3, 2, i % 3 ? PAL.leaf : PAL.leafShade);
+    }
+    if (hasFruit) { disc(ctx, 14, 18, 2.2, '#8A6448'); disc(ctx, 19, 18, 2.2, '#8A6448'); }
+  });
+}
+
+export function hiveSprite(hasHoney) {
+  return sprite('hive_' + (hasHoney ? 1 : 0), 16, 24, ctx => {
+    px(ctx, 7, 14, 2, 10, PAL.woodShade);
+    for (let i = 0; i < 4; i++) px(ctx, 3 + (i % 2), 3 + i * 3, 10 - (i % 2) * 2, 3, i % 2 ? '#D9A53A' : '#E8C25A');
+    px(ctx, 7, 11, 2, 2, PAL.inkDeep);
+    if (hasHoney) px(ctx, 6, 15, 4, 2, '#E8B83A');
+  });
+}
+
+export function pineSprite() {
+  return sprite('snow_pine', 20, 32, ctx => {
+    px(ctx, 9, 24, 3, 8, PAL.woodShade);
+    for (let y = 0; y < 25; y++) {
+      const w = Math.min(18, Math.floor(y * 0.75) + 2);
+      px(ctx, 10 - w / 2, y, w, 1, y % 6 < 2 ? '#F2F6F6' : '#4F7A54');
+    }
+  });
+}
+
+export function snowmanSprite() {
+  return sprite('snowman', 16, 24, ctx => {
+    disc(ctx, 8, 17, 6, '#F7FAFA'); disc(ctx, 8, 8, 4.5, '#F7FAFA');
+    px(ctx, 6, 7, 1, 1, PAL.inkDeep); px(ctx, 9, 7, 1, 1, PAL.inkDeep); px(ctx, 8, 9, 3, 1, '#E8873A');
+    px(ctx, 4, 12, 8, 2, PAL.rose); px(ctx, 5, 1, 6, 3, PAL.inkDeep);
+  });
+}
+
+export function archSprite() {
+  return sprite('rose_arch', 32, 32, ctx => {
+    px(ctx, 2, 8, 3, 24, PAL.leafShade); px(ctx, 27, 8, 3, 24, PAL.leafShade);
+    for (let x = 2; x < 30; x++) px(ctx, x, 8 - Math.round(Math.sin(((x - 2) / 27) * Math.PI) * 7), 1, 3, PAL.leaf);
+    for (const [x, y] of [[4, 12], [27, 16], [8, 3], [16, 1], [24, 3], [3, 22], [28, 26]]) disc(ctx, x, y, 1.8, '#D9506E');
+  });
+}

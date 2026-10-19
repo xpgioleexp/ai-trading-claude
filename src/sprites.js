@@ -19,6 +19,8 @@ export const SEASON_GROUND = {
   summer: ['#9DB86E', '#7E9A55', '#B9CC86'],
   autumn: ['#C2B070', '#A28F55', '#D6C68C'],
   winter: ['#E6EDEE', '#C5D3D8', '#F7FAFA'],
+  sand: ['#E9D7A8', '#D5C08A', '#F5E8C4'],
+  blossom: ['#B9CC86', '#9DB86E', '#E4B4A3'],
 };
 
 // ---------- helpers ----------

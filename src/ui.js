@@ -12,6 +12,7 @@ import { dayOfSeason } from './clock.js';
 import { S, partnerId } from './shared.js';
 import { cloud, setDoc, newId, now } from './cloud.js';
 import { rngFor } from './rng.js';
+import { MAPS, MAP_FISH_IDS, MAP_FORAGE_IDS } from './maps.js';
 
 const $ = s => document.querySelector(s);
 
@@ -100,6 +101,8 @@ export function updateHud(g) {
     ? `${R.BAND_NAMES[R.bandOf(g.layer)]} layer ${g.layer} of 30`
     : g.scene === 'home'
       ? `${g.room?.name || 'Home'} · tap Build to furnish`
+      : g.scene === 'map'
+        ? `${MAPS[g.mapId].name} · ${cap(g.season)} · ${weather} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`
       : `${cap(g.season)} ${dayOfSeason(g.today)} · ${weather} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`;
   const leave = $('#btn-leave');
   // Inside your home you leave through the door mat; in the cave there's also a button.
@@ -161,10 +164,10 @@ function catName(cat) {
 export function openLog(g, tab = 'fish') {
   const s = g.state;
   const groups = {
-    fish: FISH.map(f => f.id),
+    fish: [...FISH.map(f => f.id), ...MAP_FISH_IDS],
     bugs: BUGS.map(b => b.id),
     finds: MINERALS.map(m => m.id),
-    nature: [...CROPS.map(c => c.id), ...FORAGE.map(f => f.id), ...Object.values(TREE_FRUIT).map(f => f.id)],
+    nature: [...CROPS.map(c => c.id), ...FORAGE.map(f => f.id), ...Object.values(TREE_FRUIT).map(f => f.id), ...MAP_FORAGE_IDS],
   };
   const ids = groups[tab];
   const found = ids.filter(id => s.log.found[id]).length;
@@ -175,7 +178,7 @@ export function openLog(g, tab = 'fish') {
     if (tab === 'fish' && have) note = `${s.log.fish[id]?.best ?? '?'} cm`;
     else if (tab === 'fish') note = fishHint(item);
     else if (tab === 'bugs') note = have ? `${s.log.bugs?.[id]?.count || 1} caught` : fishHint(BUG_BY_ID[id]);
-    else if (!have) note = item.season ? cap(item.season) : '';
+    else if (!have) note = item.map ? MAPS[item.map].name : item.season ? cap(item.season) : '';
     return `<li class="${have ? 'got' : 'missing'}">${icon(id, have ? '' : 'silhouette')}<span class="name">${have ? esc(item.name) : '???'}</span><span class="note">${esc(note)}</span></li>`;
   }).join('');
   const tabs = [['fish', 'Fish'], ['bugs', 'Bugs'], ['finds', 'Mine finds'], ['nature', 'Garden & forage']]
@@ -190,6 +193,7 @@ export function openLog(g, tab = 'fish') {
 
 function fishHint(f) {
   const bits = [];
+  if (f.map) bits.push(MAPS[f.map].name);
   if (f.seasons) bits.push(f.seasons.map(cap).join('/'));
   if (f.time === 'night') bits.push('Night');
   if (f.time === 'day') bits.push('Day');

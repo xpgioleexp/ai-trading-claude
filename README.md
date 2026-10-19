@@ -32,6 +32,7 @@ Any static file server works. There is no build step.
 | Workbench | Upgrade the fishing rod and pickaxe with ore |
 | Fruit tree | Shake once a day for fruit |
 | Glints on the ground | Forage, new spots every day |
+| Door (right side) | The jar shelf: open and visit the other jars |
 | Tent / your home | Go inside. **Build** inside furnishes the room you're in |
 | Bench | **Today**: the daily question (answer, later or skip), mood check-in, the weekly ritual |
 | Mailbox | Notes and appreciation cards between you, plus tips |
@@ -72,6 +73,14 @@ Any static file server works. There is no build step.
 - **Sneaking:** tap a bug to creep up on it slowly, then swing the net when you reach it. A bug gets nervous when you move near it. A yellow mark means careful and red means about to go. Walk normally nearby and it flies off to somewhere else.
 - **Collecting:** caught bugs go in the bag (sell them in the crate) and in the **Bugs** tab of the collection log.
 
+**Other jars:**
+- **The door:** on the right of the meadow. It opens the jar shelf, where you open new terrariums with pebbles and travel between them. Opening a jar opens it for both of you.
+- **Beach jar (300 pebbles):** always summer. Sea and tide-pool fishing, shells, sea glass, starfish and coral, and a palm tree with coconuts (plus 2 wood).
+- **Snow jar (500):** always winter and snowing. Fishing on a frozen lake, icicles and frost lilies.
+- **Flower jar (700):** always spring. A koi pond, wild roses, lilies and lavender, and a beehive with honey.
+- **What's different:** each jar has its own fish (15 in all), forage (5 new spots a day), 10 fishing bites a day and bugs found nowhere else (5 in all). The weather follows the meadow's, except in the snow jar.
+- **Together:** you see each other when you're in the same jar. Building only works in the forest jar.
+
 **The rules:**
 - **Real time:** the jar follows the real clock, so mornings, nights and new days happen when they do for you.
 - **Seasons:** each season lasts one real week.
@@ -93,7 +102,7 @@ Any static file server works. There is no build step.
 | `src/path.js` | Walking routes on the tile grid |
 | `src/sprites.js` | Placeholder pixel art drawn in code, and loading of real PNG art |
 | `src/avatar.js` | The layered player avatar |
-| `src/scene.js` | Draws the jar, the mine, weather, night and the fishing minigame |
+| `src/scene.js` | Draws the jar, the other jars, the mine, weather, night and the fishing minigame |
 | `src/ui.js` | Panels: bag, log, shop, crate, workbench, mailbox, wardrobe |
 | `src/main.js` | Game loop, tapping, walking, fishing, mining, building and your partner's live avatar |
 | `src/cloud.js` | Shared storage on claude.ai, with a device-only stand-in elsewhere |
@@ -107,6 +116,8 @@ Any static file server works. There is no build step.
 | `src/kitchen.js` | The kitchen: picking ingredients, chopping and stove minigames, cooking together |
 | `src/crafting.js` | Crafting recipes, materials, and crafted furniture, toys, outfits and gifts |
 | `src/crafting-ui.js` | The crafting panel |
+| `src/maps.js` | The other jars: layouts, their fish, forage and daily state |
+| `src/travel.js` | The jar shelf: opening and travelling between jars |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |

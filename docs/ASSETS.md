@@ -115,6 +115,22 @@ Named `item_<id>`. The full list of ids is in `src/data.js`:
 - **Tree fruit:** cherry, peach, apple, orange
 - **Mine:** stone, copper_ore, iron_ore, gold_ore, quartz, amethyst, topaz, crystal_shard, emerald, ruby, diamond, geode, amber_beetle, shell_fossil, fern_fossil, tiny_bone
 
+### Other jars
+The door in the meadow leads to three more jars, each with its own ground and pieces:
+
+| Name | Size | What it is |
+|---|---|---|
+| `jar_door` | 16 × 26 | Little door, in the meadow and in each jar |
+| `ground_sand_<0-3>` | 16 × 16 | Beach jar sand |
+| `ground_blossom_<0-3>` | 16 × 16 | Flower jar grass |
+| `palm_0` / `palm_1` | 32 × 44 | Palm tree, without and with coconuts |
+| `snow_pine` | 20 × 32 | Snowy pine |
+| `snowman` | 16 × 24 | Snowman |
+| `hive_0` / `hive_1` | 16 × 24 | Beehive, without and with honey |
+| `rose_arch` | 32 × 32 | Rose arch |
+
+Item icons for the jars: sardine, mackerel, flounder, sea_bream, pufferfish, octopus, clownfish, bluefin_tuna, ice_smelt, arctic_char, snow_trout, glacier_pike, petal_minnow, rose_koi, blossom_carp, seashell, sea_glass, starfish, coral, icicle, frost_lily, rose, lily, lavender_sprig, coconut, honey. The jar bugs are hermit_crab, sand_beetle, ice_beetle, rose_chafer and orchid_mantis.
+
 ### Avatar (16 × 24)
 The avatar is built in layers so every hair, outfit and skin option lines up. Production avatar art should come as separate layers:
 

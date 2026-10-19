@@ -35,6 +35,11 @@ export const BUGS = [
   { id: 'cicada', name: 'Cicada', kind: 'small', color: '#8E9A5A', seasons: ['summer'], time: 'day', where: 'tree', rarity: 'common', price: 30, skittish: 0.5 },
   { id: 'stick_insect', name: 'Stick insect', kind: 'small', color: '#9C7046', seasons: ['autumn'], time: 'day', where: 'tree', rarity: 'rare', price: 120, skittish: 0.3 },
   { id: 'snow_flea', name: 'Snow flea', kind: 'small', color: '#4A5A6A', seasons: ['winter'], time: 'day', where: 'ground', rarity: 'common', price: 15, skittish: 0.3 },
+  { id: 'hermit_crab', name: 'Hermit crab', kind: 'small', color: '#D9806A', map: 'beach', time: null, where: 'pond', rarity: 'common', price: 35, skittish: 0.5 },
+  { id: 'sand_beetle', name: 'Sand beetle', kind: 'beetle', color: '#C9A272', map: 'beach', time: 'day', where: 'ground', rarity: 'uncommon', price: 60, skittish: 0.6 },
+  { id: 'ice_beetle', name: 'Ice beetle', kind: 'beetle', color: '#A9E0E8', map: 'snow', time: null, where: 'tree', rarity: 'uncommon', price: 75, skittish: 0.5 },
+  { id: 'rose_chafer', name: 'Rose chafer', kind: 'beetle', color: '#3FA86A', map: 'flower', time: 'day', where: 'flower', rarity: 'uncommon', price: 70, skittish: 0.5 },
+  { id: 'orchid_mantis', name: 'Orchid mantis', kind: 'small', color: '#F2C4C8', map: 'flower', time: 'day', where: 'flower', rarity: 'rare', price: 200, skittish: 0.7 },
 ];
 export const BUG_BY_ID = Object.fromEntries(BUGS.map(b => [b.id, b]));
 for (const b of BUGS) ITEMS[b.id] = { id: b.id, name: b.name, cat: 'bug', shape: 'bug', kind: b.kind, color: b.color, price: b.price };
@@ -42,7 +47,8 @@ for (const b of BUGS) ITEMS[b.id] = { id: b.id, name: b.name, cat: 'bug', shape:
 const RARITY = { common: 60, uncommon: 22, rare: 6 };
 export const BUGS_AT_ONCE = 4;
 
-export function bugAvailable(bug, season, hour, weather) {
+export function bugAvailable(bug, season, hour, weather, mapId = null) {
+  if ((bug.map || null) !== mapId && bug.map) return false;
   if (bug.seasons && !bug.seasons.includes(season)) return false;
   if (bug.time === 'night' && !isNightHour(hour)) return false;
   if (bug.time === 'day' && isNightHour(hour)) return false;
@@ -50,8 +56,8 @@ export function bugAvailable(bug, season, hour, weather) {
   return true;
 }
 
-export function bugsOut(season, hour, weather) {
-  return BUGS.filter(b => bugAvailable(b, season, hour, weather));
+export function bugsOut(season, hour, weather, mapId = null) {
+  return BUGS.filter(b => bugAvailable(b, season, hour, weather, mapId));
 }
 
 // Bugs change every two hours. The same seed, day and time give the same bugs,
@@ -61,20 +67,21 @@ export function timeBlock(hour) {
 }
 
 // tiles: { flower, ground, tree, pond } lists of open tiles for each kind of place.
-export function spawnBugs(seed, day, hour, season, weather, tiles) {
+export function spawnBugs(seed, day, hour, season, weather, tiles, mapId = null) {
   const block = timeBlock(hour);
-  const rand = rngFor(seed, 'bugs', day, block);
-  const pool = bugsOut(season, hour, weather);
+  const rand = rngFor(seed, 'bugs', mapId || 'forest', day, block);
+  const pool = bugsOut(season, hour, weather, mapId);
   if (!pool.length) return [];
   const taken = new Set();
   const out = [];
   for (let i = 0; i < BUGS_AT_ONCE; i++) {
-    const bug = pickWeighted(rand, pool, b => RARITY[b.rarity]);
+    // A jar's own bugs turn up more often than the visitors from the seasons.
+    const bug = pickWeighted(rand, pool, b => RARITY[b.rarity] * (b.map ? 4 : 1));
     const spots = shuffle(rand, tiles[bug.where]?.length ? tiles[bug.where] : tiles.ground);
     const spot = spots.find(t => !taken.has(t.c + ',' + t.r));
     if (!spot) continue;
     taken.add(spot.c + ',' + spot.r);
-    out.push({ sid: `${day}-${block}-${i}`, id: bug.id, c: spot.c, r: spot.r });
+    out.push({ sid: `${mapId ? mapId + '-' : ''}${day}-${block}-${i}`, id: bug.id, c: spot.c, r: spot.r });
   }
   return out;
 }

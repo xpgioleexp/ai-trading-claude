@@ -9,7 +9,8 @@ export function tagsOf(id) {
   if (!item) return [];
   if (item.cat === 'fish') return ['fish'];
   if (!['crop', 'forage'].includes(item.cat)) return [];
-  if (['cherry', 'peach', 'apple', 'orange', 'melon'].includes(id)) return ['fruit'];
+  if (['cherry', 'peach', 'apple', 'orange', 'melon', 'coconut'].includes(id)) return ['fruit'];
+  if (id === 'honey') return ['sweet'];
   const tags = [];
   const byShape = { berry: 'berry', root: 'root', round: 'veg', leaf: 'greens', mushroom: 'mushroom', flower: 'flower', pod: 'veg', cone: 'nut', crystal: 'ice' };
   if (byShape[item.shape]) tags.push(byShape[item.shape]);

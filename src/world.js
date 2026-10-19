@@ -20,6 +20,7 @@ export const OBJECTS = [
   { id: 'easel', name: 'Calendar', c: 12, r: 10, w: 1, h: 1 },
   { id: 'picnic', name: 'Picnic blanket', c: 3, r: 10, w: 2, h: 1, walkable: true },
   { id: 'cave', name: 'Cave', c: 8, r: 11, w: 1, h: 1, walkable: true },
+  { id: 'door', name: 'Door to the other jars', c: 16, r: 3, w: 1, h: 1, walkable: true },
 ];
 
 // Garden beds, two rows of three.

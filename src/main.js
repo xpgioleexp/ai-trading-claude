@@ -1,6 +1,6 @@
 // Little Us terrarium: game loop, input and the actions for each place in the jar.
 import * as R from './rules.js';
-import { ITEMS, ROD_ZONE, MINE_LAYERS, FORAGE } from './data.js';
+import { ITEMS, ROD_ZONE, MINE_LAYERS, FORAGE, DAILY_BITES } from './data.js';
 import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay, deviceTimeZone } from './clock.js';
 import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
@@ -21,6 +21,8 @@ import { openFurnish, ensureFirstRoom, roomsList, placeFurniture } from './home-
 import { openKitchen, maybeStartPart, maybeFinish, noticeInvite } from './kitchen.js';
 import { openCrafting } from './crafting-ui.js';
 import { BUG_BY_ID, spawnBugs, timeBlock, alertRate, NOTICE_TILES, catchBug } from './bugs.js';
+import { MAPS, mapWalkable, mapObjectAt, mapOpenTiles, mapNear, mapCatch, mapWeather, mapDaily } from './maps.js';
+import { openTravel } from './travel.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -78,13 +80,33 @@ function refreshClock() {
   const week = weekOf(g.today);
   g.boardNew = C.ready && S.missions[`${week}--${cloud.me}`]?.state !== 'done';
   g.wellLights = Math.min(2, Object.keys(S.discoveries['old-well']?.lights || {}).length);
+  if (g.scene === 'map') {
+    // Each jar keeps its own season; the weather follows home's unless the jar has its own.
+    const map = MAPS[g.mapId];
+    g.season = map.season;
+    g.weather = mapWeather(map, g.weather);
+    if (g.state.daily) g.mapDaily = mapDaily(g.state, g.mapId, g.today, g.state.seed, DAILY_BITES);
+  }
   syncBugs();
 }
 
 // ---------- bugs ----------
 
 let bugTiles = null;
+const mapTiles = {};
 function habitats() {
+  if (g.scene === 'map') {
+    const map = MAPS[g.mapId];
+    if (!mapTiles[map.id]) {
+      const open = mapOpenTiles(map);
+      mapTiles[map.id] = {
+        flower: open, ground: open,
+        tree: mapNear(map, ['palm', 'pine', 'hive', 'arch'], 2),
+        pond: mapNear(map, ['water', 'water2'], 1),
+      };
+    }
+    return mapTiles[map.id];
+  }
   if (bugTiles) return bugTiles;
   const open = forageTiles();
   const near = (o, d) => open.filter(t => t.c >= o.c - d && t.c < o.c + o.w + d && t.r >= o.r - d && t.r < o.r + o.h + d);
@@ -98,11 +120,12 @@ function habitats() {
 
 function syncBugs() {
   if (!g.state.daily) return;
-  const key = [g.state.seed, g.today, timeBlock(g.hour), g.season, g.weather].join('|');
+  const mapId = g.scene === 'map' ? g.mapId : null;
+  const key = [g.state.seed, g.today, timeBlock(g.hour), g.season, g.weather, mapId].join('|');
   if (key === g.bugKey) return;
   g.bugKey = key;
   const caught = new Set(g.state.daily.bugs || []);
-  g.bugs = spawnBugs(g.state.seed, g.today, g.hour, g.season, g.weather, habitats())
+  g.bugs = spawnBugs(g.state.seed, g.today, g.hour, g.season, g.weather, habitats(), mapId)
     .filter(b => !caught.has(b.sid))
     .map(b => {
       const p = tileCenter(b.c, b.r);
@@ -166,6 +189,7 @@ function checkNewDay() {
     if (g.night) T.noticeDiscovery('firefly-grove');
     if (g.weather === 'rain') T.noticeDiscovery('rain-pool');
   }
+  if (g.scene === 'map' && events.length) g.mapDaily = mapDaily(g.state, g.mapId, g.today, g.state.seed, DAILY_BITES);
   if (!events.length && g.state.daily.day === g.today && g.lastDay === g.today) return;
   g.lastDay = g.today;
   if (g.scene === 'mine') leaveMine();
@@ -212,6 +236,7 @@ function walkable(c, r) {
     return !g.rocks.some(rock => rock.c === c && rock.r === r && !g.mineBroken.has(rock.id));
   }
   if (g.scene === 'home') return roomWalkable(c, r, g.furnitureBlocked) || (c === DOOR.c && r === DOOR.r);
+  if (g.scene === 'map') return mapWalkable(MAPS[g.mapId], c, r);
   return isWalkable(c, r, g.decorBlocked);
 }
 
@@ -294,7 +319,7 @@ function sendPresence() {
   if (!room) return;
   const p = g.player;
   const data = {
-    scene: g.scene, layer: g.layer, roomId: g.scene === 'home' ? g.roomId : null, x: Math.round(p.x), y: Math.round(p.y),
+    scene: g.scene, layer: g.layer, roomId: g.scene === 'home' ? g.roomId : null, mapId: g.scene === 'map' ? g.mapId : null, x: Math.round(p.x), y: Math.round(p.y),
     dir: p.dir, frame: p.frame, pose: p.pose, look: g.state.avatar, uid: cloud.me,
     sleeping: !!p.sleeping, bedId: p.sleeping ? p.bedId : null, side: p.side || 0,
   };
@@ -322,7 +347,8 @@ function readOthers() {
     Object.assign(o, {
       tx: Math.max(0, Math.min(W, pr.x)), ty: Math.max(0, Math.min(H, pr.y)), dir: pr.dir | 0, frame: pr.frame | 0,
       pose: ['walk', 'sit', 'cast', 'swing', 'crouch'].includes(pr.pose) ? pr.pose : 'walk',
-      scene: ['mine', 'home'].includes(pr.scene) ? pr.scene : 'jar', layer: pr.layer | 0, look: cleanLook(pr.look),
+      scene: ['mine', 'home', 'map'].includes(pr.scene) ? pr.scene : 'jar', layer: pr.layer | 0, look: cleanLook(pr.look),
+      mapId: MAPS[pr.mapId] ? pr.mapId : null,
       roomId: typeof pr.roomId === 'string' ? pr.roomId : null, sleeping: !!pr.sleeping,
       bedId: typeof pr.bedId === 'string' ? pr.bedId : null, side: pr.side ? 1 : 0,
     });
@@ -509,6 +535,7 @@ function useObject(o) {
       g.player.dir = DIRS.down;
       return ready() && T.openToday(g);
     case 'pond': return startFishing(o);
+    case 'door': return ready() && openTravel(g);
     case 'cave':
       if (g.state.mine.deepest >= 11) return UI.openElevator(g, enterMine);
       return enterMine(1);
@@ -685,10 +712,95 @@ function placeFurnitureTap(c, r) {
   if (!ok) UI.toast(def.w > 1 || def.h > 1 ? `That needs ${def.w}×${def.h} free tiles on the floor, away from the door.` : 'That spot is taken.');
 }
 
+// ---------- other jars ----------
+
+function enterMap(id) {
+  if (!MAPS[id]) return;
+  closeSheetQuietly();
+  cancelAction();
+  stopPlacing();
+  g.scene = 'map';
+  g.mapId = id;
+  placePlayer(1, 5);
+  g.player.dir = DIRS.right;
+  refreshClock();
+  UI.updateHud(g);
+}
+
+function leaveMap() {
+  closeSheetQuietly();
+  cancelAction();
+  g.scene = 'jar';
+  g.mapId = null;
+  g.mapDaily = null;
+  const door = OBJECTS.find(o => o.id === 'door');
+  placePlayer(door.c - 1, door.r);
+  g.player.dir = DIRS.left;
+  refreshClock();
+  UI.updateHud(g);
+}
+
+function tapMap(c, r, x, y) {
+  const map = MAPS[g.mapId];
+  const day = g.mapDaily;
+  const bug = bugAt(x, y);
+  if (bug) return sneakTo(bug);
+  const fi = day.forage.findIndex((f, i) => f.c === c && f.r === r && !day.picked.includes(i));
+  if (fi >= 0) {
+    walkTo(c, r, () => {
+      if (day.picked.includes(fi)) return;
+      const id = day.forage[fi].id;
+      if (!R.addItem(g.state, id, 1)) return UI.toast('Your bag is full.');
+      day.picked.push(fi);
+      R.addItem(g.state, 'fiber', 1);
+      save();
+      gained(id);
+    });
+    return;
+  }
+  const o = mapObjectAt(map, c, r);
+  if (o) {
+    const use = () => useMapObject(map, o);
+    if (o.walkable) walkTo(o.c, o.r, use);
+    else walkNextTo(footprintTiles(o), use);
+    return;
+  }
+  if (walkable(c, r)) walkTo(c, r);
+}
+
+function useMapObject(map, o) {
+  const day = g.mapDaily;
+  if (o.id === 'door') return ready() && openTravel(g);
+  if (o.id === 'water' || o.id === 'water2') return startFishing(o);
+  if (o.fruit) {
+    if (day.shook) return UI.toast(`Nothing more from the ${o.name.toLowerCase()} today.`);
+    if (!R.addItem(g.state, o.fruit, 1)) return UI.toast('Your bag is full.');
+    day.shook = true;
+    if (o.id === 'palm') {
+      R.addItem(g.state, 'wood', 2);
+      UI.toast('+2 Wood', 'wood');
+    }
+    save();
+    gained(o.fruit);
+    return;
+  }
+  UI.toast(o.name);
+}
+
+// Fishing in another jar uses that jar's own bites.
+function bites() {
+  return g.scene === 'map' ? g.mapDaily : g.state.daily;
+}
+
+function spendBite() {
+  const b = bites();
+  if (b.bites > 0) b.bites -= 1;
+}
+
 // ---------- fishing ----------
 
 function startFishing(pond) {
-  if (g.state.daily.bites <= 0) {
+  if (bites().bites <= 0) {
     UI.toast('The fish have stopped biting today. Try again tomorrow.');
     return;
   }
@@ -714,8 +826,8 @@ function tapWhileFishing() {
   const f = g.fishing;
   if (f.phase === 'cast' || f.phase === 'wait') return endFishing('Too soon. Wait for the ! before you tap.');
   if (f.phase !== 'bite') return;
-  R.useBite(g.state);
-  const c = R.rollCatch(Math.random, g.season, g.hour, g.weather);
+  spendBite();
+  const c = g.scene === 'map' ? mapCatch(Math.random, g.mapId, g.hour) : R.rollCatch(Math.random, g.season, g.hour, g.weather);
   const item = ITEMS[c.id];
   if (item.cat === 'junk') {
     const n = R.addItem(g.state, c.id, 1);
@@ -742,7 +854,7 @@ function updateFishing(dt) {
     Object.assign(f, { phase: 'bite', t: 0 });
     if (navigator.vibrate) try { navigator.vibrate(40); } catch { /* not allowed */ }
   } else if (f.phase === 'bite' && f.t > 1.0) {
-    R.useBite(g.state);
+    spendBite();
     save();
     endFishing('It got away. Tap as soon as you see the !');
   } else if (f.phase === 'reel') {
@@ -885,6 +997,7 @@ function onPointerDown(e) {
   const { c, r } = pointToTile(x, y);
   if (g.scene === 'mine') tapMine(c, r);
   else if (g.scene === 'home') tapHome(c, r);
+  else if (g.scene === 'map') tapMap(c, r, x, y);
   else tapJar(c, r, x, y);
 }
 
@@ -967,6 +1080,7 @@ function frame(now) {
   }
   updatePlayer(dt);
   updateOthers(dt);
+  if (g.scene === 'map') updateBugs(dt);
   if (g.scene === 'jar') {
     const ctxRes = { night: g.night, player: { c: g.player.c, r: g.player.r }, blocked: g.decorBlocked };
     for (const a of g.residents) updateResident(a, dt, g.t, ctxRes);
@@ -1050,6 +1164,7 @@ function start(hotData = {}) {
     scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(),
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
     residents: [], bugs: [], bugKey: '', sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
+    mapId: null, mapDaily: null, enterMap, leaveMap,
     roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
     openKitchen: () => ready() && openKitchen(g),
     openCrafting: () => openCrafting(g),
@@ -1076,7 +1191,12 @@ function start(hotData = {}) {
   on('#btn-today', () => ready() && T.openToday(g));
   on('#btn-mail', () => ready() && T.openMailbox(g, UI.letters(g)));
   on('#btn-journal', () => ready() && T.openJournal(g));
-  on('#btn-build', () => ready() && (g.scene === 'home' ? openFurnish(g) : openBuild(g)));
+  on('#btn-build', () => {
+    if (!ready()) return;
+    if (g.scene === 'home') openFurnish(g);
+    else if (g.scene === 'map') UI.toast('You build in your forest jar. Use the door to go home.');
+    else openBuild(g);
+  });
   on('#btn-more', () => ready() && openMore(g));
   on('#btn-leave', () => (g.scene === 'home' ? leaveHome() : leaveMine()));
   on('#btn-cancel', stopPlacing);
