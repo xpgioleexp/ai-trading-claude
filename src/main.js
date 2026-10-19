@@ -25,6 +25,11 @@ import { MAPS, mapWalkable, mapObjectAt, mapOpenTiles, mapNear, mapCatch, mapWea
 import { openTravel } from './travel.js';
 import { visitorOn, visitorSpot, merchantHere, MERCHANT_SPOT } from './visitors.js';
 import { openVisitor, openMerchant } from './visitors-ui.js';
+import {
+  eventsToday, eventsNow, isOn, EVENT_SPOT, SNOWMAN_SPOT, SNOWMAN_PARTS, snowmanParts, mushroomSpots, FESTIVAL_BITES,
+  recordFestivalCatch, spawnMeteor, meteorAt, catchStar, LANTERN_PRIZE,
+} from './events.js';
+import { openEventStand, eventDocs, countMushroom } from './events-ui.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -82,6 +87,11 @@ function refreshClock() {
   const week = weekOf(g.today);
   g.boardNew = C.ready && S.missions[`${week}--${cloud.me}`]?.state !== 'done';
   g.wellLights = Math.min(2, Object.keys(S.discoveries['old-well']?.lights || {}).length);
+  g.eventsToday = eventsToday(g.today);
+  g.events = eventsNow(g.today, hour);
+  if (g.eventsToday.some(e => e.id === 'snow')) g.weather = 'snow';
+  // Clear skies for lanterns and shooting stars.
+  if (g.events.some(e => e.night) && g.weather !== 'snow') g.weather = 'sun';
   if (g.scene === 'map') {
     // Each jar keeps its own season; the weather follows home's unless the jar has its own.
     const map = MAPS[g.mapId];
@@ -91,6 +101,99 @@ function refreshClock() {
   }
   syncBugs();
   syncVisitors();
+  syncEvents();
+}
+
+// ---------- seasonal events ----------
+
+function syncEvents() {
+  const s = g.state;
+  if (!s.daily) return;
+  if (isOn(g.today, g.hour, 'festival') && !s.daily.festivalBites) {
+    s.daily.festivalBites = true;
+    s.daily.bites += FESTIVAL_BITES;
+    save();
+  }
+  const key = [s.seed, g.today, g.eventsToday.map(e => e.id).join()].join('|');
+  if (key !== g.eventKey) {
+    g.eventKey = key;
+    g.mushrooms = [];
+    if (isOn(g.today, g.hour, 'mushrooms')) {
+      const taken = new Set([...s.daily.forage.map(f => f.c + ',' + f.r), ...g.decorBlocked, ...g.visitors.map(v => v.c + ',' + v.r),
+        EVENT_SPOT.c + ',' + EVENT_SPOT.r]);
+      g.mushrooms = mushroomSpots(s.seed, g.today, forageTiles(), taken);
+    }
+  }
+  g.lanternCount = eventDocs(g.today, 'lantern').length;
+  // Whoever let their lantern go first gets the together prize once the other one does.
+  const partner = partnerId();
+  if (partner && !s.daily.lanternPrize && S.events[`${g.today}-lantern-${cloud.me}`] && S.events[`${g.today}-lantern-${partner}`]) {
+    s.daily.lanternPrize = true;
+    s.pebbles += LANTERN_PRIZE;
+    save();
+    UI.toast(`Your lanterns are up there together. +${LANTERN_PRIZE} pebbles.`);
+  }
+  g.snowman = g.eventsToday.some(e => e.id === 'snow') && snowmanParts(eventDocs(g.today, 'snow')) >= SNOWMAN_PARTS.length;
+  for (const e of g.events) {
+    const k = g.today + e.id;
+    if (g.eventToasts?.has(k) || g.scene !== 'jar') continue;
+    (g.eventToasts ||= new Set()).add(k);
+    setTimeout(() => UI.toast(`${e.name}! ${e.blurb}`), 2500);
+  }
+}
+
+function eventStandAt(x, y) {
+  if (!g.eventsToday.length) return false;
+  const p = tileCenter(EVENT_SPOT.c, EVENT_SPOT.r);
+  return Math.abs(x - p.x) < 12 && y > p.y - 26 && y < p.y + 8;
+}
+
+function tapMushroom(c, r) {
+  const i = g.mushrooms.findIndex((m, j) => m.c === c && m.r === r && !(g.state.daily.mushrooms || []).includes(j));
+  if (i < 0) return false;
+  walkTo(c, r, () => {
+    const picked = (g.state.daily.mushrooms ||= []);
+    if (picked.includes(i)) return;
+    const id = g.mushrooms[i].id;
+    if (!R.addItem(g.state, id, 1)) return UI.toast('Your bag is full.');
+    picked.push(i);
+    const n = countMushroom(g.state, g.today);
+    save();
+    gained(id);
+    if (n === 10) UI.toast('Your mushroom basket is full! Trade it at the event stand.');
+  });
+  return true;
+}
+
+function updateMeteors() {
+  if (g.scene !== 'jar' || !g.events.some(e => e.id === 'meteors')) {
+    g.meteors = [];
+    return;
+  }
+  g.meteors = g.meteors.filter(m => g.t - m.t0 < m.life && !m.caught);
+  if (g.t > (g.nextMeteor || 0)) {
+    g.meteors.push(spawnMeteor(Math.random, g.t));
+    g.nextMeteor = g.t + 1.2 + Math.random() * 2.2;
+  }
+}
+
+function tapMeteor(x, y) {
+  const m = g.meteors.find(m => {
+    const p = meteorAt(m, g.t);
+    return Math.hypot(x - p.x, y - p.y) < 16;
+  });
+  if (!m) return false;
+  m.caught = true;
+  const r = catchStar(g.state);
+  if (!r.ok) {
+    UI.toast(r.reason);
+    return true;
+  }
+  save();
+  const p = meteorAt(m, g.t);
+  popItem('star_fragment', p.x, p.y);
+  UI.toast(`You caught a falling star! Make a wish.${r.left ? ` ${r.left} more tonight.` : ''}`, 'star_fragment');
+  return true;
 }
 
 // ---------- visitors ----------
@@ -104,7 +207,8 @@ function syncVisitors() {
     g.visitorKey = key;
     const seed = g.state.seed;
     const list = [];
-    const taken = new Set([...g.state.daily.forage.map(f => f.c + ',' + f.r), ...g.decorBlocked]);
+    const taken = new Set([...g.state.daily.forage.map(f => f.c + ',' + f.r), ...g.decorBlocked,
+      EVENT_SPOT.c + ',' + EVENT_SPOT.r, SNOWMAN_SPOT.c + ',' + SNOWMAN_SPOT.r]);
     if (merchantHere(seed, g.today)) {
       for (const d of [0, 1]) taken.add(MERCHANT_SPOT.c + d + ',' + MERCHANT_SPOT.r);
       list.push({ kind: 'merchant', c: MERCHANT_SPOT.c, r: MERCHANT_SPOT.r });
@@ -235,6 +339,7 @@ function updateBugs(dt) {
 function checkNewDay() {
   refreshClock();
   const events = R.rollover(g.state, g.today);
+  if (events.length || g.lastDay !== g.today) syncEvents();
   if (g.scene === 'jar') {
     if (g.night) T.noticeDiscovery('firefly-grove');
     if (g.weather === 'rain') T.noticeDiscovery('rain-pool');
@@ -473,6 +578,8 @@ function tapJar(c, r, x, y) {
   if (bug) return sneakTo(bug);
   const visitor = visitorAt(x, y);
   if (visitor) return talkTo(visitor);
+  if (eventStandAt(x, y)) return walkNextTo([EVENT_SPOT], () => ready() && openEventStand(g));
+  if (tapMushroom(c, r)) return;
   // Animals
   const a = residentAt(x, y);
   if (a) {
@@ -935,7 +1042,9 @@ function landFish(f) {
   if (!R.addItem(g.state, id, 1)) return endFishing('Your bag is full, so you let it go.');
   const isNew = !g.state.log.fish[id];
   const record = R.recordCatch(g.state, id, size);
+  const festivalBest = g.scene === 'jar' && isOn(g.today, g.hour, 'festival') && recordFestivalCatch(g.state, id, size);
   save();
+  if (festivalBest) setTimeout(() => UI.toast('A new best for the festival! Enter it at the event stand.'), 1800);
   popItem(id, f.bobber.x, f.bobber.y - 8);
   const note = isNew ? ' New to your log!' : record ? ' A new record!' : '';
   endFishing(`You caught a ${item.name.toLowerCase()}! ${size} cm.${note}`, id);
@@ -1046,6 +1155,7 @@ function onPointerDown(e) {
     return;
   }
   const { x, y } = canvasPoint(e);
+  if (g.scene === 'jar' && g.meteors.length && tapMeteor(x, y)) return;
   const { c, r } = pointToTile(x, y);
   if (g.scene === 'mine') tapMine(c, r);
   else if (g.scene === 'home') tapHome(c, r);
@@ -1138,6 +1248,7 @@ function frame(now) {
     for (const a of g.residents) updateResident(a, dt, g.t, ctxRes);
     updateBugs(dt);
   }
+  updateMeteors();
   updateFishing(dt);
   updateAction(dt);
   g.effects = g.effects.filter(e => g.t - e.t0 < 1.3);
@@ -1215,7 +1326,7 @@ function start(hotData = {}) {
     state: R.migrate(saved, seed, today),
     scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(),
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
-    residents: [], bugs: [], bugKey: '', visitors: [], visitorKey: '', sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
+    residents: [], bugs: [], bugKey: '', visitors: [], visitorKey: '', events: [], eventsToday: [], eventKey: '', mushrooms: [], meteors: [], snowman: false, crouch, sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     mapId: null, mapDaily: null, enterMap, leaveMap,
     roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
     openKitchen: () => ready() && openKitchen(g),
@@ -1265,6 +1376,19 @@ function start(hotData = {}) {
       g.debugHour = g.debugHour == null ? 13 : g.debugHour === 13 ? 22 : null;
       refreshClock();
       UI.updateHud(g);
+    });
+    tools.querySelector('[data-debug="event"]')?.addEventListener('click', () => {
+      // Jump to the next seasonal event, at night if it's a night event.
+      for (let d = g.today + 1; d < g.today + 29; d++) {
+        const e = eventsToday(d)[0];
+        if (!e) continue;
+        g.state.dayOffset = (g.state.dayOffset || 0) + (d - g.today);
+        g.debugHour = e.night ? 22 : 13;
+        checkNewDay();
+        UI.updateHud(g);
+        UI.toast(`Test: ${e.name}`);
+        return;
+      }
     });
     tools.querySelector('[data-debug="pebbles"]').addEventListener('click', () => {
       g.state.pebbles += 500;

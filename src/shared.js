@@ -28,6 +28,7 @@ export const S = {
   gifts: {},
   jars: {},
   deliveries: {},
+  events: {},
   house: null,
   weather: null,
   timer: null,
@@ -43,7 +44,7 @@ function changed(kind) {
   listeners.forEach(fn => fn(kind));
 }
 
-const COLLECTIONS = ['people', 'garden', 'answers', 'checkins', 'notes', 'missions', 'rituals', 'dates', 'dreams', 'scrapbook', 'decor', 'animals', 'discoveries', 'rooms', 'furniture', 'wallitems', 'goodnights', 'kitchen', 'recipes', 'meals', 'gifts', 'jars', 'deliveries'];
+const COLLECTIONS = ['people', 'garden', 'answers', 'checkins', 'notes', 'missions', 'rituals', 'dates', 'dreams', 'scrapbook', 'decor', 'animals', 'discoveries', 'rooms', 'furniture', 'wallitems', 'goodnights', 'kitchen', 'recipes', 'meals', 'gifts', 'jars', 'deliveries', 'events'];
 
 export async function startShared({ seed, today, timeZone }) {
   // The jar itself: one seed and time zone for both of you.

@@ -15,7 +15,7 @@ It also carries over everything from the original Little Us app: 3,000 daily que
 npm start          # serves the folder at http://127.0.0.1:4173
 ```
 
-Open `http://127.0.0.1:4173/`. Add `#debug` to the address to get test buttons for skipping to the next day, switching between day and night, and adding pebbles.
+Open `http://127.0.0.1:4173/`. Add `#debug` to the address to get test buttons for skipping to the next day or the next seasonal event, switching between day and night, and adding pebbles.
 
 Any static file server works. There is no build step.
 
@@ -46,7 +46,7 @@ Any static file server works. There is no build step.
 **Building your home:**
 - **Upgrade the house:** tent → cabin → cottage → cottage with a loft. Upgrades cost pebbles, plus stone and ore from the cave. Each level allows more rooms (1, 2, 4, then 6).
 - **Add rooms:** living room, our bedroom (one, from the cabin on), kitchen, study, bathroom, sunroom and loft.
-- **Furnish:** 31 pieces in the catalogue, plus 12 special pieces from shops and visitors. Tap twice to place, then move or return them later; returning gives back the full price.
+- **Furnish:** 31 pieces in the catalogue, plus 14 special pieces from shops, visitors and events. Tap twice to place, then move or return them later; returning gives back the full price.
 - **Decorate:** 10 things for the six spots on the back wall, 8 wallpapers and 6 floors, chosen per room.
 - **Furniture you can use:** beds (sleep), wardrobe and dresser (change your look), seats (sit), desk (calendar), bookshelf (journal), chest (bag), record player and piano (music).
 - **Saying goodnight:** in the shared bedroom you can each get into the double bed and say goodnight. When you both do on the same day, you each get 15 pebbles, and it's kept in the journal.
@@ -72,6 +72,15 @@ Any static file server works. There is no build step.
 - **Spawns:** four are out at a time. They change every two hours, and both of you see the same ones.
 - **Sneaking:** tap a bug to creep up on it slowly, then swing the net when you reach it. A bug gets nervous when you move near it. A yellow mark means careful and red means about to go. Walk normally nearby and it flies off to somewhere else.
 - **Collecting:** caught bugs go in the bag (sell them in the crate) and in the **Bugs** tab of the collection log.
+
+**Seasonal events:** each season is one week (Monday to Sunday), and events fall on set days of it. A striped event stand appears in the meadow on event days. Tap it for what's on and what's coming up, and the top bar shows the event's name.
+- **Lantern nights (spring, Saturday and Sunday, from 6pm):** paper lanterns float up through the night. Let yours go with a wish. When you both do, you see each other's wish and each get 20 pebbles.
+- **Fishing festival (summer, Saturday):** 10 extra bites at the pond. Your best catch is scored by size against the biggest of its kind, plus a bonus for rarer fish. Enter it once at the stand for pebbles, plus a fishing trophy the first time. You see each other's entries, and the higher one gets a 🏆.
+- **Meteor showers (summer Wednesday night, autumn Sunday night):** tap shooting stars to catch up to 3 star fragments a night.
+- **Mushroom season (autumn, Monday to Friday):** 5 extra mushroom spots a day, including puffballs and the rare glowcap and truffle. Fill a basket of 10 for a mushroom lamp.
+- **Snow days (winter, Tuesday and Friday):** deep snow all day. Roll the four parts of a snowman (you can each roll some), and it stands in the meadow until tomorrow. Everyone who helped gets 40 pebbles.
+- **Clear skies:** lantern and meteor nights are always clear.
+- **Testing:** `#debug` has a **Next event** button that jumps to the next event, at night if it's a night event.
 
 **Shops and visitors:**
 - **Rotating furniture:** the beetle shop has four new pieces every morning: two special pieces you can't get from the catalogue, and two catalogue pieces at 20% off. One of each per day. They go in your bag; place them from **Build** inside your home.
@@ -128,6 +137,8 @@ Any static file server works. There is no build step.
 | `src/travel.js` | The jar shelf: opening and travelling between jars |
 | `src/visitors.js` | The traveling merchant, visitors, delivery requests and the rotating furniture stock |
 | `src/visitors-ui.js` | Their panels |
+| `src/events.js` | Seasonal events: the calendar, mushrooms, festival scoring, meteors and the snowman |
+| `src/events-ui.js` | The event stand and each event's panel |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |

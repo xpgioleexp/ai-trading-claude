@@ -509,3 +509,20 @@ export function merchantRugSprite() {
     disc(ctx, 24, 8, 2, '#E8C25A');
   });
 }
+
+// ---------- seasonal events ----------
+
+// The little striped stand where events are run, 24 x 28.
+export function eventStandSprite() {
+  return sprite('event_stand', 24, 28, ctx => {
+    px(ctx, 2, 8, 2, 20, PAL.woodShade);
+    px(ctx, 20, 8, 2, 20, PAL.woodShade);
+    for (let x = 0; x < 24; x += 4) px(ctx, x, 4, 4, 6, x % 8 ? PAL.linenHi : '#D9533C');
+    px(ctx, 0, 10, 24, 1, PAL.woodShade);
+    px(ctx, 1, 18, 22, 8, PAL.wood);
+    px(ctx, 1, 18, 22, 1, PAL.woodHi);
+    px(ctx, 11, 0, 1, 4, PAL.woodShade);
+    px(ctx, 12, 0, 4, 2, '#E8C25A');
+    for (let x = 3; x < 21; x += 4) px(ctx, x, 12, 2, 2, ['#E8C25A', '#79AAA4', '#E07A9B'][x % 3]);
+  });
+}

@@ -142,6 +142,14 @@ Item icons for the jars: sardine, mackerel, flounder, sea_bream, pufferfish, oct
 
 Special furniture uses the same `furniture_<type>` names as the rest: canopy_bed (32 × 32), rocking_chair, tall_clock (16 × 24), globe, tea_table, paper_lantern, bonsai, jukebox (16 × 18), star_rug (32 × 32, flat), telescope, aquarium (32 × 16), lucky_cat.
 
+### Seasonal events
+
+| Name | Size | What it is |
+|---|---|---|
+| `event_stand` | 24 × 28 | The striped stand in the meadow on event days |
+
+Lanterns in the sky and shooting stars are drawn as light effects in `src/scene.js` (`drawEventSky`). The snowman reuses `snowman`. New item icons: puffball, glowcap, truffle, star_fragment. New furniture: `furniture_fish_trophy` and `furniture_mushroom_lamp` (16 × 16).
+
 ### Avatar (16 × 24)
 The avatar is built in layers so every hair, outfit and skin option lines up. Production avatar art should come as separate layers:
 

@@ -1,5 +1,6 @@
 // Draws the jar, its world and the mine onto the game canvas.
 import { COLS, ROWS, TILE, OBJECTS, BEDS } from './world.js';
+import { EVENT_SPOT, SNOWMAN_SPOT, meteorAt } from './events.js';
 import { bedStage, bandOf, MINE_ENTRY } from './rules.js';
 import {
   PAL, px, disc, shade, grassTile, itemIcon, mailboxSprite, crateSprite, workbenchSprite,
@@ -7,7 +8,7 @@ import {
   ladderUpSprite, bunnySprite, heartSprite,
 } from './sprites.js';
 import { avatarSprite, DIRS } from './avatar.js';
-import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR, bugSprite, visitorSprite, merchantSprite, merchantRugSprite, requestMarkSprite } from './sprites-more.js';
+import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR, bugSprite, visitorSprite, merchantSprite, merchantRugSprite, requestMarkSprite, eventStandSprite } from './sprites-more.js';
 import { BUG_BY_ID } from './bugs.js';
 import { doorSprite, palmSprite, hiveSprite, pineSprite, snowmanSprite, archSprite } from './sprites-more.js';
 import { MAPS } from './maps.js';
@@ -103,6 +104,12 @@ function drawJarWorld(ctx, g) {
     if (Math.floor(g.t * 2 + i) % 3 === 0) px(ctx, p.x + 4, p.y - 10, 1, 1, PAL.linenHi);
   });
 
+  (g.mushrooms || []).forEach((m, i) => {
+    if ((g.state.daily.mushrooms || []).includes(i)) return;
+    const p = tileCenter(m.c, m.r);
+    ctx.drawImage(itemIcon(m.id), p.x - 8, p.y - 10);
+  });
+
   // Everything that stands up is sorted by where it touches the ground.
   const items = [];
   const at = (o, img, dx = 0, dy = 0) => {
@@ -174,6 +181,8 @@ function drawJarWorld(ctx, g) {
       if (b.alert > 0.4) px(ctx, bx, by - 12, 2, 4 + Math.round(b.alert * 2), b.alert > 0.75 ? '#D9533C' : '#E8C25A');
     } });
   }
+  if (g.eventsToday?.length) at({ ...EVENT_SPOT, w: 1, h: 1 }, eventStandSprite(), 0, -1);
+  if (g.snowman) at({ ...SNOWMAN_SPOT, w: 1, h: 1 }, snowmanSprite(), 0, -1);
   for (const v of g.visitors || []) {
     const frame = Math.floor(g.t * 1.2 + v.phase) % 2;
     const img = v.kind === 'merchant' ? merchantSprite(frame) : visitorSprite(v.def.species, v.def.color, frame);
@@ -209,6 +218,36 @@ function drawJarWorld(ctx, g) {
   drawSoil(ctx, g);
   drawWeather(ctx, g);
   if (g.night) drawNight(ctx, g);
+  drawEventSky(ctx, g);
+}
+
+// Lanterns drifting up and shooting stars, drawn over the night tint so they glow.
+function drawEventSky(ctx, g) {
+  const on = id => (g.events || []).some(e => e.id === id);
+  if (on('lanterns')) {
+    const ours = g.lanternCount || 0;
+    for (let i = 0; i < 14 + ours; i++) {
+      const hx = hashString('lantern' + i);
+      const span = 250;
+      const y = 290 - ((g.t * (6 + (hx % 5)) + (hx >>> 5) % span) % span);
+      const x = 30 + ((hx >>> 3) % 260) + Math.sin(g.t * 0.6 + i) * 5;
+      const yours = i >= 14;
+      ctx.fillStyle = yours ? 'rgba(255,200,120,0.35)' : 'rgba(255,190,110,0.22)';
+      ctx.fillRect(x - 4, y - 4, 11, 12);
+      px(ctx, x, y, 4, 5, yours ? '#FFD27A' : '#F2A65A');
+      px(ctx, x + 1, y + 1, 2, 3, '#FFF1C4');
+      px(ctx, x, y + 5, 4, 1, '#B5653A');
+    }
+  }
+  for (const m of g.meteors || []) {
+    const p = meteorAt(m, g.t);
+    const fade = Math.max(0, 1 - p.age / m.life);
+    for (let k = 0; k < 10; k++) {
+      ctx.fillStyle = `rgba(255,250,210,${(fade * (1 - k / 10)).toFixed(2)})`;
+      ctx.fillRect(Math.round(p.x + k * 2.2), Math.round(p.y - k), 2, 2);
+    }
+    px(ctx, Math.round(p.x) - 1, Math.round(p.y) - 1, 3, 3, '#FFFFFF');
+  }
 }
 
 const SEASON_EDGE = { spring: PAL.grass, summer: '#9DB86E', autumn: '#C2B070', winter: '#E6EDEE' };

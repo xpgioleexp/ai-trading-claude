@@ -76,6 +76,9 @@ export const FURNITURE = [
   { type: 'telescope', name: 'Telescope', category: 'Special', price: 180, w: 1, h: 1, special: true, merchant: true },
   { type: 'aquarium', name: 'Aquarium', category: 'Special', price: 240, w: 2, h: 1, special: true, merchant: true },
   { type: 'lucky_cat', name: 'Lucky cat', category: 'Special', price: 160, w: 1, h: 1, special: true, merchant: true },
+  // Event prizes (event: true): only from seasonal events.
+  { type: 'fish_trophy', name: 'Fishing trophy', category: 'Special', price: 150, w: 1, h: 1, special: true, event: true },
+  { type: 'mushroom_lamp', name: 'Mushroom lamp', category: 'Special', price: 130, w: 1, h: 1, special: true, event: true },
 ];
 export const FURNITURE_BY_TYPE = Object.fromEntries(FURNITURE.map(f => [f.type, f]));
 

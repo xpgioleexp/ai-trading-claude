@@ -278,6 +278,14 @@ function drawFurniture(ctx, type, w, h) {
       px(ctx, 12, 2, 2, 6, PAL.linenHi); px(ctx, 6, 6, 1, 1, PAL.inkDeep); px(ctx, 10, 6, 1, 1, PAL.inkDeep);
       px(ctx, 6, 10, 5, 1, '#B5324A'); disc(ctx, 8, 12, 1.5, '#E8C25A');
       return;
+    case 'fish_trophy':
+      px(ctx, 4, 12, 8, 4, woodD); px(ctx, 6, 9, 4, 3, '#E8C25A');
+      disc(ctx, 8, 5, 4.5, '#E8C25A'); px(ctx, 3, 4, 10, 2, '#5E8AA0'); px(ctx, 12, 3, 2, 4, '#5E8AA0');
+      return;
+    case 'mushroom_lamp':
+      px(ctx, 6, 8, 4, 8, PAL.linenHi); disc(ctx, 8, 6, 6, '#D9533C');
+      for (const [x, y] of [[5, 4], [10, 3], [8, 7]]) px(ctx, x, y, 2, 2, PAL.linenHi);
+      return;
     default:
       px(ctx, 2, 4, 12, 12, PAL.rose);
   }
