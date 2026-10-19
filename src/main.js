@@ -10,12 +10,14 @@ import { DIRS } from './avatar.js';
 import * as UI from './ui.js';
 import { C, loadContent, weekOf } from './content.js';
 import { cloud, connect, setDoc, privatePath } from './cloud.js';
-import { S, startShared, onShared, partnerId, saveBed, shareLook, rainingNow } from './shared.js';
+import { S, startShared, onShared, partnerId, saveBed, shareLook, rainingNow, sayGoodnight, goodnightsOn } from './shared.js';
 import { adopted, makeResident, updateResident, startMotion, adopt } from './animals.js';
 import { FLAT_DECOR } from './sprites-more.js';
 import * as T from './together.js';
 import { openBuild, placeDecor, openAnimal, openMore } from './places.js';
 import { openHangout, startHangout } from './hangout.js';
+import { DOOR, FURNITURE_BY_TYPE, WALL_BY_TYPE, canPlace, blockedTiles, roomWalkable, tilesOf } from './home.js';
+import { openFurnish, ensureFirstRoom, roomsList, placeFurniture } from './home-ui.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -127,6 +129,7 @@ function walkable(c, r) {
     if (!inBounds(c, r)) return false;
     return !g.rocks.some(rock => rock.c === c && rock.r === r && !g.mineBroken.has(rock.id));
   }
+  if (g.scene === 'home') return roomWalkable(c, r, g.furnitureBlocked) || (c === DOOR.c && r === DOOR.r);
   return isWalkable(c, r, g.decorBlocked);
 }
 
@@ -206,7 +209,11 @@ function sendPresence() {
   const room = cloud.room;
   if (!room) return;
   const p = g.player;
-  const data = { scene: g.scene, layer: g.layer, x: Math.round(p.x), y: Math.round(p.y), dir: p.dir, frame: p.frame, pose: p.pose, look: g.state.avatar, uid: cloud.me };
+  const data = {
+    scene: g.scene, layer: g.layer, roomId: g.scene === 'home' ? g.roomId : null, x: Math.round(p.x), y: Math.round(p.y),
+    dir: p.dir, frame: p.frame, pose: p.pose, look: g.state.avatar, uid: cloud.me,
+    sleeping: !!p.sleeping, bedId: p.sleeping ? p.bedId : null, side: p.side || 0,
+  };
   const key = JSON.stringify(data);
   if (key === lastPresence) return;
   lastPresence = key;
@@ -231,7 +238,9 @@ function readOthers() {
     Object.assign(o, {
       tx: Math.max(0, Math.min(W, pr.x)), ty: Math.max(0, Math.min(H, pr.y)), dir: pr.dir | 0, frame: pr.frame | 0,
       pose: ['walk', 'sit', 'cast', 'swing', 'crouch'].includes(pr.pose) ? pr.pose : 'walk',
-      scene: pr.scene === 'mine' ? 'mine' : 'jar', layer: pr.layer | 0, look: cleanLook(pr.look),
+      scene: ['mine', 'home'].includes(pr.scene) ? pr.scene : 'jar', layer: pr.layer | 0, look: cleanLook(pr.look),
+      roomId: typeof pr.roomId === 'string' ? pr.roomId : null, sleeping: !!pr.sleeping,
+      bedId: typeof pr.bedId === 'string' ? pr.bedId : null, side: pr.side ? 1 : 0,
     });
     out.push(o);
   }
@@ -382,7 +391,7 @@ function ready() {
 
 function useObject(o) {
   switch (o.id) {
-    case 'tent': return UI.openWardrobe(g);
+    case 'tent': return ready() && enterHome();
     case 'mailbox': return ready() && T.openMailbox(g, UI.letters(g));
     case 'crate': return UI.openCrate(g);
     case 'workbench': return UI.openWorkbench(g);
@@ -424,7 +433,8 @@ function decorTaken(c, r, ignoreId) {
 function startPlacing(opts) {
   g.build = { ...opts, ghost: null };
   document.querySelector('#btn-cancel').hidden = false;
-  UI.toast(`Tap a free spot for the ${(C.decorByType[opts.type]?.name || 'decoration').toLowerCase()}, then tap it again to place it.`);
+  const name = opts.furniture ? FURNITURE_BY_TYPE[opts.type]?.name : C.decorByType[opts.type]?.name;
+  UI.toast(`Tap a free spot for the ${(name || 'decoration').toLowerCase()}, then tap it again to place it.`);
 }
 
 function stopPlacing() {
@@ -448,6 +458,139 @@ function placeTap(c, r) {
 function syncDecor() {
   g.decor = Object.entries(S.decor).map(([id, d]) => ({ id, type: d.type, c: d.c | 0, r: d.r | 0 })).filter(d => C.decorByType[d.type]);
   g.decorBlocked = new Set(g.decor.filter(d => !FLAT_DECOR.has(d.type)).map(d => tileKey(d.c, d.r)));
+}
+
+// ---------- your home ----------
+
+function syncHome() {
+  g.houseLevel = S.house?.level || 0;
+  g.room = S.rooms[g.roomId] || null;
+  g.furniture = Object.entries(S.furniture).filter(([, f]) => f.room === g.roomId && FURNITURE_BY_TYPE[f.type]).map(([id, f]) => ({ id, type: f.type, c: f.c | 0, r: f.r | 0 }));
+  g.wallitems = Object.entries(S.wallitems).filter(([, w]) => w.room === g.roomId && WALL_BY_TYPE[w.type]).map(([id, w]) => ({ id, type: w.type, slot: w.slot | 0 }));
+  g.furnitureBlocked = blockedTiles(g.furniture);
+  if (g.scene === 'home' && !g.room && roomsList().length) g.roomId = roomsList()[0].id;
+}
+
+async function enterHome(roomId) {
+  closeSheetQuietly();
+  stopPlacing();
+  const first = await ensureFirstRoom();
+  g.scene = 'home';
+  g.roomId = roomId && S.rooms[roomId] ? roomId : (g.roomId && S.rooms[g.roomId] ? g.roomId : first);
+  syncHome();
+  wake();
+  placePlayer(DOOR.c, DOOR.r);
+  g.player.dir = DIRS.up;
+  UI.updateHud(g);
+  if (!g.state.homeTip) {
+    g.state.homeTip = true;
+    save();
+    UI.toast('Welcome home! Tap Build to add furniture, walls and rooms.');
+  }
+}
+
+function leaveHome() {
+  wake();
+  stopPlacing();
+  g.scene = 'jar';
+  const tent = OBJECTS.find(o => o.id === 'tent');
+  placePlayer(tent.c + 1, tent.r + tent.h);
+  UI.updateHud(g);
+}
+
+function wake() {
+  if (!g.player.sleeping) return;
+  g.player.sleeping = false;
+  g.player.bedId = null;
+}
+
+function tapHome(c, r) {
+  if (g.player.sleeping) {
+    wake();
+    UI.toast('Good morning.');
+    return;
+  }
+  if (g.build?.furniture) return placeFurnitureTap(c, r);
+  if (c === DOOR.c && r >= DOOR.r) {
+    walkTo(DOOR.c, DOOR.r, leaveHome);
+    return;
+  }
+  const item = [...g.furniture].reverse().find(f => !FURNITURE_BY_TYPE[f.type].flat && tilesOf(f).some(t => t.c === c && t.r === r));
+  if (item) {
+    walkNextTo(tilesOf(item), () => useFurniture(item));
+    return;
+  }
+  if (r < 4 && r >= 1) {
+    const w = g.wallitems.find(x => Math.abs([3, 5, 7, 9, 11, 13][x.slot] - c) <= 0);
+    if (w) return UI.toast(w.type === 'portrait' ? 'The two of you, in a little frame.' : WALL_BY_TYPE[w.type].name);
+  }
+  if (walkable(c, r)) walkTo(c, r);
+}
+
+function useFurniture(item) {
+  const def = FURNITURE_BY_TYPE[item.type];
+  switch (def.use) {
+    case 'sleep': return goToBed(item);
+    case 'wardrobe': return UI.openWardrobe(g);
+    case 'sit':
+      g.player.pose = 'sit';
+      g.player.dir = DIRS.down;
+      return;
+    case 'calendar': return ready() && T.openCalendar(g);
+    case 'journal': return ready() && T.openJournal(g);
+    case 'bag': return UI.openBag(g);
+    case 'music': {
+      const x = GX_HOME(item), y = GY_HOME(item);
+      for (let i = 0; i < 4; i++) g.effects.push({ kind: 'note', x: x + i * 5 - 6, y: y - i * 3, t0: g.t + i * 0.2 });
+      return UI.toast(item.type === 'piano' ? 'You play a little tune.' : 'A soft song fills the room.');
+    }
+    default:
+      return UI.toast(def.name);
+  }
+}
+
+const GX_HOME = item => 24 + (item.c + FURNITURE_BY_TYPE[item.type].w / 2) * 16;
+const GY_HOME = item => 100 + item.r * 16 - 4;
+
+function goToBed(bed) {
+  const def = FURNITURE_BY_TYPE[bed.type];
+  const taken = g.others.some(o => o.sleeping && o.bedId === bed.id && (o.side || 0) === 0);
+  g.player.sleeping = true;
+  g.player.bedId = bed.id;
+  g.player.side = def.w > 1 && taken ? 1 : 0;
+  sayGoodnight(g.today);
+  const partner = partnerId();
+  const together = partner && goodnightsOn(g.today).includes(partner);
+  UI.toast(together ? 'Goodnight, you two.' : partner ? 'Goodnight. Sweet dreams. Tap anywhere to get up.' : 'Goodnight. Tap anywhere to get up.');
+  checkGoodnight();
+}
+
+function checkGoodnight() {
+  const partner = partnerId();
+  if (!partner) return;
+  const said = goodnightsOn(g.today);
+  if (!said.includes(cloud.me) || !said.includes(partner)) return;
+  g.state.rewards = g.state.rewards || {};
+  const key = 'goodnight-' + g.today;
+  if (g.state.rewards[key]) return;
+  g.state.rewards[key] = true;
+  g.state.pebbles += 15;
+  save();
+  UI.toast('You both said goodnight today. +15 pebbles');
+}
+
+function placeFurnitureTap(c, r) {
+  const b = g.build;
+  const def = FURNITURE_BY_TYPE[b.type];
+  const onPlayer = tilesOf({ type: b.type, c, r }).some(t => t.c === g.player.c && t.r === g.player.r) && !def.flat;
+  const ok = canPlace(b.type, c, r, g.furniture, b.moveId) && !onPlayer;
+  if (b.ghost && b.ghost.c === c && b.ghost.r === r && ok) {
+    if (placeFurniture(g, b, c, r)) UI.toast(b.moveId ? 'Moved.' : 'Placed!');
+    stopPlacing();
+    return;
+  }
+  b.ghost = { type: b.type, c, r, ok };
+  if (!ok) UI.toast(def.w > 1 || def.h > 1 ? `That needs ${def.w}×${def.h} free tiles on the floor, away from the door.` : 'That spot is taken.');
 }
 
 // ---------- fishing ----------
@@ -649,6 +792,7 @@ function onPointerDown(e) {
   const { x, y } = canvasPoint(e);
   const { c, r } = pointToTile(x, y);
   if (g.scene === 'mine') tapMine(c, r);
+  else if (g.scene === 'home') tapHome(c, r);
   else tapJar(c, r, x, y);
 }
 
@@ -766,6 +910,8 @@ async function bootShared() {
     if (kind === 'decor' || kind === 'ready') syncDecor();
     if (kind === 'animals' || kind === 'ready') syncResidents();
     if (kind === 'people') T.refreshNames().then(() => UI.refreshSheet());
+    if (['house', 'rooms', 'furniture', 'wallitems', 'ready'].includes(kind)) syncHome();
+    if (kind === 'goodnights') checkGoodnight();
     refreshClock();
     UI.updateHud(g);
     UI.refreshSheet();
@@ -810,6 +956,7 @@ function start(hotData = {}) {
     scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(),
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
     residents: [], decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
+    roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
     fishing: null, action: null, effects: [], hold: false, t: 0, today,
     debugHour: null, save, startPlacing, animalReacts, resetMine,
   };
@@ -832,9 +979,9 @@ function start(hotData = {}) {
   on('#btn-today', () => ready() && T.openToday(g));
   on('#btn-mail', () => ready() && T.openMailbox(g, UI.letters(g)));
   on('#btn-journal', () => ready() && T.openJournal(g));
-  on('#btn-build', () => ready() && openBuild(g));
+  on('#btn-build', () => ready() && (g.scene === 'home' ? openFurnish(g) : openBuild(g)));
   on('#btn-more', () => ready() && openMore(g));
-  on('#btn-leave', leaveMine);
+  on('#btn-leave', () => (g.scene === 'home' ? leaveHome() : leaveMine()));
   on('#btn-cancel', stopPlacing);
 
   if (debug) {

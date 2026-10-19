@@ -18,6 +18,11 @@ export const S = {
   decor: {},
   animals: {},
   discoveries: {},
+  rooms: {},
+  furniture: {},
+  wallitems: {},
+  goodnights: {},
+  house: null,
   weather: null,
   timer: null,
   prompt: null,
@@ -32,7 +37,7 @@ function changed(kind) {
   listeners.forEach(fn => fn(kind));
 }
 
-const COLLECTIONS = ['people', 'garden', 'answers', 'checkins', 'notes', 'missions', 'rituals', 'dates', 'dreams', 'scrapbook', 'decor', 'animals', 'discoveries'];
+const COLLECTIONS = ['people', 'garden', 'answers', 'checkins', 'notes', 'missions', 'rituals', 'dates', 'dreams', 'scrapbook', 'decor', 'animals', 'discoveries', 'rooms', 'furniture', 'wallitems', 'goodnights'];
 
 export async function startShared({ seed, today, timeZone }) {
   // The jar itself: one seed and time zone for both of you.
@@ -51,6 +56,7 @@ export async function startShared({ seed, today, timeZone }) {
       if (name === 'answers') revealWhenBothAnswered();
     });
   }
+  watchDoc('home/house', d => { S.house = d; changed('house'); });
   watchDoc('live/weather', d => { S.weather = d; changed('weather'); });
   watchDoc('live/timer', d => { S.timer = d; changed('timer'); });
   watchDoc('live/prompt', d => { S.prompt = d; changed('prompt'); });
@@ -163,4 +169,16 @@ export function stopRain() {
 
 export function rainingNow() {
   return (S.weather?.rainUntil || 0) > now();
+}
+
+// ---------- goodnight ----------
+// Each of you says goodnight from the bed; when you both have on the same day,
+// it's kept as a little moment.
+
+export function sayGoodnight(day) {
+  setDoc(`goodnights/${day}--${cloud.me}`, { day, uid: cloud.me, at: now() }).catch(() => {});
+}
+
+export function goodnightsOn(day) {
+  return Object.values(S.goodnights).filter(n => n.day === day).map(n => n.uid);
 }

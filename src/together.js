@@ -656,6 +656,9 @@ function momentsHtml(g, limit) {
   for (const d of Object.values(S.dates)) if (d.done) items.push({ at: d.doneAt || d.at, kind: 'Date', html: `<p>${esc(d.title)}</p>` });
   for (const d of Object.values(S.dreams)) if (d.stage === 'done') items.push({ at: d.at, kind: 'Dream come true', html: `<p>${esc(d.title)}</p>` });
   for (const [id, d] of Object.entries(S.discoveries)) if (d.at) items.push({ at: d.at, kind: 'Discovery', html: `<p>${esc(C.landmarks.find(l => l.id === id)?.secret || id)}</p>` });
+  const nights = {};
+  for (const n of Object.values(S.goodnights)) (nights[n.day] = nights[n.day] || []).push(n);
+  for (const list of Object.values(nights)) if (new Set(list.map(n => n.uid)).size >= 2) items.push({ at: Math.max(...list.map(n => n.at)), kind: 'Goodnight', html: '<p>You both said goodnight from your bedroom.</p>' });
   items.sort((a, b) => b.at - a.at);
   if (!items.length) return '<p class="detail">Your shared moments will collect here: answers you\'ve both opened, shared check-ins, notes, missions, dates, dreams and discoveries.</p>';
   return `<ul class="moments">${items.slice(0, limit).map(i => `<li><span class="label">${esc(i.kind)} · ${esc(fmtDate(i.at))}</span>${i.html}</li>`).join('')}</ul>

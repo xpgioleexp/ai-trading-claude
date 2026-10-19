@@ -2,13 +2,15 @@
 import { COLS, ROWS, TILE, OBJECTS, BEDS } from './world.js';
 import { bedStage, bandOf, MINE_ENTRY } from './rules.js';
 import {
-  PAL, px, disc, shade, grassTile, itemIcon, tentSprite, mailboxSprite, crateSprite, workbenchSprite,
+  PAL, px, disc, shade, grassTile, itemIcon, mailboxSprite, crateSprite, workbenchSprite,
   stallSprite, treeSprite, benchSprite, caveSprite, bedSprite, cropSprite, rockSprite, ladderHoleSprite,
   ladderUpSprite, bunnySprite, heartSprite,
 } from './sprites.js';
 import { avatarSprite, DIRS } from './avatar.js';
 import { boardSprite, wellSprite, picnicSprite, easelSprite, animalSprite, noteSprite, bubbleSprite, sparkleSprite, zzzSprite, decorSprite, FLAT_DECOR } from './sprites-more.js';
 import { hashString } from './rng.js';
+import { houseSprite, wallpaperTile, floorTile, furnitureSprite, wallItemSprite, sleeperSprite } from './home-art.js';
+import { ROOM, DOOR, WALL_SLOTS, FURNITURE_BY_TYPE } from './home.js';
 
 export const W = 320;
 export const H = 384;
@@ -48,6 +50,7 @@ export function drawScene(ctx, g) {
   jarPath(ctx);
   ctx.clip();
   if (g.scene === 'mine') drawMine(ctx, g);
+  else if (g.scene === 'home') drawHome(ctx, g);
   else drawJarWorld(ctx, g);
   drawEffects(ctx, g);
   ctx.restore();
@@ -101,7 +104,7 @@ function drawJarWorld(ctx, g) {
     items.push({ y: GY + (o.r + o.h) * TILE, draw: () => ctx.drawImage(img, x, y) });
   };
   for (const o of OBJECTS) {
-    if (o.id === 'tent') at(o, tentSprite(), 0, 2);
+    if (o.id === 'tent') at(o, houseSprite(g.houseLevel || 0, g.night), 0, 2);
     if (o.id === 'mailbox') at(o, mailboxSprite(g.unreadMail), 0, -2);
     if (o.id === 'crate') at(o, crateSprite(g.state.crate.length > 0), 0, -1);
     if (o.id === 'workbench') at(o, workbenchSprite(), 0, -2);
@@ -239,6 +242,7 @@ function drawAvatarAt(ctx, p, look, isMe, t) {
   const x = Math.round(p.x) - 8, y = Math.round(p.y) - 22;
   ctx.fillStyle = 'rgba(41,55,47,0.25)';
   ctx.fillRect(x + 3, Math.round(p.y) + 1, 10, 2);
+  if (p.sleeping) return;
   ctx.drawImage(avatarSprite(look, p.dir || 0, p.frame || 0, p.pose || 'walk'), x, y);
   // Tools in hand
   if (p.pose === 'swing') {
@@ -374,6 +378,107 @@ function drawNight(ctx, g) {
     }
   }
   ctx.restore();
+}
+
+// ---------- inside your home ----------
+
+function drawHome(ctx, g) {
+  const room = g.room || {};
+  const x0 = GX + ROOM.c0 * TILE, x1 = GX + (ROOM.c1 + 1) * TILE;
+  const wallTop = 46, wallBottom = GY + ROOM.r0 * TILE, floorBottom = GY + (ROOM.r1 + 1) * TILE;
+  px(ctx, 0, 0, W, H, '#3A2E28');
+  // back wall
+  const wp = wallpaperTile(room.wallpaper || 'linen');
+  for (let x = x0 - 16; x < x1 + 16; x += TILE) for (let y = wallTop; y < wallBottom; y += TILE) ctx.drawImage(wp, x, y);
+  px(ctx, x0 - 16, wallTop, x1 - x0 + 32, 3, PAL.woodShade);
+  // floor
+  const fl = floorTile(room.floor || 'planks');
+  for (let c = ROOM.c0 - 1; c <= ROOM.c1 + 1; c++) for (let r = ROOM.r0; r <= ROOM.r1; r++) ctx.drawImage(fl, GX + c * TILE, GY + r * TILE);
+  // side walls, slightly in shadow
+  ctx.fillStyle = 'rgba(41,30,24,0.55)';
+  ctx.fillRect(0, wallTop, x0 - 16, floorBottom - wallTop);
+  ctx.fillRect(x1 + 16, wallTop, W - x1 - 16, floorBottom - wallTop);
+  ctx.fillStyle = 'rgba(41,30,24,0.25)';
+  ctx.fillRect(x0 - 16, wallTop, 16, floorBottom - wallTop);
+  ctx.fillRect(x1, wallTop, 16, floorBottom - wallTop);
+  // baseboard
+  px(ctx, x0 - 16, wallBottom - 4, x1 - x0 + 32, 4, PAL.wood);
+  px(ctx, x0 - 16, wallBottom - 4, x1 - x0 + 32, 1, PAL.woodHi);
+  // below the floor: the house's foundations in the soil
+  px(ctx, 0, floorBottom, W, H - floorBottom, '#5A4332');
+  px(ctx, 0, floorBottom, W, 3, PAL.woodShade);
+  // the door out, at the front
+  const door = tileCenter(DOOR.c, DOOR.r);
+  px(ctx, door.x - 10, floorBottom - 3, 20, 6, '#2A2420');
+  px(ctx, door.x - 8, door.y - 2, 16, 9, PAL.rose);
+  px(ctx, door.x - 6, door.y, 12, 5, PAL.roseHi);
+
+  // wall items
+  for (const w of g.wallitems) {
+    const col = WALL_SLOTS[w.slot];
+    if (col == null) continue;
+    ctx.drawImage(wallItemSprite(w.type), GX + col * TILE + 8 - 10, wallTop + 34);
+  }
+  // rugs first, then everything standing, sorted by where it meets the floor
+  const items = [];
+  for (const f of g.furniture) {
+    const def = FURNITURE_BY_TYPE[f.type];
+    if (!def) continue;
+    const img = furnitureSprite(f.type);
+    const x = GX + f.c * TILE, bottom = GY + (f.r + def.h) * TILE;
+    if (def.flat) ctx.drawImage(img, x, GY + f.r * TILE);
+    else items.push({ y: bottom - 2, draw: () => {
+      ctx.drawImage(img, x, bottom - img.height);
+      if (def.use === 'sleep') drawSleepers(ctx, g, f, x, bottom - img.height);
+    } });
+  }
+  items.push({ y: g.player.y, draw: () => drawPlayer(ctx, g) });
+  for (const o of g.others) {
+    if (o.scene === 'home' && o.roomId === g.roomId) items.push({ y: o.y, draw: () => drawAvatarAt(ctx, o, o.look, false, g.t) });
+  }
+  if (g.build?.ghost && g.build.furniture) {
+    const gh = g.build.ghost;
+    const def = FURNITURE_BY_TYPE[gh.type];
+    const img = furnitureSprite(gh.type);
+    items.push({ y: 999, draw: () => {
+      ctx.globalAlpha = 0.65;
+      ctx.drawImage(img, GX + gh.c * TILE, def.flat ? GY + gh.r * TILE : GY + (gh.r + def.h) * TILE - img.height);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = gh.ok ? '#9DBA74' : '#D9533C';
+      ctx.strokeRect(GX + gh.c * TILE + 0.5, GY + gh.r * TILE + 0.5, def.w * TILE - 1, def.h * TILE - 1);
+    } });
+  }
+  items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
+
+  // evening light from lamps, candles and the fire
+  if (g.night) {
+    ctx.fillStyle = 'rgba(22,30,58,0.38)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const f of g.furniture) {
+      if (!['floor_lamp', 'fireplace', 'nightstand', 'desk', 'stove'].includes(f.type)) continue;
+      const def = FURNITURE_BY_TYPE[f.type];
+      const cx = GX + (f.c + def.w / 2) * TILE, cy = GY + f.r * TILE;
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 46);
+      grad.addColorStop(0, 'rgba(255,214,140,0.4)');
+      grad.addColorStop(1, 'rgba(255,214,140,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(cx - 46, cy - 46, 92, 92);
+    }
+    ctx.restore();
+  }
+}
+
+// Heads on the pillows: you, and your partner if they're tucked in too.
+function drawSleepers(ctx, g, bed, x, y) {
+  const sleepers = [];
+  if (g.player.sleeping && g.player.bedId === bed.id) sleepers.push({ look: g.state.avatar, side: g.player.side || 0 });
+  for (const o of g.others) if (o.sleeping && o.bedId === bed.id && o.roomId === g.roomId) sleepers.push({ look: o.look, side: o.side || 0 });
+  for (const s of sleepers) {
+    ctx.drawImage(sleeperSprite(s.look), x + 4 + s.side * 14, y + 8);
+  }
+  if (sleepers.length && Math.floor(g.t) % 2 === 0) px(ctx, x + 10, y + 2, 3, 1, PAL.ink);
 }
 
 // ---------- the mine ----------

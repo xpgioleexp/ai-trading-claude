@@ -429,3 +429,12 @@ body {
   #tray .tray-btn { font-size: 13px; padding: 8px 2px; }
   .moods { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ---------- home ---------- */
+.house-card { display: flex; gap: 12px; align-items: center; background: #fff7e4; padding: 8px 12px; box-shadow: 0 0 0 2px var(--linen-deep); margin-bottom: 10px; }
+.house-card img { image-rendering: pixelated; background: #e6dcc0; }
+.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; margin: 8px 0; }
+.slot-cell { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 56px; background: #efe3c4; padding: 4px 2px; text-align: center; }
+.slot-cell img { image-rendering: pixelated; }
+.decor.on { box-shadow: inset 0 0 0 3px var(--ink); }
+@media (max-width: 420px) { .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

@@ -7,6 +7,7 @@ import { SPECIES_ORDER, SPECIES_INFO, ADOPT_PRICE, actionsFor, currentNeeds, moo
 import { nameOf, saveFile, reminderIcs } from './together.js';
 import { decorSprite } from './sprites-more.js';
 import { makeCanvas } from './sprites.js';
+import { openHome } from './home-ui.js';
 
 const decorIcons = new Map();
 function decorIcon(type, season) {
@@ -46,7 +47,9 @@ export function openBuild(g, tab = 'shop') {
         ${doc?.adopted ? '' : `<button class="btn small" data-adopt="${sp}" ${g.state.pebbles < price ? 'disabled' : ''}>Welcome</button>`}</li>`;
     }).join('')}</ul><p class="detail small">Residents are shared. Their needs never drop very low while you're away.</p>`;
   }
-  openSheet('Build', `<div class="tabs">${tabs}</div>${inner}`, body => {
+  const home = '<div class="row-actions"><button class="btn" id="build-home">Build your home</button></div>';
+  openSheet('Build', `${home}<div class="tabs">${tabs}</div>${inner}`, body => {
+    body.querySelector('#build-home').addEventListener('click', () => openHome(g));
     body.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => openBuild(g, b.dataset.tab)));
     body.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => {
       closeSheet();

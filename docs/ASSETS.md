@@ -89,6 +89,16 @@ Give this page to ChatGPT (or any artist) when asking for art. Every piece the g
 - **Animal care:** waterbowl, foodbowl, petbed, tunnel
 - **Treasures:** crystal, stone, riverstone
 
+### Your home
+| Name | Size | What |
+|---|---|---|
+| `house_1_0`, `house_2_0`, `house_3_0` | 52 × 46, 56 × 54, 60 × 64 | Cabin, cottage, cottage with loft (level 0 is `tent`). `_1` versions have lit windows for night |
+| `wallpaper_<id>` | 16 × 16 tile | linen, sage_stripe, rose_floral, wood_panel, blue_check, starry, mint_dots, brick |
+| `floor_<id>` | 16 × 16 tile | planks, dark_wood, checker, stone, rose_carpet, moss |
+| `furniture_<type>` | 16 px per tile wide, 16 px per tile deep plus extra height for tall pieces | double_bed (32 × 32), single_bed, nightstand, wardrobe (16 × 26), dresser, armchair, sofa, stool, beanbag, table, coffee_table, desk, bookshelf (16 × 26), chest, stove, counter, icebox, kitchen_sink, bathtub, washstand, fireplace, floor_lamp, record_player, piano, houseplant, flower_vase, cat_bed, easel_art, rug_round (32 × 32), rug_long (48 × 16), rug_heart (32 × 32) |
+| `wall_<type>` | 20 × 18 | window, painting, portrait, clock, shelf, mirror, garland, pennants, photo_wall, heart_sign |
+| `sleeper_<skin>_<hairColor>` | 10 × 7 | A sleeping head on a pillow |
+
 ### Mine
 | Name | Size | What |
 |---|---|---|

@@ -91,10 +91,15 @@ export function updateHud(g) {
   const h = g.date.getHours(), m = g.date.getMinutes();
   const time = `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
   const weather = { sun: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[g.weather];
+  const when = `${cap(g.season)} ${dayOfSeason(g.today)} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`;
   $('#clock').textContent = g.scene === 'mine'
     ? `${R.BAND_NAMES[R.bandOf(g.layer)]} layer ${g.layer} of 30`
-    : `${cap(g.season)} ${dayOfSeason(g.today)} · ${weather} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`;
-  $('#btn-leave').hidden = g.scene !== 'mine';
+    : g.scene === 'home'
+      ? `${g.room?.name || 'Home'} · ${when}`
+      : `${cap(g.season)} ${dayOfSeason(g.today)} · ${weather} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`;
+  const leave = $('#btn-leave');
+  leave.hidden = g.scene === 'jar';
+  leave.textContent = g.scene === 'home' ? 'Go outside' : 'Leave cave';
 }
 
 // ---------- bag ----------
@@ -343,7 +348,7 @@ export function openWardrobe(g, firstTime = false) {
   const words = (key, names) => names.map((n, i) =>
     `<button class="chip ${look[key] === i ? 'on' : ''}" data-key="${key}" data-v="${i}" aria-pressed="${look[key] === i}">${n}</button>`).join('');
   const html = `
-    ${firstTime ? '<p class="detail">Make your little you. You can change this any time at the tent.</p>' : ''}
+    ${firstTime ? '<p class="detail">Make your little you. You can change this any time from More, or at a wardrobe in your home.</p>' : ''}
     <div class="wardrobe">
       <canvas id="preview" width="64" height="96" aria-label="Your avatar"></canvas>
       <div class="options">

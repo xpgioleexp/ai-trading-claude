@@ -32,7 +32,7 @@ Any static file server works. There is no build step.
 | Workbench | Upgrade the fishing rod and pickaxe with ore |
 | Fruit tree | Shake once a day for fruit |
 | Glints on the ground | Forage, new spots every day |
-| Tent | Change your look |
+| Tent / your home | Go inside. **Build** inside furnishes the room you're in |
 | Bench | **Today**: the daily question (answer, later or skip), mood check-in, the weekly ritual |
 | Mailbox | Notes and appreciation cards between you, plus tips |
 | Notice board | This week's mission, which you both mark done, and a pinboard of what's coming up |
@@ -41,6 +41,15 @@ Any static file server works. There is no build step.
 | Picnic blanket | Hangout: live chat, a shared drawing pad, a timer and conversation questions |
 | Animals | Care, play and explore (43 actions across five species) |
 | Tray | Bag, Today, Mail, Journal (moments, question packs, scrapbook, discoveries), Build (decorations and residents), More (settings, reminders, download your data) |
+
+**Building your home:**
+- **Upgrade the house:** tent → cabin → cottage → cottage with a loft. Upgrades cost pebbles, plus stone and ore from the cave. Each level allows more rooms (1, 2, 4, then 6).
+- **Add rooms:** living room, our bedroom (one, from the cabin on), kitchen, study, bathroom, sunroom and loft.
+- **Furnish:** 31 pieces. Tap twice to place, then move or return them later; returning gives back the full price.
+- **Decorate:** 10 things for the six spots on the back wall, 8 wallpapers and 6 floors, chosen per room.
+- **Furniture you can use:** beds (sleep), wardrobe and dresser (change your look), seats (sit), desk (calendar), bookshelf (journal), chest (bag), record player and piano (music).
+- **Saying goodnight:** in the shared bedroom you can each get into the double bed and say goodnight. When you both do on the same day, you each get 15 pebbles, and it's kept in the journal.
+- **Shared:** the home belongs to both of you, and you see each other walking around in the same room.
 
 **The rules:**
 - **Real time:** the jar follows the real clock, so mornings, nights and new days happen when they do for you.
@@ -71,6 +80,9 @@ Any static file server works. There is no build step.
 | `src/content.js` | Loads `content/` and picks the day's question and the week's mission |
 | `src/together.js` | Today, check-ins, rituals, notice board, mailbox, calendar, dreams, journal |
 | `src/places.js` | Build mode, animal care and settings |
+| `src/home.js` | Your home: house levels, room types, furniture, wall items, wallpapers, floors and placement rules |
+| `src/home-ui.js` | Home panels: upgrade, rooms, furnishing, walls, wallpaper and floors |
+| `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |
 | `src/animals.js` | Residents: needs, the 43 actions and wandering |
 | `src/sprites-more.js` | Placeholder art for the couple places, animals and 50 decorations |
