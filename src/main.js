@@ -32,7 +32,7 @@ import { MAPS, mapWalkable, mapObjectAt, mapOpenTiles, mapNear, mapCatch, mapWea
 import { openTravel } from './travel.js';
 import { openPhone, closePhone, phoneOpen, phoneHasNews } from './phone.js';
 import './biomes.js';
-import { syncCritters, updateCritters, critterAt, openCritter, openJarShop, runSpot, digAt } from './jar-life.js';
+import { syncCritters, updateCritters, critterAt, openCritter, spotWild, openJarShop, runSpot, digAt } from './jar-life.js';
 import { makeActor, updateActor } from './behaviors.js';
 import { visitorOn, visitorSpot, merchantHere, MERCHANT_SPOT } from './visitors.js';
 import { openVisitor, openMerchant } from './visitors-ui.js';
@@ -44,6 +44,7 @@ import { openEventStand, eventDocs, countMushroom } from './events-ui.js';
 import { MONSTERS } from './mine-data.js';
 import { FARM_BY_TYPE } from './farm-data.js';
 import { OUTDOOR_BY_TYPE } from './outdoor-data.js';
+import './wildlife-data.js'; // more fish and bugs, each with its own time and place
 import './catalog-data.js'; // the big catalogue: furniture sets, wall pieces, wallpapers, floors, outdoor pieces
 import { collect as collectFarmItem } from './farm.js';
 
@@ -421,11 +422,11 @@ function habitats() {
 function syncBugs() {
   if (!g.state.daily) return;
   const mapId = g.scene === 'map' ? g.mapId : null;
-  const key = [g.state.seed, g.today, timeBlock(g.hour), g.season, g.weather, mapId].join('|');
+  const key = [g.state.seed, g.today, timeBlock(g.hour), g.season, g.weather, mapId, !!g.wx?.rainbow, !!g.wx?.frost, !!g.wx?.puddles].join('|');
   if (key === g.bugKey) return;
   g.bugKey = key;
   const caught = new Set(g.state.daily.bugs || []);
-  g.bugs = spawnBugs(g.state.seed, g.today, g.hour, g.season, g.weather, habitats(), mapId)
+  g.bugs = spawnBugs(g.state.seed, g.today, g.hour, g.season, g.weather, habitats(), mapId, { wx: g.wx })
     .filter(b => !caught.has(b.sid))
     .map(b => {
       const p = tileCenter(b.c, b.r);
@@ -731,7 +732,7 @@ function tapJar(c, r, x, y) {
   const visitor = visitorAt(x, y);
   if (visitor) return talkTo(visitor);
   const critter = critterAt(g, x, y);
-  if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => ready() && openCritter(g, critter));
+  if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => (critter.def.wild ? spotWild(g, critter) : ready() && openCritter(g, critter)));
   if (eventStandAt(x, y)) return walkNextTo([EVENT_SPOT], () => ready() && openEventStand(g));
   if (tapMushroom(c, r)) return;
   if (tapWeather(c, r)) return;
@@ -1098,7 +1099,7 @@ function tapMap(c, r, x, y) {
   const bug = bugAt(x, y);
   if (bug) return sneakTo(bug);
   const critter = critterAt(g, x, y);
-  if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => ready() && openCritter(g, critter));
+  if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => (critter.def.wild ? spotWild(g, critter) : ready() && openCritter(g, critter)));
   const di = day.digs.findIndex((t, i) => t.c === c && t.r === r && !day.dug.includes(i));
   if (di >= 0) return walkTo(c, r, () => digAt(g, di));
   if (tapWeather(c, r)) return;
@@ -1173,7 +1174,7 @@ function startFishing(pond) {
   bx += Math.sign(cx - bx) * 10;
   by += Math.sign(cy - by) * 6;
   g.player.pose = 'cast';
-  g.fishing = { phase: 'cast', t: 0, bobber: { x: Math.round(bx), y: Math.round(by) }, wait: 1.2 + Math.random() * 3 };
+  g.fishing = { phase: 'cast', t: 0, bobber: { x: Math.round(bx), y: Math.round(by) }, wait: 1.2 + Math.random() * 3, pond: pond.id };
 }
 
 function endFishing(message, iconId) {
@@ -1188,8 +1189,10 @@ function tapWhileFishing() {
   if (f.phase === 'cast' || f.phase === 'wait') return endFishing('Too soon. Wait for the ! before you tap.');
   if (f.phase !== 'bite') return;
   spendBite();
-  const c = g.scene === 'mine' ? R.caveCatch(Math.random, R.bandOf(g.layer))
-    : g.scene === 'map' ? mapCatch(Math.random, g.mapId, g.hour) : R.rollCatch(Math.random, g.season, g.hour, g.weather);
+  // Which pond, the weather, a rainbow or a full moon can all change what bites.
+  const extra = { pond: f.pond, wx: g.wx, day: g.today };
+  const c = g.scene === 'mine' ? R.caveCatch(Math.random, R.bandOf(g.layer), g.layer, g.hour)
+    : g.scene === 'map' ? mapCatch(Math.random, g.mapId, g.hour, { ...extra, weather: g.weather }) : R.rollCatch(Math.random, g.season, g.hour, g.weather, extra);
   const item = ITEMS[c.id];
   if (item.cat === 'junk') {
     const n = R.addItem(g.state, c.id, 1);
@@ -1753,7 +1756,7 @@ function start(hotData = {}) {
     state: R.migrate(saved, seed, today),
     scene: 'jar', camX: 0, camY: 0, layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(), mine: null, mineWalls: new Set(), monsters: [], maxHp: 100,
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
-    residents: [], bugs: [], bugKey: '', visitors: [], visitorKey: '', critters: [], events: [], eventsToday: [], eventKey: '', mushrooms: [], meteors: [], snowman: false, crouch, sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
+    residents: [], bugs: [], bugKey: '', wild: [], visitors: [], visitorKey: '', critters: [], events: [], eventsToday: [], eventKey: '', mushrooms: [], meteors: [], snowman: false, crouch, sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     mapId: null, mapDaily: null, enterMap, leaveMap,
     roomId: null, room: null, furniture: [], wallitems: [], furnitureBlocked: new Set(), houseLevel: 0, enterHome,
     openKitchen: () => ready() && openKitchen(g),

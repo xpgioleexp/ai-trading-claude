@@ -7,6 +7,7 @@ import {
 import { rngFor, randInt, pickWeighted, shuffle } from './rng.js';
 import { seasonOf, weatherOf, isWet, isNightHour, weatherMatches } from './clock.js';
 import { pickPart } from './fossils.js';
+import { conditionsMet } from './conditions.js';
 import { BEDS, COLS, ROWS, forageTiles } from './world.js';
 import {
   BANDS, ROCKS, ROCK_TABLE, FOSSILS_BY_BAND, ARTIFACTS_BY_BAND, GEODE_CONTENTS, GROTTO_BY_BAND, CAVE_FISH_IDS, CAVE_BITES,
@@ -188,25 +189,22 @@ export function harvestBed(state, i, today) {
 
 // ---------- Fishing ----------
 
-export function fishAvailable(fish, season, hour, weather) {
-  if (fish.seasons && !fish.seasons.includes(season)) return false;
-  if (fish.time === 'night' && !isNightHour(hour)) return false;
-  if (fish.time === 'day' && isNightHour(hour)) return false;
-  if (!weatherMatches(fish.weather, weather)) return false;
-  return true;
+// extra: { pond, wx, day } for pond-only fish and ones that need a rainbow or a full moon.
+export function fishAvailable(fish, season, hour, weather, extra = {}) {
+  return conditionsMet(fish, { season, hour, weather, ...extra });
 }
 
-export function biteableFish(season, hour, weather) {
-  return FISH.filter(f => fishAvailable(f, season, hour, weather));
+export function biteableFish(season, hour, weather, extra = {}) {
+  return FISH.filter(f => fishAvailable(f, season, hour, weather, extra));
 }
 
 // Decides what is on the hook. Returns { id, size } (size is null for junk).
-export function rollCatch(rand, season, hour, weather) {
+export function rollCatch(rand, season, hour, weather, extra = {}) {
   if (rand() < 0.08) {
     const junk = JUNK[Math.floor(rand() * JUNK.length)];
     return { id: junk.id, size: null };
   }
-  const pool = biteableFish(season, hour, weather);
+  const pool = biteableFish(season, hour, weather, extra);
   const fish = pickWeighted(rand, pool, f => RARITY_WEIGHT[f.rarity]);
   const size = Math.round((fish.size[0] + rand() * (fish.size[1] - fish.size[0])) * 10) / 10;
   return { id: fish.id, size };
@@ -467,8 +465,10 @@ export function caveBites(state) {
   return state.daily.cave;
 }
 
-export function caveCatch(rand, band) {
-  const pool = CAVE_FISH_IDS.map(id => ITEMS[id]).filter(f => f.bands.includes(band));
+export function caveCatch(rand, band, layer = null, hour = 12) {
+  const all = CAVE_FISH_IDS.map(id => ITEMS[id]).filter(f => f.bands.includes(band));
+  const deep = all.filter(f => conditionsMet(f, { layer, hour }));
+  const pool = deep.length ? deep : all;
   const fish = pickWeighted(rand, pool, f => RARITY_WEIGHT[f.rarity]);
   const size = Math.round((fish.size[0] + rand() * (fish.size[1] - fish.size[0])) * 10) / 10;
   return { id: fish.id, size };

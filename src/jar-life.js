@@ -15,6 +15,8 @@ import {
 } from './biomes.js';
 import { rngFor, shuffle } from './rng.js';
 import { makeActor, updateActor, BEHAVIOR_TEXT } from './behaviors.js';
+import { wildVisitors, spotAnimal } from './wild.js';
+import { timeBlock } from './bugs.js';
 import { OBJECTS, forageTiles } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
 
@@ -108,10 +110,54 @@ export function updateCritters(g, dt, walkable, onEvent) {
     env.anchors.water = a.waterTiles || [];
     for (const ev of updateActor(a, env)) onEvent?.(a, ev);
   }
+  syncWild(g, jar);
+  env.actors = [...g.critters, ...g.wild];
+  for (const a of g.wild) {
+    env.anchors.water = a.waterTiles || [];
+    updateActor(a, env);
+  }
+}
+
+// ---------- wild animals (wild.js) ----------
+
+// Who's passing through changes with the time of day and the weather. Ones
+// still around keep where they are.
+function syncWild(g, jar) {
+  const place = jar === 'forest' ? 'meadow' : jar;
+  const key = [place, g.today, timeBlock(g.hour), g.weather, !!g.wx?.rainbow, !!g.wx?.frost, !!g.wx?.puddles].join('|');
+  if (key === g.wildKey) return;
+  g.wildKey = key;
+  const season = g.scene === 'map' ? MAPS[g.mapId].season : g.season;
+  const defs = wildVisitors(g.state.seed, g.today, place, { season, hour: g.hour, weather: g.weather, wx: g.wx });
+  const open = jar === 'forest' ? forageTiles() : mapOpenTiles(MAPS[jar]).filter(t => t.c > 1);
+  const spots = shuffle(rngFor(g.state.seed, 'wild-spots', place, g.today, timeBlock(g.hour)), open);
+  const objs = objectsHere(g);
+  const old = new Map((g.wild || []).map(a => [a.def.id, a]));
+  g.wild = defs.map((def, i) => {
+    if (old.has(def.id)) return old.get(def.id);
+    let a = makeActor(def, spots[i % spots.length], g.t);
+    if (def.water) {
+      const water = objs.filter(o => o.id === def.water).flatMap(tilesOf);
+      if (water.length) a = Object.assign(makeActor(def, water[(i * 5) % water.length], g.t), { waterTiles: water });
+    }
+    return a;
+  });
+}
+
+// Spotting a wild animal you walked up to.
+export function spotWild(g, a) {
+  const def = a.def;
+  const got = spotAnimal(g.state, def.id, g.today);
+  if (!got) return toast(`You've already spotted the ${def.name.toLowerCase()} today.`);
+  g.save();
+  updateHud(g);
+  if (got.first) toast(`New in your wildlife journal: ${def.name}! +${got.pebbles} pebbles.`);
+  else toast(`You spotted the ${def.name.toLowerCase()} again (${got.count} times now).`);
+  g.effects.push({ kind: 'heart', x: a.x, y: a.y - 20, t0: g.t });
 }
 
 export function critterAt(g, x, y) {
-  return (g.critters || []).find(a => !a.hidden && !['hide', 'climb'].includes(a.pose)
+  return [...(g.critters || []), ...(g.wild || [])].find(a => !a.hidden && !['hide', 'climb'].includes(a.pose)
     && Math.abs(x - a.x) < 10 && y > a.y - (a.z || 0) - 20 && y < a.y - (a.z || 0) + 4);
 }
 

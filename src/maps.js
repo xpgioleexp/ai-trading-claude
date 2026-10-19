@@ -2,6 +2,7 @@
 // small map with a fixed season, its own water, fish, forage and a few places.
 import { ITEMS, FORAGE, RARITY_WEIGHT, JUNK } from './data.js';
 import { COLS, ROWS } from './world.js';
+import { conditionsMet } from './conditions.js';
 import { rngFor, shuffle, pickWeighted } from './rng.js';
 import { isNightHour } from './clock.js';
 
@@ -51,6 +52,17 @@ export const MAP_FISH_IDS = Object.values(MAP_FISH).flat().map(f => f[0]);
 export const MAP_FORAGE_IDS = [...Object.values(MAP_FORAGE).flat().map(f => f[0]), 'coconut', 'honey'];
 
 // Adds another jar (see biomes.js): its layout, fish and forage.
+// More fish for a jar. Each row: [id, name, colour, rarity, size, price, difficulty, conditions].
+export function addMapFish(mapId, rows) {
+  for (const row of rows) {
+    const [id, name, color, rarity, size, price, difficulty, conds] = row;
+    if (ITEMS[id]) continue;
+    MAP_FISH[mapId].push(row);
+    ITEMS[id] = { id, name, cat: 'fish', shape: 'fish', color, rarity, size, price, difficulty, map: mapId, ...(conds || {}) };
+    MAP_FISH_IDS.push(id);
+  }
+}
+
 export function addMap(map, fish, forage) {
   MAPS[map.id] = map;
   if (!MAP_ORDER.includes(map.id)) MAP_ORDER.push(map.id);
@@ -145,12 +157,15 @@ export function mapForageSpots(seed, day, mapId) {
   return shuffle(rand, mapOpenTiles(map)).slice(0, map.west ? 8 : 5).map(t => ({ c: t.c, r: t.r, id: pickWeighted(rand, pool, f => (f.rare ? 1 : 6)).id }));
 }
 
-export function mapCatch(rand, mapId, hour) {
+// extra: { weather, pond, wx, day } for fish that only bite at some times, in some weather or in one pool.
+export function mapCatch(rand, mapId, hour, extra = {}) {
   if (rand() < 0.08) {
     const junk = JUNK[Math.floor(rand() * JUNK.length)];
     return { id: junk.id, size: null };
   }
-  const pool = MAP_FISH[mapId].map(f => ITEMS[f[0]]);
+  const all = MAP_FISH[mapId].map(f => ITEMS[f[0]]);
+  const fits = all.filter(f => conditionsMet(f, { season: MAPS[mapId].season, hour, ...extra }));
+  const pool = fits.length ? fits : all;
   // Rare ones are a little easier to find at night.
   const night = isNightHour(hour);
   const fish = pickWeighted(rand, pool, f => RARITY_WEIGHT[f.rarity] * (night && f.rarity === 'rare' ? 2 : 1));

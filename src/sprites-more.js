@@ -728,6 +728,23 @@ export function critterSprite(shape, color, accent, frame) {
         px(ctx, 1, 13, 14, 3, '#D9C9A0'); disc(ctx, 7, 9, 5, color); disc(ctx, 7, 9, 2.5, d);
         px(ctx, 12, 8 - up, 1, 5, '#D9C9A0'); e(12, 7);
         break;
+      case 'bat':
+        disc(ctx, 8, 8 - up * 2, 3, color);
+        for (const sx of [-1, 1]) for (let i = 0; i < 6; i++) px(ctx, 8 + sx * (2 + i), 7 - up * 2 + (up ? i % 2 : -(i % 2)), 1, 3 - (i % 2), d);
+        px(ctx, 6, 4 - up * 2, 1, 2, color); px(ctx, 9, 4 - up * 2, 1, 2, color); e(7, 7 - up * 2); e(9, 7 - up * 2);
+        return;
+      case 'snake':
+        for (let x = 2; x < 13; x++) px(ctx, x, 13 + Math.round(Math.sin(x / 1.6 + up) * 1.5), 2, 2, x % 3 ? color : (accent || d));
+        disc(ctx, 13.5, 12, 2, color); e(14, 11); px(ctx, 15, 12, 1, 1, '#C9283A');
+        return;
+      case 'mouse':
+        disc(ctx, 8, 13 - up, 3.5, color); disc(ctx, 11, 11 - up, 2.2, color); disc(ctx, 10, 8.5 - up, 1.4, l); disc(ctx, 12.5, 8.5 - up, 1.4, l);
+        e(11, 11); px(ctx, 13, 11 - up, 1, 1, '#E8A0B0'); for (let x = 1; x < 5; x++) px(ctx, x, 14 - (x % 2), 1, 1, d);
+        return;
+      case 'seal':
+        disc(ctx, 7, 13 - up, 5, color); disc(ctx, 11, 10 - up, 3.5, color); px(ctx, 1, 14, 3, 2, d); px(ctx, 6, 16, 3, 1, d);
+        e(10, 9); e(12, 9); px(ctx, 13, 11 - up, 2, 1, accent || d);
+        return;
       default: {
         // four-legged and upright animals: fox, deer, camel, sloth, capybara, monkey, bunny, otter, bear, lizard, toad
         const low = ['capybara', 'lizard', 'toad', 'otter'].includes(shape);

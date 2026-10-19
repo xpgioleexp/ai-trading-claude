@@ -10,6 +10,10 @@ import { iconURL, monsterSprite } from './sprites.js';
 import { avatarSprite } from './avatar.js';
 import { dayOfSeason } from './clock.js';
 import { WEATHER_NAMES } from './weather.js';
+import { WILD } from './wild.js';
+import { whenText } from './conditions.js';
+import { critterSprite } from './sprites-more.js';
+import { OBJECTS } from './world.js';
 import { S, partnerId } from './shared.js';
 import { cloud, setDoc, newId, now } from './cloud.js';
 import { rngFor } from './rng.js';
@@ -211,6 +215,7 @@ export function openLog(g, tab = 'fish') {
     finds: MINERALS.map(m => m.id),
     nature: [...CROPS.map(c => c.id), ...FORAGE.map(f => f.id), ...Object.values(TREE_FRUIT).map(f => f.id), ...MAP_FORAGE_IDS, ...EVENT_ITEM_IDS, ...GROTTO_IDS, ...PRODUCE_IDS],
   };
+  if (tab === 'animals') return openAnimalLog(g);
   const ids = groups[tab];
   if (tab === 'monsters') return openMonsterLog(g, ids);
   const found = ids.filter(id => s.log.found[id]).length;
@@ -235,7 +240,24 @@ export function openLog(g, tab = 'fish') {
   });
 }
 
-const LOG_TABS = [['fish', 'Fish'], ['bugs', 'Bugs'], ['finds', 'Mine finds'], ['monsters', 'Monsters'], ['nature', 'Garden & forage']];
+const LOG_TABS = [['fish', 'Fish'], ['bugs', 'Bugs'], ['animals', 'Animals'], ['finds', 'Mine finds'], ['monsters', 'Monsters'], ['nature', 'Garden & forage']];
+
+// The wildlife journal: every wild animal, where and when to look.
+function openAnimalLog(g) {
+  const seen = g.state.log.animals || {};
+  const icon = w => critterSprite(w.shape, w.color, w.accent, 0).toDataURL?.() || '';
+  const cells = WILD.map(w => {
+    const n = seen[w.id]?.count || 0;
+    return `<li class="${n ? 'got' : 'missing'}"><img class="icon ${n ? '' : 'silhouette'}" src="${icon(w)}" alt="" width="32" height="36"><span class="name">${n ? esc(w.name) : '???'}</span><span class="note">${esc(n ? `Seen ${n} time${n > 1 ? 's' : ''}` : `${whenText(w) || 'Any time'} · ${cap(w.rarity)}`)}</span></li>`;
+  }).join('');
+  const tabs = LOG_TABS.map(([id, label]) => `<button class="tab ${id === 'animals' ? 'on' : ''}" data-tab="${id}" aria-pressed="${id === 'animals'}">${label}</button>`).join('');
+  openSheet('Collection log', `
+    <div class="tabs">${tabs}</div>
+    <p class="detail">${WILD.filter(w => seen[w.id]).length} of ${WILD.length} animals spotted. Wild animals pass through the meadow and the jars at their own times: walk up and tap one to spot it.</p>
+    <ul class="log">${cells}</ul>`, body => {
+    body.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => openLog(g, b.dataset.tab)));
+  });
+}
 
 function openMonsterLog(g, ids) {
   const s = g.state;
@@ -258,13 +280,17 @@ function monsterIcon(id) {
   return img.toDataURL ? img.toDataURL() : '';
 }
 
+// Where and when to look for a fish or bug.
 function fishHint(f) {
   const bits = [];
   if (f.map) bits.push(MAPS[f.map].name);
-  if (f.seasons) bits.push(f.seasons.map(cap).join('/'));
-  if (f.time === 'night') bits.push('Night');
-  if (f.time === 'day') bits.push('Day');
-  if (f.weather === 'rain') bits.push('Rain');
+  else if (f.cat === 'fish' && !f.cave && !f.ponds) bits.push('Meadow ponds');
+  if (f.maps) bits.push(f.maps.map(m => (m === 'meadow' ? 'Meadow' : MAPS[m]?.name || m)).join(', '));
+  if (f.ponds) bits.push(f.ponds.map(p => (f.map ? MAPS[f.map].objects : OBJECTS).find(o => o.id === p)?.name || p).join(' or '));
+  if (f.bands) bits.push(f.bands.map(b => BANDS[b].name).join('/') + ' lake');
+  if (f.layers) bits.push(`layers ${f.layers[0]} to ${f.layers[1]}`);
+  const when = whenText(f);
+  if (when) bits.push(when);
   return bits.join(' · ') || 'Any time';
 }
 

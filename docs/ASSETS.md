@@ -202,6 +202,10 @@ Special furniture uses the same `furniture_<type>` names as the rest: canopy_bed
 
 Lanterns in the sky and shooting stars are drawn as light effects in `src/scene.js` (`drawEventSky`). The snowman reuses `snowman`. New item icons: puffball, glowcap, truffle, star_fragment. New furniture: `furniture_fish_trophy` and `furniture_mushroom_lamp` (16 × 16).
 
+### Wildlife
+
+Every new fish and bug (`src/wildlife-data.js`) is an item icon, `item_<id>` (16 × 16); they use the generic fish and bug shapes for now. Wild animals (`src/wild.js`, 158 of them) are drawn with `critterSprite(shape, colour, accent)`, 16 × 18 in two frames, so real art is `critter_<animal id>` or one per shape. New shapes: bat, snake, mouse, seal.
+
 ### The big catalogue
 
 Every piece in `src/catalog-data.js` is drawn from a shape (`form`) and its style's two colours, so real art can be one image per piece: `furniture_<type>` (16 px per tile wide, plus extra height for tall shapes), `wall_<type>` (20 × 18), `wallpaper_<id>` and `floor_<id>` (16 × 16 repeating tiles) and `decor_<type>` for outdoor pieces. Type ids are `<style>_<name>`, for example `strawberry_cafe_cake_fridge`. New shapes drawn in `src/home-art.js`: arcade, throne, hanging_chair, pillar, statue, fishtank, bookstack, gramophone, vending, easel, grandfather, bench, fountain_in, canopy, cradle, upright_piano, globe_stand, telescope_stand, dollhouse; wall shapes banner, sconce, wall_shelf, mounted_fish, mosaic, quilt, string_lights. Wallpaper and floor patterns are in `drawPattern`.

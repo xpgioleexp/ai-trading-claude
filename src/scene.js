@@ -152,7 +152,7 @@ function drawEdgeHints(ctx, g, b) {
 // The animals and people who live in a jar (see behaviors.js): hops and flights
 // get a shadow, sleepers get a z, hiders and climbers vanish for a moment.
 function drawCritters(ctx, g, items) {
-  for (const a of g.critters || []) {
+  for (const a of [...(g.critters || []), ...(g.wild || [])]) {
     if (a.hidden || a.pose === 'climb') continue;
     const frame = a.pose === 'sleep' ? 0 : Math.floor(g.t * (a.z > 0 ? 6 : 2) + a.phase) % 2;
     const img = critterSprite(a.def.shape, a.def.color, a.def.accent, frame);

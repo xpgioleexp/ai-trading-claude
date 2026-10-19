@@ -235,7 +235,7 @@ const WIDE = {
     { id: 'palm_e2', kind: 'palm', name: 'Palm tree', c: 30, r: 6 },
     { id: 'palm_e3', kind: 'palm', name: 'Palm tree', c: 26, r: 4 },
     { id: 'palm_n1', kind: 'palm', name: 'Palm tree', c: 3, r: -6, fruit: 'coconut' }, { id: 'palm_n2', kind: 'palm', name: 'Palm tree', c: -9, r: -4 },
-    { id: 'palm_n3', kind: 'palm', name: 'Palm tree', c: 24, r: -7 }, { id: 'water4', kind: 'pool', name: 'Tide pool', c: 10, r: -6, w: 3, h: 2 },
+    { id: 'palm_n3', kind: 'palm', name: 'Palm tree', c: 24, r: -7 }, { id: 'water4', kind: 'pool', name: 'Deep tide pool', c: 10, r: -6, w: 3, h: 2 },
   ],
   snow: [
     { id: 'pine_w1', kind: 'pine', name: 'Snowy pine', c: -14, r: 2 }, { id: 'pine_w2', kind: 'pine', name: 'Snowy pine', c: -9, r: 8 },

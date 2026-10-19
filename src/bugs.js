@@ -2,7 +2,7 @@
 // Pure rules; the jar draws the bugs and handles sneaking up on them.
 import { ITEMS } from './data.js';
 import { rngFor, pickWeighted, shuffle } from './rng.js';
-import { isNightHour, weatherMatches } from './clock.js';
+import { conditionsMet } from './conditions.js';
 import { addItem } from './rules.js';
 
 // where: flower (open grass), ground, tree, pond. skittish: 0 calm .. 1 very jumpy.
@@ -56,17 +56,15 @@ export function addBugs(list) {
 const RARITY = { common: 60, uncommon: 22, rare: 6 };
 export const BUGS_AT_ONCE = 4;
 
-export function bugAvailable(bug, season, hour, weather, mapId = null) {
+// extra: { wx, day } for bugs that need a rainbow, frost or a full moon.
+export function bugAvailable(bug, season, hour, weather, mapId = null, extra = {}) {
   if ((bug.map || null) !== mapId && bug.map) return false;
-  if (bug.seasons && !bug.seasons.includes(season)) return false;
-  if (bug.time === 'night' && !isNightHour(hour)) return false;
-  if (bug.time === 'day' && isNightHour(hour)) return false;
-  if (!weatherMatches(bug.weather, weather)) return false;
-  return true;
+  if (bug.maps && !bug.maps.includes(mapId || 'meadow')) return false;
+  return conditionsMet(bug, { season, hour, weather, ...extra });
 }
 
-export function bugsOut(season, hour, weather, mapId = null) {
-  return BUGS.filter(b => bugAvailable(b, season, hour, weather, mapId));
+export function bugsOut(season, hour, weather, mapId = null, extra = {}) {
+  return BUGS.filter(b => bugAvailable(b, season, hour, weather, mapId, extra));
 }
 
 // Bugs change every two hours. The same seed, day and time give the same bugs,
@@ -76,16 +74,16 @@ export function timeBlock(hour) {
 }
 
 // tiles: { flower, ground, tree, pond } lists of open tiles for each kind of place.
-export function spawnBugs(seed, day, hour, season, weather, tiles, mapId = null) {
+export function spawnBugs(seed, day, hour, season, weather, tiles, mapId = null, extra = {}) {
   const block = timeBlock(hour);
   const rand = rngFor(seed, 'bugs', mapId || 'forest', day, block);
-  const pool = bugsOut(season, hour, weather, mapId);
+  const pool = bugsOut(season, hour, weather, mapId, { day, ...extra });
   if (!pool.length) return [];
   const taken = new Set();
   const out = [];
   for (let i = 0; i < BUGS_AT_ONCE; i++) {
     // A jar's own bugs turn up more often than the visitors from the seasons.
-    const bug = pickWeighted(rand, pool, b => RARITY[b.rarity] * (b.map ? 4 : 1));
+    const bug = pickWeighted(rand, pool, b => RARITY[b.rarity] * (b.map || b.maps ? 4 : 1));
     const spots = shuffle(rand, tiles[bug.where]?.length ? tiles[bug.where] : tiles.ground);
     const spot = spots.find(t => !taken.has(t.c + ',' + t.r));
     if (!spot) continue;

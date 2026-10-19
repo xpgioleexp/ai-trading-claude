@@ -310,6 +310,12 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 - **Outside:** 150 new outdoor pieces in new colours and styles (stone paths, brick roads, flower beds, picket fences, hedges, lamp posts, string lights, benches, swings, gnomes, birdhouses, arches, statues, windmills, fountains and more). Every outdoor piece can now be bought in Build as well as made at the workbench.
 - **Finding things:** Furnish has a style picker and a search box (search all 973 pieces at once), and so do the walls, wallpapers, floors, Build and the workbench's long lists, which also have a "Ready to make" view.
 
+**Wildlife:** 226 fish, 171 bugs and 158 wild animals, and most only turn up in particular places, at particular times or in particular weather. The Collection log shows where and when to look for each one you haven't found.
+- **When and where:** by season; by time of day (day, night, dawn from 5 to 8am, dusk from 5 to 8pm) or exact hours (some only between midnight and 3am); by weather (rain, storms, wind, heatwaves, fog, snow, blizzards); while a rainbow is out, on frosty mornings or by puddles; under a full moon (every 8th night).
+- **Fish:** 61 more for the meadow, and many only bite in one pond: the hill spring (golden trout at dawn, cherry salmon), the meadow marsh (snakehead, newts, tadpoles), the forest pool (axolotl at night), the lily pond, the reed pond (muskellunge) or the big pond (sturgeon at night; the ghost sturgeon only under a full moon). Every jar has 8 to 18 more, some only in one of its pools: manta rays at dusk and whale sharks under a full moon at the beach, aurora trout late at night in the snow, the arapaima at 4am in the rainforest, the dragon koi at 5am in the hot springs. The mine has 20 more cave fish, a few only on its deepest layers (the little leviathan lives on layer 60).
+- **Bugs:** 126 more. The meadow has butterflies, moths, bees, beetles, dragonflies, fireflies, crickets and more through the seasons, and every jar has its own (ghost crabs at night on the beach, aurora moths in the snow, camel spiders in the desert, titan beetles at 2am in the rainforest, wisp fireflies in the glade, comet moths on Starlight isle).
+- **Wild animals:** a new collection. Up to three wild animals pass through wherever you are, the same ones for both of you, and they change with the time of day and the weather. Foxes at dusk, deer at dawn, badgers and owls at night, frogs in the rain, a white stag under a full moon; seals and dolphins at the beach, reindeer and snow leopards in the snow, camels and fennec foxes in the desert, jaguars and sloths in the rainforest, snow monkeys and pandas at the hot springs, star bunnies and cloud whales on Starlight isle. Walk up and tap one to spot it: it goes in the **Animals** tab of the Collection log, with pebbles the first time (20 for common, 50 uncommon, 150 rare, 500 legendary).
+
 ## Code
 
 | File | What it does |
@@ -319,6 +325,9 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 | `src/world.js` | The jar's layout: tile grid and where each object sits |
 | `src/clock.js` | Day numbers, seasons, weather, time of day |
 | `src/catalog-data.js` | The big catalogue: furniture styles, wall pieces, wallpapers, floors and outdoor pieces, each a palette and a list of pieces |
+| `src/conditions.js` | When and where a fish, bug or animal turns up: seasons, hours, weather, ponds, mine depth, rainbows, full moons |
+| `src/wildlife-data.js` | Lots more fish and bugs, each with its own time and place |
+| `src/wild.js` | Wild animals: who's around where and when, and spotting them |
 | `src/fossils.js` | Fossils: every animal and its pieces, relics, dig sites, the dig kit, the excavation game |
 | `src/museum.js` | Museum rules: wings, giving, milestones, skeletons, the fossil swap |
 | `src/museum-ui.js` | The museum's panels, the excavation game and piecing skeletons together |
