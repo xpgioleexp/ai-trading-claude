@@ -25,6 +25,8 @@ Any static file server works. There is no build step.
 
 **A taller meadow:** it also runs 8 rows above the first screen and 8 below. Walk toward the lid or the soil and the view slides up or down; arrows at the top and bottom show there's more. **North hills:** a hill spring to fish in and six trees. **South fields:** a meadow marsh to fish in and five trees. Your home and the mine still fit on one screen.
 
+**Fills tall screens:** on a tall screen (an iPad or a phone held upright) the jar stretches down to fill the space, so you see more of the meadow or jar at once. Your home and the mine stay their size, in the middle of the jar.
+
 **Wider jars:** every jar is three screens wide too, with the jar you know in the middle (door and all), so each one opens up to the left and the right. Each side has scenery that fits the jar and an extra place to fish:
 
 | Jar | Extra pond | Scenery |

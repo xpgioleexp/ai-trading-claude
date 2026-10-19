@@ -20,7 +20,12 @@ import { houseSprite, wallpaperTile, floorTile, furnitureSprite, wallItemSprite,
 import { ROOM, DOOR, WALL_SLOTS, FURNITURE_BY_TYPE } from './home.js';
 
 export const W = 320;
-export const H = 384;
+// The canvas is 384 px tall at least; on tall screens it grows (see setHeight)
+// so the jar fills the space. The meadow and the jars show more rows; home and
+// the mine stay their size, in the middle.
+export const BASE_H = 384;
+export const MAX_H = 640;
+export let H = BASE_H;
 export const GX = 24;
 export const GY = 100;
 export const SOIL_TOP = GY + ROWS * TILE;
@@ -36,15 +41,24 @@ export const CAMY_MAX = MEADOW_SOUTH * TILE;
 
 // Where the camera can go in the scene you're in, or null when it stays still.
 export function camBounds(g) {
-  if (g.scene === 'jar') return { minX: CAM_MIN, maxX: CAM_MAX, minY: CAMY_MIN, maxY: CAMY_MAX };
+  if (g.scene === 'jar') return { minX: CAM_MIN, maxX: CAM_MAX, minY: CAMY_MIN, maxY: Math.max(CAMY_MIN, CAMY_MAX - (H - BASE_H)) };
   const map = g.scene === 'map' ? MAPS[g.mapId] : null;
   if (!map || !(map.west || map.north || map.south)) return null;
   return {
     minX: -(map.west || 0) * TILE, maxX: GX * 2 + (map.cols || COLS) * TILE - W,
-    minY: -(map.north || 0) * TILE, maxY: (map.south || 0) * TILE,
+    minY: -(map.north || 0) * TILE, maxY: Math.max(-(map.north || 0) * TILE, (map.south || 0) * TILE - (H - BASE_H)),
   };
 }
-const JAR = { x: 12, y: 40, w: 296, h: 332, r: 24 };
+const JAR = { x: 12, y: 40, w: 296, h: BASE_H - 52, r: 24 };
+
+export function setHeight(h) {
+  H = Math.max(BASE_H, Math.min(MAX_H, Math.round(h)));
+  JAR.h = H - 52;
+  return H;
+}
+
+// How far home and the mine sit down from the top, so they're centred.
+export const roomOffset = () => Math.round((H - BASE_H) / 2);
 
 export function tileCenter(c, r) {
   return { x: GX + c * TILE + TILE / 2, y: GY + r * TILE + TILE / 2 };
@@ -76,8 +90,16 @@ export function drawScene(ctx, g) {
   ctx.save();
   jarPath(ctx);
   ctx.clip();
-  if (g.scene === 'mine') drawMine(ctx, g);
-  else if (g.scene === 'home') drawHome(ctx, g);
+  if (g.scene === 'mine' || g.scene === 'home') {
+    // On a tall screen these sit in the middle, with their own colour above and below.
+    ctx.save();
+    px(ctx, 0, 0, W, H, g.scene === 'home' ? '#3A2E28' : '#2A2420');
+    ctx.translate(0, roomOffset());
+    if (g.scene === 'mine') drawMine(ctx, g);
+    else drawHome(ctx, g);
+    drawEffects(ctx, g);
+    ctx.restore();
+  }
   const cam = camBounds(g);
   if (g.scene === 'map' && cam) {
     ctx.save();
@@ -96,7 +118,7 @@ export function drawScene(ctx, g) {
     drawJarWorld(ctx, g);
     drawEffects(ctx, g);
     ctx.restore();
-  } else if (g.scene !== 'map') drawEffects(ctx, g);
+  }
   ctx.restore();
   drawGlass(ctx, g);
   if (cam) drawEdgeHints(ctx, g, cam);
@@ -113,7 +135,7 @@ function drawEdgeHints(ctx, g, b) {
   if (cx > b.minX + 2) side(18 - pulse, -1);
   if (cx < b.maxX - 2) side(300 + pulse, 1);
   if (cy > b.minY + 2) updown(48 - pulse, -1);
-  if (cy < b.maxY - 2) updown(362 + pulse, 1);
+  if (cy < b.maxY - 2) updown(H - 22 + pulse, 1);
 }
 
 // The animals and people who live in a jar (see behaviors.js): hops and flights

@@ -2,10 +2,10 @@
 import * as R from './rules.js';
 import { ITEMS, ROD_ZONE, MINE_LAYERS, FORAGE, DAILY_BITES } from './data.js';
 import { dayNumber, seasonOf, weatherOf, isNightHour, partOfDay, deviceTimeZone } from './clock.js';
-import { COLS, MEADOW_COLS, TILE } from './world.js';
+import { COLS, MEADOW_COLS, ROWS, TILE } from './world.js';
 import { isWalkable, inBounds, objectAt, bedAt, footprintTiles, OBJECTS, START_TILE, tileKey, BEDS, forageTiles, PONDS } from './world.js';
 import { pathTo, pathNextTo } from './path.js';
-import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W, CAM_MIN, CAMY_MIN, CAMY_MAX, camBounds } from './scene.js';
+import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W, CAM_MIN, CAMY_MIN, CAMY_MAX, camBounds, setHeight, roomOffset, BASE_H } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
 import { DIRS } from './avatar.js';
 import * as UI from './ui.js';
@@ -1430,7 +1430,7 @@ function onPointerDown(e) {
   if (g.scene === 'jar' && g.meteors.length && tapMeteor(screen.x, screen.y)) return;
   // In the meadow the view may have slid: turn the tap into a spot in the world.
   const moved = g.scene === 'jar' || g.scene === 'map';
-  const x = screen.x + (moved ? Math.round(g.camX) : 0), y = screen.y + (moved ? Math.round(g.camY) : 0);
+  const x = screen.x + (moved ? Math.round(g.camX) : 0), y = screen.y + (moved ? Math.round(g.camY) : -roomOffset());
   const { c, r } = pointToTile(x, y);
   if (g.scene === 'mine') tapMine(c, r, x, y);
   else if (g.scene === 'home') tapHome(c, r);
@@ -1479,13 +1479,16 @@ function onKey(e) {
 function fitCanvas() {
   const stage = document.querySelector('#stage');
   const box = stage.getBoundingClientRect();
-  let scale = Math.min(box.width / W, box.height / H);
+  // Fit the width first, then grow the canvas down to fill a tall screen.
+  let scale = Math.min(box.width / W, box.height / BASE_H);
   if (scale >= 2) scale = Math.floor(scale);
+  setHeight(box.height / scale);
+  scale = Math.min(scale, box.height / H);
   canvas.style.width = Math.floor(W * scale) + 'px';
   canvas.style.height = Math.floor(H * scale) + 'px';
   // Draw at a whole-number multiple of the screen's pixels so the art stays crisp.
   const backing = Math.max(1, Math.round(scale * (window.devicePixelRatio || 1)));
-  if (canvas.width !== W * backing) {
+  if (canvas.width !== W * backing || canvas.height !== H * backing) {
     canvas.width = W * backing;
     canvas.height = H * backing;
   }
