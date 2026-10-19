@@ -2,6 +2,7 @@
 // missions, 306 question packs, 160 date ideas, moods, needs, rituals,
 // dream starters, decorations, animal actions and discoveries.
 import { rngFor, shuffle } from './rng.js';
+import { FARM_BUILDINGS } from './farm-data.js';
 
 export const C = { ready: false };
 
@@ -29,6 +30,8 @@ export async function loadContent(base = '') {
   C.dateIdeas = lib.dateIdeas;
   C.decorations = [...extra.decorations, ...SMALL_DECOR.map(([type, name, category, price]) => ({ type, name, category, price }))];
   C.decorByType = Object.fromEntries(C.decorations.map(d => [d.type, d]));
+  // Farm buildings and fruit trees are placed like decorations but bought in the shop's Farm tab.
+  for (const f of FARM_BUILDINGS) C.decorByType[f.type] = { type: f.type, name: f.name, category: 'Farm', price: f.price, farm: true };
   C.packById = Object.fromEntries(C.packs.map(p => [p.id, p]));
   C.ready = true;
   return C;

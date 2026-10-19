@@ -23,9 +23,11 @@ export const OBJECTS = [
   { id: 'door', name: 'Door to the other jars', c: 16, r: 3, w: 1, h: 1, walkable: true },
 ];
 
-// Garden beds, two rows of three.
+// Garden beds, rows of three. The first six are open; the garden upgrades open the rest.
 export const BEDS = [];
 for (let r = 6; r <= 7; r++) for (let c = 1; c <= 3; c++) BEDS.push({ c, r });
+// The second plot sits below, with a path in between so every bed can be reached.
+for (let r = 9; r <= 10; r++) for (let c = 0; c <= 2; c++) BEDS.push({ c, r });
 
 export const START_TILE = { c: 5, r: 3 };
 

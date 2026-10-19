@@ -347,7 +347,47 @@ function drawDecor(ctx, type, season) {
   }
 }
 
+// Farm buildings and fruit trees.
+const FRUIT_COLOR = { tree_pear: '#C9C25A', tree_plum: '#7A3A6A', tree_lemon: '#F0DA4A', tree_mango: '#F0A040', tree_banana: '#F0DA6A' };
+
+function drawFarm(c, type) {
+  if (type.startsWith('tree_')) {
+    const [w, h] = TREE_SIZE;
+    px(c, w / 2 - 2, h - 14, 4, 13, PAL.woodShade);
+    if (type === 'tree_banana') {
+      for (const [x, y, dx] of [[4, 8, 1], [14, 6, -1], [8, 2, 1], [16, 12, -1]]) for (let i = 0; i < 8; i++) px(c, x + i * dx * 0.6 + (dx < 0 ? 6 : 0), y + i * 0.6, 3, 2, i % 2 ? PAL.leaf : PAL.leafShade);
+      px(c, 9, 12, 5, 3, FRUIT_COLOR[type]);
+    } else {
+      disc(c, w / 2, 11, 10, PAL.leafShade);
+      disc(c, w / 2, 10, 9, PAL.leaf);
+      for (const [x, y] of [[7, 8], [15, 7], [11, 13], [17, 12], [6, 14]]) px(c, x, y, 3, 3, FRUIT_COLOR[type]);
+    }
+    return;
+  }
+  switch (type) {
+    case 'coop':
+      px(c, 1, 5, 14, 10, PAL.wood); px(c, 0, 3, 16, 3, '#B5324A'); px(c, 6, 9, 4, 6, PAL.woodShade);
+      disc(c, 12.5, 12, 2, PAL.linenHi); px(c, 14, 11, 1, 1, '#E8A03A');
+      return;
+    case 'goat_pen':
+      for (let x = 0; x < 16; x += 4) px(c, x, 8, 1, 7, PAL.woodShade);
+      px(c, 0, 9, 16, 1, PAL.wood); px(c, 0, 13, 16, 1, PAL.wood);
+      px(c, 4, 6, 7, 4, PAL.linenHi); px(c, 10, 4, 3, 3, PAL.linenHi); px(c, 11, 3, 1, 1, '#9A958A'); px(c, 5, 10, 1, 2, PAL.ink); px(c, 9, 10, 1, 2, PAL.ink);
+      return;
+    case 'bee_box':
+      px(c, 3, 3, 10, 12, '#E8C25A'); px(c, 3, 7, 10, 1, '#B5853A'); px(c, 3, 11, 10, 1, '#B5853A'); px(c, 2, 2, 12, 2, PAL.woodShade);
+      px(c, 7, 13, 2, 1, PAL.inkDeep); px(c, 13, 5, 1, 1, PAL.inkDeep);
+      return;
+    case 'mushroom_log':
+      px(c, 1, 9, 14, 6, PAL.woodShade); px(c, 2, 10, 12, 4, PAL.wood); disc(c, 14, 12, 2.5, '#C9A272');
+      disc(c, 5, 8, 2.5, '#8A6448'); disc(c, 10, 8, 2, '#8A6448'); px(c, 5, 9, 1, 2, PAL.linenHi);
+      return;
+  }
+}
+
 export function decorSprite(type, season) {
+  if (type.startsWith('tree_') && FRUIT_COLOR[type]) return sprite('decor_' + type, TREE_SIZE[0], TREE_SIZE[1], ctx => drawFarm(ctx, type));
+  if (['coop', 'goat_pen', 'bee_box', 'mushroom_log'].includes(type)) return sprite('decor_' + type, 16, 16, ctx => drawFarm(ctx, type));
   const isTree = ['pine', 'oak', 'birch', 'willow', 'cherry', 'sapling'].includes(type);
   const seasonal = isTree;
   const [w, h] = isTree ? TREE_SIZE : [16, 16];

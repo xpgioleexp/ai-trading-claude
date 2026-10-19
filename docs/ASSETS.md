@@ -142,6 +142,16 @@ Item icons for the jars: sardine, mackerel, flounder, sea_bream, pufferfish, oct
 
 New item icons: every ore, gem, fossil, artifact, geode, cave fish, grotto plant and monster loot listed in `src/mine-data.js`. The underground lake is drawn in code in `drawMine`.
 
+### Farming
+
+| Name | Size | What it is |
+|---|---|---|
+| `crop_<id>_<0-3>` | 16 × 20 | Growth stages for all 48 crops in `src/data.js` and `src/farm-data.js` |
+| `decor_coop`, `decor_goat_pen`, `decor_bee_box`, `decor_mushroom_log` | 16 × 16 | Farm buildings in the meadow |
+| `decor_tree_<pear, plum, lemon, mango, banana>` | 24 × 34 | Fruit trees |
+
+The locked garden beds are drawn faded, with a small sign, in `drawJarWorld`. New item icons: every new crop and seed, egg, milk, shiitake, the 5 fruits, flour, sugar, butter, cheese, oil, the 3 fertilizers and all 142 dishes in `src/cooking.js`.
+
 ### Visitors and the merchant
 
 | Name | Size | What it is |

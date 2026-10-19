@@ -52,12 +52,40 @@ Any static file server works. There is no build step.
 - **Saying goodnight:** in the shared bedroom you can each get into the double bed and say goodnight. When you both do on the same day, you each get 15 pebbles, and it's kept in the journal.
 - **Shared:** the home belongs to both of you, and you see each other walking around in the same room.
 
+**Farming:**
+- **Crops (48):** 12 for each season, including lettuce, potatoes, garlic, tea, wheat, rice, chilies, basil, pineapple, grapes, soybeans, oats, leeks, ginger, cocoa and vanilla. Many regrow after you pick them. The beetle shop sells this season's seeds, and they grow in any season.
+- **Garden:** 6 beds to start. Open 3 more, then 3 more after that, in the shop's **Farm** tab. You need pebbles, wood and stone. Tap a locked bed to go straight there.
+- **Sprinkler:** waters every bed each morning.
+- **Fertilizers:** pick one when you plant. Fertilizer gives an extra crop at every harvest, Speed-gro grows about a third faster, and water-keeping soil waters itself.
+- **Farm buildings:** a chicken coop (eggs), goat pen (milk), bee box (honey) and mushroom log (shiitake).
+- **Fruit trees:** pear, plum, lemon, mango and banana. They grow for a few days, then give fruit daily.
+- **Placing and collecting:** buy buildings and trees in the Farm tab, place them in the meadow from **Build**, and tap them each day to collect.
+- **Shared:** the garden, its upgrades and the buildings belong to both of you.
+
 **Cooking:**
 - **Where:** the stove or kitchen counter in your home, a campfire decoration outside, or **Cook** in the Bag.
-- **How:** pick up to 3 ingredients: crops, fish, forage or fruit. Then chop (tap when the knife is over the green) and mind the stove (hold to keep the heat in the green).
-- **Recipes:** 25 to discover by trying combinations, kept in a recipe book you share. Undiscovered ones show a hint like "a fish, a root vegetable". Anything else becomes mystery stew.
-- **Together:** when your partner is in the jar, one of you chops while the other works the stove, live, and you see each other's progress. You each get the dish, plus an extra star, and it's kept in the journal.
-- **Dishes:** sell them in the crate or give them through the mailbox. Any item in the Bag can be given to your partner.
+- **Tools (8):** each cooks in two steps, with its own minigame:
+  - **Cutting board** (free): chop, then toss
+  - **Cooking pot** (free): chop, then simmer
+  - **Frying pan:** chop, then flip
+  - **Grill:** chop, then turn
+  - **Oven:** mix, then bake
+  - **Tea kettle:** steep, then pour
+  - **Blender:** chop, then blend
+  - **Ice cream maker:** churn, then keep it cold
+- **Buying tools:** the kitchen tools other than the board and pot are in the shop's **Kitchen** tab. Each is bought once, for both of you.
+- **How:** pick a tool and up to 3 ingredients: crops, fish, forage, fruit, farm produce or pantry staples. The **Pantry** tab sells flour, sugar, butter, cheese, oil, eggs and milk.
+- **Recipes (142):** some examples:
+  - Pot: ramen, risotto, curry, miso soup
+  - Pan: pancakes, fried rice, tempura
+  - Oven: pizza, apple pie, chocolate cake, quiche
+  - Kettle: milk tea, chai, hot cocoa
+  - Blender: smoothies and lassis
+  - Ice cream maker: ice creams and sorbets
+- **Same ingredients, different tools:** the same ingredients can make different dishes with different tools. The kitchen tells you when a dish you already know needs another tool.
+- **Recipe book:** shared, and grouped by tool. Undiscovered recipes show a hint like "Oven: flour, an egg, something sweet". Anything else becomes mystery stew.
+- **Together:** when your partner is in the jar, you each do one of the tool's two steps, live. You each get the dish, plus an extra star, and it's kept in the journal.
+- **Dishes:** eat them to heal in the mine, sell them in the crate, or give them through the mailbox.
 
 **Crafting:**
 - **Where:** the workbench, or **Craft** in the Bag.
@@ -120,7 +148,7 @@ Any static file server works. There is no build step.
 - **Seasons:** each season lasts one real week.
 - **Weather:** changes daily. Rain waters the garden for you.
 - **Fish:** 25 kinds. Which ones bite depends on the season, the time of day and the weather. The pond gives 10 bites a day.
-- **Garden:** 16 crops. A crop grows one step each day after it's watered, and it never dies if you skip a day.
+- **Garden:** 48 crops. A crop grows one step each day after it's watered, and it never dies if you skip a day.
 - **Mine:** 60 layers in 6 zones that each look different: Soil, Stone, Crystal, Frost, Ember and Starfall. Every layer is a small cave with walls and rocks. One plain rock per layer hides the ladder down. Rocks come back every day, and the elevator in the cave takes you to the top of any zone you've reached.
 - **Collection log:** tracks every fish, find and crop you've collected, plus your biggest catch of each fish.
 
@@ -146,8 +174,8 @@ Any static file server works. There is no build step.
 | `src/places.js` | Build mode, animal care and settings |
 | `src/home.js` | Your home: house levels, room types, furniture, wall items, wallpapers, floors and placement rules |
 | `src/home-ui.js` | Home panels: upgrade, rooms, furnishing, walls, wallpaper and floors |
-| `src/cooking.js` | Recipes, ingredient kinds, matching and star ratings |
-| `src/kitchen.js` | The kitchen: picking ingredients, chopping and stove minigames, cooking together |
+| `src/cooking.js` | Kitchen tools and their steps, 142 recipes, ingredient kinds, matching and star ratings |
+| `src/kitchen.js` | The kitchen: picking a tool and ingredients, the five minigames, cooking together |
 | `src/crafting.js` | Crafting recipes, materials, and crafted furniture, toys, outfits and gifts |
 | `src/crafting-ui.js` | The crafting panel |
 | `src/maps.js` | The other jars: layouts, their fish, forage and daily state |
@@ -157,6 +185,8 @@ Any static file server works. There is no build step.
 | `src/events.js` | Seasonal events: the calendar, mushrooms, festival scoring, meteors and the snowman |
 | `src/events-ui.js` | The event stand and each event's panel |
 | `src/mine-data.js` | The mine's zones, rocks, ores, gems, fossils, artifacts, geodes, cave fish, grotto plants and monsters |
+| `src/farm-data.js` | New crops, farm buildings, fruit trees, fertilizers, pantry staples and garden upgrades |
+| `src/farm.js` | Farm rules: collecting from buildings and trees, opening beds, the sprinkler |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |

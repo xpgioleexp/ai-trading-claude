@@ -18,10 +18,10 @@ test('every item has a name, price and known category', () => {
   for (const item of Object.values(ITEMS)) {
     assert.ok(item.name, item.id);
     assert.ok(item.price > 0, item.id);
-    assert.ok(['fish', 'junk', 'crop', 'seed', 'forage', 'mineral', 'fossil', 'artifact', 'loot'].includes(item.cat), item.id);
+    assert.ok(['fish', 'junk', 'crop', 'seed', 'forage', 'mineral', 'fossil', 'artifact', 'loot', 'produce', 'pantry', 'farm'].includes(item.cat), item.id);
   }
   assert.equal(FISH.length, 25);
-  assert.equal(CROPS.length, 16);
+  assert.equal(CROPS.length, 48);
 });
 
 test('every season and time of day has fish to catch', () => {
@@ -185,7 +185,7 @@ test('upgrades cost ore and pebbles', () => {
 test('the shop sells this season\'s seeds and buying costs pebbles', () => {
   const s = R.newState('seed-k', 20000);
   const stock = R.shopStock('autumn');
-  assert.equal(stock.length, 4);
+  assert.equal(stock.length, 12);
   assert.ok(stock.every(i => ITEMS[i.id].season === 'autumn'));
   s.pebbles = 20;
   assert.ok(R.buy(s, 'carrot_seed', 15));

@@ -15,6 +15,10 @@ import { rngFor } from './rng.js';
 import { MAPS, MAP_FISH_IDS, MAP_FORAGE_IDS } from './maps.js';
 import { furnitureStockHtml, bindFurnitureStock } from './visitors-ui.js';
 import { EVENT_ITEM_IDS, EVENTS } from './events.js';
+import { PANTRY, FERTILIZERS, FERTILIZER_BY_ID, FARM_BUILDINGS, NEW_CROP_IDS, PRODUCE_IDS } from './farm-data.js';
+import { nextBedUpgrade, upgradeBeds, sprinklerCost, buySprinkler, costText } from './farm.js';
+import { TOOLS, TOOL_BY_ID, RECIPES } from './cooking.js';
+import { ownsTool, buyTool } from './kitchen.js';
 import { CAVE_FISH_IDS, GROTTO_IDS, MONSTERS, MONSTER_IDS, SWORD_DAMAGE, GEODES, BANDS, healOf } from './mine-data.js';
 
 const $ = s => document.querySelector(s);
@@ -171,7 +175,7 @@ export function openBag(g) {
 }
 
 function catName(cat) {
-  return { artifact: 'Artifact', loot: 'Monster loot', fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', bug: 'Bug', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
+  return { produce: 'Farm produce', pantry: 'Pantry', farm: 'Farm', artifact: 'Artifact', loot: 'Monster loot', fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', bug: 'Bug', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
 }
 
 // ---------- collection log ----------
@@ -183,7 +187,7 @@ export function openLog(g, tab = 'fish') {
     monsters: MONSTER_IDS,
     bugs: BUGS.map(b => b.id),
     finds: MINERALS.map(m => m.id),
-    nature: [...CROPS.map(c => c.id), ...FORAGE.map(f => f.id), ...Object.values(TREE_FRUIT).map(f => f.id), ...MAP_FORAGE_IDS, ...EVENT_ITEM_IDS, ...GROTTO_IDS],
+    nature: [...CROPS.map(c => c.id), ...FORAGE.map(f => f.id), ...Object.values(TREE_FRUIT).map(f => f.id), ...MAP_FORAGE_IDS, ...EVENT_ITEM_IDS, ...GROTTO_IDS, ...PRODUCE_IDS],
   };
   const ids = groups[tab];
   if (tab === 'monsters') return openMonsterLog(g, ids);
@@ -244,28 +248,75 @@ function fishHint(f) {
 
 // ---------- shop ----------
 
-export function openShop(g) {
+const SHOP_TABS = [['seeds', 'Seeds'], ['pantry', 'Pantry'], ['farm', 'Farm'], ['kitchen', 'Kitchen'], ['furniture', 'Furniture']];
+
+export function openShop(g, tab = 'seeds') {
   const s = g.state;
-  const stock = [...R.shopStock(g.season), ...MATERIALS_FOR_SALE];
-  const rows = stock.map(item => {
-    const it = ITEMS[item.id];
-    return `<li>${icon(item.id)}<span class="name">${esc(it.name)}<small>${esc(it.crop ? growText(it.crop) : 'For crafting')}</small></span>
-      <button class="btn small" data-id="${item.id}" data-price="${item.price}" ${s.pebbles < item.price ? 'disabled' : ''}>Buy · ${item.price}</button></li>`;
-  }).join('');
-  openSheet('Beetle shop', `
-    <p class="detail">“Fresh ${cap(g.season)} seeds today. Plant them in your garden beds and water them every day.”</p>
-    <ul class="list">${rows}</ul>
-    ${furnitureStockHtml(g)}
+  const row = (id, price, note) => `<li>${icon(id)}<span class="name">${esc(ITEMS[id].name)}<small>${esc(note)}</small></span>
+    <button class="btn small" data-id="${id}" data-price="${price}" ${s.pebbles < price ? 'disabled' : ''}>Buy · ${price}</button></li>`;
+  let inner = '';
+  if (tab === 'seeds') {
+    inner = `<p class="detail">“Fresh ${cap(g.season)} seeds today. Plant them in your garden beds and water them every day.”</p>
+      <ul class="list">${[...R.shopStock(g.season).map(i => row(i.id, i.price, growText(ITEMS[i.id].crop))), ...MATERIALS_FOR_SALE.map(i => row(i.id, i.price, 'For crafting'))].join('')}</ul>`;
+  } else if (tab === 'pantry') {
+    inner = `<p class="detail">“Flour, sugar and the rest, for baking and cooking. Eggs and milk are cheaper from your own coop and goat pen.”</p>
+      <ul class="list">${PANTRY.map(i => row(i.id, i.price, 'For the kitchen')).join('')}</ul>`;
+  } else if (tab === 'farm') {
+    const up = nextBedUpgrade(s);
+    const spr = sprinklerCost(s);
+    inner = `<h3>Your garden</h3>
+      <ul class="list">
+        <li><span class="name">Garden beds: ${s.farm.beds}<small>${up ? `Open ${up.beds - s.farm.beds} more beds: ${esc(costText(up.cost))}` : 'All 12 beds are open.'}</small></span>
+          ${up ? `<button class="btn small" data-beds ${up.ok ? '' : 'disabled'}>Open</button>` : ''}</li>
+        <li><span class="name">Sprinkler<small>${spr ? `Waters every bed each morning. ${esc(costText(spr.cost))}` : 'Installed. Your beds are watered every morning.'}</small></span>
+          ${spr ? `<button class="btn small" data-sprinkler ${spr.ok ? '' : 'disabled'}>Install</button>` : ''}</li>
+      </ul>
+      <p class="detail small">The garden is shared, so upgrades are for both of you.</p>
+      <h3>For your beds</h3>
+      <ul class="list">${FERTILIZERS.map(f => row(f.id, f.price, f.text + ' Pick one when you plant.')).join('')}</ul>
+      <h3>Farm buildings and fruit trees</h3>
+      <p class="detail small">They go in your bag. Place them in the meadow from Build, then tap them each day to collect.</p>
+      <ul class="list">${FARM_BUILDINGS.map(f => row('made_' + f.type, f.price, f.text)).join('')}</ul>`;
+  } else if (tab === 'kitchen') {
+    inner = `<p class="detail">“Every tool cooks differently, and some recipes need a particular one. You buy each tool once, for both of you.”</p>
+      <ul class="list">${TOOLS.map(t => `<li><span class="name">${esc(t.name)}<small>${ownsTool(t.id) ? 'In your kitchen' : 'For your kitchen'} · ${RECIPES.filter(r => r.tool === t.id).length} recipes</small></span>
+        ${ownsTool(t.id) ? '<span class="detail small">Owned</span>' : `<button class="btn small" data-tool-buy="${t.id}" ${s.pebbles < t.price ? 'disabled' : ''}>Buy · ${t.price}</button>`}</li>`).join('')}</ul>`;
+  } else {
+    inner = furnitureStockHtml(g);
+  }
+  const tabs = SHOP_TABS.map(([id, label]) => `<button class="tab ${id === tab ? 'on' : ''}" data-tab="${id}" aria-pressed="${id === tab}">${label}</button>`).join('');
+  openSheet('Beetle shop', `<div class="tabs">${tabs}</div>${inner}
     <p class="detail">You have <strong>${s.pebbles}</strong> pebbles.</p>`, body => {
-    bindFurnitureStock(g, body, () => openShop(g));
+    body.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => openShop(g, b.dataset.tab)));
+    bindFurnitureStock(g, body, () => openShop(g, 'furniture'));
     body.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', () => {
       if (R.buy(s, b.dataset.id, +b.dataset.price)) {
         g.save();
         toast('Bought ' + ITEMS[b.dataset.id].name, b.dataset.id);
-        openShop(g);
+        openShop(g, tab);
       } else toast(R.bagFull(s, b.dataset.id) ? 'Your bag is full.' : 'Not enough pebbles.');
     }));
-  });
+    body.querySelector('[data-beds]')?.addEventListener('click', () => {
+      if (!upgradeBeds(s)) return toast('You need more to open these.');
+      g.save();
+      g.saveFarm?.();
+      toast(`Your garden now has ${s.farm.beds} beds.`);
+      openShop(g, 'farm');
+    });
+    body.querySelector('[data-sprinkler]')?.addEventListener('click', () => {
+      if (!buySprinkler(s)) return toast('You need more to install it.');
+      g.save();
+      g.saveFarm?.();
+      toast('Sprinkler installed! It waters the garden every morning.');
+      openShop(g, 'farm');
+    });
+    body.querySelectorAll('[data-tool-buy]').forEach(b => b.addEventListener('click', async () => {
+      if (!(await buyTool(s, b.dataset.toolBuy))) return toast('Not enough pebbles.');
+      g.save();
+      toast(`The ${TOOL_BY_ID[b.dataset.toolBuy].name.toLowerCase()} is in your kitchen!`);
+      openShop(g, 'kitchen');
+    }));
+  }, null, () => openShop(g, tab));
 }
 
 function growText(cropId) {
@@ -355,11 +406,14 @@ export function openSeedPicker(g, bedIndex, onPlant) {
   const seeds = [...new Set(s.bag.filter(slot => ITEMS[slot.id].cat === 'seed').map(slot => slot.id))];
   const rows = seeds.map(id => `<li>${icon(id)}<span class="name">${esc(ITEMS[id].name)}<small>${R.countItem(s, id)} in bag · ${esc(growText(ITEMS[id].crop))}</small></span>
     <button class="btn small" data-seed="${id}">Plant</button></li>`).join('');
+  const ferts = FERTILIZERS.filter(f => R.countItem(s, f.id));
+  const fertPick = ferts.length ? `<label class="label" for="fert">Add to the bed</label>
+    <select id="fert"><option value="">Nothing</option>${ferts.map(f => `<option value="${f.id}">${esc(f.name)} (${R.countItem(s, f.id)}): ${esc(f.text)}</option>`).join('')}</select>` : '';
   openSheet('Plant a seed', seeds.length
-    ? `<ul class="list">${rows}</ul><p class="detail">Water once a day. Plants grow overnight, and they never wilt if you miss a day.</p>`
+    ? `${fertPick}<ul class="list">${rows}</ul><p class="detail">Water once a day. Plants grow overnight, and they never wilt if you miss a day.</p>`
     : '<p class="detail">You have no seeds. The beetle shop at the back of the jar sells them.</p>', body => {
     body.querySelectorAll('[data-seed]').forEach(b => b.addEventListener('click', () => {
-      if (R.plantBed(s, bedIndex, b.dataset.seed)) {
+      if (R.plantBed(s, bedIndex, b.dataset.seed, body.querySelector('#fert')?.value || null)) {
         g.save();
         closeSheet();
         onPlant(b.dataset.seed);

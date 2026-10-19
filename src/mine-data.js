@@ -231,7 +231,7 @@ const FRUIT = new Set(['cherry', 'peach', 'apple', 'orange', 'coconut', 'honey']
 export function healOf(item) {
   if (!item) return 0;
   if (item.cat === 'dish') return 40;
-  if (item.cat === 'crop' || FRUIT.has(item.id)) return 12;
+  if (item.cat === 'crop' || item.cat === 'produce' || FRUIT.has(item.id)) return 12;
   if (item.cat === 'forage' && ['berry', 'mushroom', 'root'].includes(item.shape)) return 8;
   return 0;
 }

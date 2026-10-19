@@ -31,6 +31,8 @@ import {
 } from './events.js';
 import { openEventStand, eventDocs, countMushroom } from './events-ui.js';
 import { MONSTERS } from './mine-data.js';
+import { FARM_BY_TYPE } from './farm-data.js';
+import { collect as collectFarmItem } from './farm.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -351,6 +353,10 @@ function checkNewDay() {
   if (g.scene === 'mine') leaveMine();
   for (const e of events) {
     if (e.type === 'payout') UI.toast(`Good morning! The crate paid ${e.amount} pebbles.`);
+    if (e.type === 'sprinkler') {
+      UI.toast('The garden is watered for today.');
+      g.state.garden.forEach((bed, i) => { if (bed.crop) saveSharedBed(i); });
+    }
     if (e.type === 'rain-watered') {
       UI.toast('The rain watered your garden.');
       g.state.garden.forEach((bed, i) => { if (bed.crop) saveSharedBed(i); });
@@ -367,6 +373,11 @@ function saveSharedBed(i) {
 
 function pullGarden() {
   if (cloud.mode !== 'cloud') return;
+  const meta = S.garden.meta;
+  if (meta) {
+    g.state.farm.beds = Math.max(g.state.farm.beds, meta.beds || 0);
+    g.state.farm.sprinkler = g.state.farm.sprinkler || !!meta.sprinkler;
+  } else if (g.state.farm.beds > 6 || g.state.farm.sprinkler) saveFarm();
   const beds = Object.keys(S.garden);
   if (!beds.length) {
     // First person to connect brings their garden along.
@@ -375,7 +386,7 @@ function pullGarden() {
   }
   BEDS.forEach((b, i) => {
     const doc = S.garden['bed-' + i];
-    g.state.garden[i] = doc ? { crop: doc.crop ?? null, count: doc.count || 0, last: doc.last ?? -1 } : { crop: null, count: 0, last: -1 };
+    g.state.garden[i] = doc ? { crop: doc.crop ?? null, count: doc.count || 0, last: doc.last ?? -1, ...(doc.fert ? { fert: doc.fert } : {}) } : { crop: null, count: 0, last: -1 };
   });
 }
 
@@ -609,7 +620,8 @@ function tapJar(c, r, x, y) {
   const deco = g.decor.find(d => d.c === c && d.r === r);
   if (deco && !FLAT_DECOR.has(deco.type)) {
     walkNextTo([{ c, r }], () => {
-      if (deco.type === 'log') T.noticeDiscovery('hollow-log');
+      if (FARM_BY_TYPE[deco.type]) collectFarm(deco);
+      else if (deco.type === 'log') T.noticeDiscovery('hollow-log');
       else if (deco.type === 'campfire') ready() && openKitchen(g);
       else UI.toast(C.decorByType[deco.type]?.name || 'A decoration');
     });
@@ -625,7 +637,35 @@ function tapJar(c, r, x, y) {
   if (inBounds(c, r)) walkTo(c, r);
 }
 
+function collectFarm(deco) {
+  const def = FARM_BY_TYPE[deco.type];
+  const placedDay = (deco.at ? dayNumber(new Date(deco.at), S.world?.timeZone) : g.today) + (g.state.dayOffset || 0);
+  const res = collectFarmItem(g.state, { id: deco.id, type: deco.type, placedDay }, g.today);
+  crouch();
+  if (res.ok) {
+    save();
+    gained(res.id, res.n);
+    return;
+  }
+  const say = {
+    growing: `The ${def.name.toLowerCase()} is still growing. ${res.daysLeft} more day${res.daysLeft === 1 ? '' : 's'}.`,
+    collected: `You already collected from the ${def.name.toLowerCase()} today.`,
+    resting: `Nothing yet. Come back tomorrow.`,
+    full: 'Your bag is full.',
+  }[res.state];
+  UI.toast(say);
+}
+
+// Opening more beds and the sprinkler are shared: they go in the garden's meta doc.
+function saveFarm() {
+  if (cloud.mode === 'cloud') setDoc('garden/meta', { ...g.state.farm, by: cloud.me }).catch(() => {});
+}
+
 function useBed(i) {
+  if (!R.bedOpen(g.state, i)) {
+    UI.toast('This bed isn\'t open yet. Open more beds in the beetle shop\'s Farm tab.');
+    return UI.openShop(g, 'farm');
+  }
   const bed = g.state.garden[i];
   const stage = R.bedStage(bed, g.today);
   crouch();
@@ -731,7 +771,7 @@ function placeTap(c, r) {
 }
 
 function syncDecor() {
-  g.decor = Object.entries(S.decor).map(([id, d]) => ({ id, type: d.type, c: d.c | 0, r: d.r | 0 })).filter(d => C.decorByType[d.type]);
+  g.decor = Object.entries(S.decor).map(([id, d]) => ({ id, type: d.type, c: d.c | 0, r: d.r | 0, at: d.at || 0 })).filter(d => C.decorByType[d.type]);
   g.decorBlocked = new Set(g.decor.filter(d => !FLAT_DECOR.has(d.type)).map(d => tileKey(d.c, d.r)));
 }
 
@@ -1501,7 +1541,7 @@ function start(hotData = {}) {
     openCrafting: () => openCrafting(g),
     openTools: () => UI.openWorkbench(g),
     fishing: null, action: null, effects: [], hold: false, t: 0, today,
-    debugHour: null, save, startPlacing, animalReacts, resetMine, enterMine,
+    debugHour: null, save, saveFarm, startPlacing, animalReacts, resetMine, enterMine,
   };
   placePlayer(START_TILE.c, START_TILE.r);
   checkNewDay();

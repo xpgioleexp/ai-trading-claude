@@ -11,6 +11,7 @@ import {
   BANDS, ROCKS, ROCK_TABLE, FOSSILS_BY_BAND, ARTIFACTS_BY_BAND, GEODE_CONTENTS, GROTTO_BY_BAND, CAVE_FISH_IDS, CAVE_BITES,
   MONSTERS, monstersOfBand, bossOfBand, START_HP, BOSS_HP_BONUS, SWORD_DAMAGE, healOf,
 } from './mine-data.js';
+import { FERTILIZER_BY_ID, BED_LEVELS } from './farm-data.js';
 
 export const STATE_VERSION = 1;
 
@@ -25,6 +26,7 @@ export function newState(seed, today) {
     avatar: { skin: 1, hairStyle: 0, hairColor: 1, outfit: 0, outfitStyle: 1, made: false },
     tools: { rod: 0, pick: 0, sword: 0 },
     garden: BEDS.map(() => ({ crop: null, count: 0, last: -1 })),
+    farm: { beds: BED_LEVELS[0], sprinkler: false },
     crate: [],
     log: { fish: {}, found: {} },
     mine: { deepest: 0, bosses: {} },
@@ -63,6 +65,13 @@ export function rollover(state, today) {
     let watered = 0;
     state.garden.forEach((bed, i) => { if (waterBed(state, i, today)) watered++; });
     if (watered) events.push({ type: 'rain-watered', count: watered });
+  } else {
+    // The sprinkler waters every bed; water-keeping soil waters its own.
+    let watered = 0;
+    state.garden.forEach((bed, i) => {
+      if ((state.farm?.sprinkler || bed.fert === 'water_soil') && waterBed(state, i, today)) watered++;
+    });
+    if (watered) events.push({ type: 'sprinkler', count: watered });
   }
   return events;
 }
@@ -124,21 +133,33 @@ export function bedGrowth(bed, today) {
 }
 
 // 0 = seeds, 1 = sprout, 2 = growing, 3 = ready to pick.
-export function bedStage(bed, today) {
-  if (!bed.crop) return -1;
+// Days a crop needs in this bed. Speed-gro takes about a third off.
+export function daysFor(bed) {
   const crop = CROP_BY_ID[bed.crop];
-  const g = bedGrowth(bed, today);
-  if (g >= crop.days) return 3;
-  if (g <= 0) return 0;
-  return g < crop.days / 2 ? 1 : 2;
+  return bed.fert === 'speed_gro' ? Math.max(1, Math.ceil(crop.days * 0.67)) : crop.days;
 }
 
-export function plantBed(state, i, seedId) {
+export function bedStage(bed, today) {
+  if (!bed.crop) return -1;
+  const days = daysFor(bed);
+  const g = bedGrowth(bed, today);
+  if (g >= days) return 3;
+  if (g <= 0) return 0;
+  return g < days / 2 ? 1 : 2;
+}
+
+export function bedOpen(state, i) {
+  return i < (state.farm?.beds || BED_LEVELS[0]);
+}
+
+export function plantBed(state, i, seedId, fertId = null) {
   const bed = state.garden[i];
   const seed = ITEMS[seedId];
-  if (!bed || bed.crop || !seed || seed.cat !== 'seed') return false;
+  if (!bed || bed.crop || !seed || seed.cat !== 'seed' || !bedOpen(state, i)) return false;
+  if (fertId && (!FERTILIZER_BY_ID[fertId] || countItem(state, fertId) < 1)) return false;
   if (!removeItem(state, seedId, 1)) return false;
-  state.garden[i] = { crop: seed.crop, count: 0, last: -1 };
+  if (fertId) removeItem(state, fertId, 1);
+  state.garden[i] = { crop: seed.crop, count: 0, last: -1, ...(fertId ? { fert: fertId } : {}) };
   return true;
 }
 
@@ -155,9 +176,9 @@ export function harvestBed(state, i, today) {
   if (!bed || bedStage(bed, today) !== 3) return null;
   const crop = CROP_BY_ID[bed.crop];
   if (bagFull(state, crop.id)) return null;
-  addItem(state, crop.id, 1);
+  addItem(state, crop.id, bed.fert === 'fertilizer' ? 2 : 1);
   if (crop.regrow) {
-    bed.count = crop.days - crop.regrow + (bed.last === today ? 1 : 0);
+    bed.count = daysFor(bed) - crop.regrow + (bed.last === today ? 1 : 0);
   } else {
     state.garden[i] = { crop: null, count: 0, last: -1 };
   }
@@ -568,6 +589,7 @@ export function migrate(saved, seed, today) {
     ...fresh, ...saved,
     avatar: { ...fresh.avatar, ...saved.avatar },
     tools: { ...fresh.tools, ...saved.tools },
+    farm: { ...fresh.farm, ...saved.farm },
     log: { ...fresh.log, ...saved.log },
     mine: { ...fresh.mine, ...saved.mine },
     garden: fresh.garden.map((b, i) => saved.garden?.[i] || b),

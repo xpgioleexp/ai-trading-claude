@@ -87,7 +87,17 @@ function drawJarWorld(ctx, g) {
   drawPond(ctx, g);
   const cave = OBJECTS.find(o => o.id === 'cave');
   ctx.drawImage(caveSprite(), GX + cave.c * TILE, GY + cave.r * TILE);
-  BEDS.forEach((b, i) => ctx.drawImage(bedSprite(g.state.garden[i].last === g.today), GX + b.c * TILE, GY + b.r * TILE));
+  BEDS.forEach((b, i) => {
+    // Beds you haven't opened yet are a faint outline with a little sign.
+    const open = i < (g.state.farm?.beds || 6);
+    if (!open) ctx.globalAlpha = 0.3;
+    ctx.drawImage(bedSprite(open && g.state.garden[i].last === g.today), GX + b.c * TILE, GY + b.r * TILE);
+    ctx.globalAlpha = 1;
+    if (!open && i % 3 === 1) {
+      px(ctx, GX + b.c * TILE + 7, GY + b.r * TILE + 4, 2, 9, PAL.woodShade);
+      px(ctx, GX + b.c * TILE + 3, GY + b.r * TILE + 2, 10, 5, PAL.wood);
+    }
+  });
   const picnic = OBJECTS.find(o => o.id === 'picnic');
   ctx.drawImage(picnicSprite(), GX + picnic.c * TILE, GY + picnic.r * TILE + 2);
   for (const d of g.decor) {
