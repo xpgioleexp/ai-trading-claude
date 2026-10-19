@@ -175,6 +175,10 @@ The waterfall, hot spring steam, starry sky and glade mist are drawn in code in 
   - Paths, flower beds and lawns are flat and drawn under everything.
   - The full list is in `src/outdoor-data.js`, and the placeholders are in `drawOutdoor` in `src/sprites-more.js`.
 
+### The phone
+
+The phone and its 24 app icons are styled in CSS (`style.css`, "the phone"). The icons are emoji placeholders, set in `APPS` in `src/phone.js`. For real icons, make 24 square icons (52 × 52 shown, drawn at 26 × 26 or 52 × 52), one per app id, and send them to Claude to wire up.
+
 ### Visitors and the merchant
 
 | Name | Size | What it is |

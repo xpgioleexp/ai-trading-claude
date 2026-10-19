@@ -23,6 +23,7 @@ import { openCrafting } from './crafting-ui.js';
 import { BUG_BY_ID, spawnBugs, timeBlock, alertRate, NOTICE_TILES, catchBug } from './bugs.js';
 import { MAPS, mapWalkable, mapObjectAt, mapOpenTiles, mapNear, mapCatch, mapWeather, mapDaily } from './maps.js';
 import { openTravel } from './travel.js';
+import { openPhone, closePhone, phoneOpen, phoneHasNews } from './phone.js';
 import './biomes.js';
 import { syncCritters, updateCritters, critterAt, openCritter, openJarShop, runSpot, digAt } from './jar-life.js';
 import { visitorOn, visitorSpot, merchantHere, MERCHANT_SPOT } from './visitors.js';
@@ -1395,6 +1396,10 @@ function onPointerUp() {
 }
 
 function onKey(e) {
+  if (phoneOpen()) {
+    if (e.key === 'Escape') closePhone();
+    return;
+  }
   if (UI.sheetOpen()) {
     if (e.key === 'Escape') UI.closeSheet();
     return;
@@ -1456,6 +1461,7 @@ function frame(now) {
     clockTimer = 2;
     checkNewDay();
     UI.updateHud(g);
+    document.querySelector('#btn-phone')?.classList.toggle('has-news', phoneHasNews(g));
   }
   presenceTimer -= dt;
   if (presenceTimer <= 0) {
@@ -1582,17 +1588,9 @@ function start(hotData = {}) {
 
   const on = (sel, fn) => document.querySelector(sel).addEventListener('click', fn);
   on('#sheet-close', UI.closeSheet);
-  on('#btn-bag', () => UI.openBag(g));
-  on('#btn-today', () => ready() && T.openToday(g));
-  on('#btn-mail', () => ready() && T.openMailbox(g, UI.letters(g)));
-  on('#btn-journal', () => ready() && T.openJournal(g));
-  on('#btn-build', () => {
-    if (!ready()) return;
-    if (g.scene === 'home') openFurnish(g);
-    else if (g.scene === 'map') UI.toast('You build in your forest jar. Use the door to go home.');
-    else openBuild(g);
-  });
-  on('#btn-more', () => ready() && openMore(g));
+  // Everything lives in the phone now.
+  on('#btn-phone', () => (phoneOpen() ? closePhone() : openPhone(g)));
+  on('#sheet-back', UI.sheetBack);
   on('#btn-leave', () => (g.scene === 'home' ? leaveHome() : leaveMine()));
   on('#btn-cancel', stopPlacing);
 

@@ -47,6 +47,14 @@ export function toast(text, iconId) {
 
 let onClose = null;
 let opener = null;
+let backFn = null;
+
+// When a panel is opened from the phone, its header gets a "Phone" button back.
+export function setSheetBack(fn) {
+  backFn = fn;
+  const b = $('#sheet-back');
+  if (b) b.hidden = !fn;
+}
 let refresher = null;
 let sheetKey = null;
 
@@ -61,6 +69,7 @@ export function openSheet(title, html, bind, close, refresh) {
   $('#sheet-title').textContent = title;
   body.innerHTML = html;
   sheet.hidden = false;
+  if ($('#sheet-back')) $('#sheet-back').hidden = !backFn;
   onClose = close || null;
   refresher = refresh || null;
   sheetKey = title;
@@ -82,6 +91,7 @@ export function closeSheet() {
   if (sheet.hidden) return;
   sheet.hidden = true;
   $('#sheet-body').innerHTML = '';
+  setSheetBack(null);
   if (onClose) onClose();
   onClose = null;
   refresher = null;
@@ -540,4 +550,11 @@ export function openWardrobe(g, firstTime = false) {
       toast(firstTime ? 'Tap the meadow to walk around.' : 'Look saved.');
     });
   }, () => clearInterval(timer));
+}
+
+// The sheet's "Phone" button.
+export function sheetBack() {
+  const fn = backFn;
+  closeSheet();
+  fn?.();
 }

@@ -19,12 +19,7 @@
   </header>
   <main id="stage"><canvas id="game" width="320" height="384" aria-label="Your terrarium. Tap the ground to walk, tap things to use them."></canvas></main>
   <nav id="tray" aria-label="Tools">
-    <button class="tray-btn" id="btn-bag" type="button">Bag</button>
-    <button class="tray-btn" id="btn-today" type="button">Today</button>
-    <button class="tray-btn" id="btn-mail" type="button">Mail</button>
-    <button class="tray-btn" id="btn-journal" type="button">Journal</button>
-    <button class="tray-btn" id="btn-build" type="button">Build</button>
-    <button class="tray-btn" id="btn-more" type="button">More</button>
+    <button class="tray-btn phone-btn" id="btn-phone" type="button" aria-label="Open your phone">📱 Phone</button>
     <button class="tray-btn alt" id="btn-leave" type="button" hidden>Leave cave</button>
     <button class="tray-btn alt" id="btn-cancel" type="button" hidden>Stop placing</button>
   </nav>
@@ -36,8 +31,9 @@
   </div>
 </div>
 <div id="toasts" aria-live="polite"></div>
+<div id="phone" hidden></div>
 <section id="sheet" hidden role="dialog" aria-labelledby="sheet-title">
-  <header><h2 id="sheet-title"></h2><button class="btn small" id="sheet-close" type="button">Close</button></header>
+  <header><button class="btn small ghost" id="sheet-back" type="button" hidden>📱 Phone</button><h2 id="sheet-title"></h2><button class="btn small" id="sheet-close" type="button">Close</button></header>
   <div id="sheet-body"></div>
 </section>
 <script type="module" src="src/main.js"></script>

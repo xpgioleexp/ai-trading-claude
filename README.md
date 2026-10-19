@@ -41,7 +41,30 @@ Any static file server works. There is no build step.
 | Wishing well | Dreams with stages and steps, and a light you each leave |
 | Picnic blanket | Hangout: live chat, a shared drawing pad, a timer and conversation questions |
 | Animals | Care, play and explore (43 actions across five species) |
-| Tray | Bag, Today, Mail, Journal (moments, question packs, scrapbook, discoveries), Build (decorations and residents), More (settings, reminders, download your data) |
+| 📱 Phone | Everything else, as apps. See **The phone** below |
+
+**The phone:** the button at the bottom opens your phone, like in Animal Crossing. Every panel in the game is an app on it, and a red dot means something new. Each app has a **📱 Phone** button to go back, and Escape closes the phone.
+
+| App | What's in it |
+|---|---|
+| Today | The daily question (answer, later or skip), mood check-in, the weekly ritual |
+| Questions | 306 question packs, answered the same sealed way |
+| Missions | This week's mission (you both mark it done) and the pinboard |
+| Mail | Notes, appreciation cards and gifts |
+| Dates | Plan dates from 160 ideas or your own, and add them to your calendar |
+| Dreams | Dreams with stages and steps, and the well light |
+| Journal · Scrapbook · Discoveries | Your moments together, the scrapbook and the secret places you've found |
+| Hangout | Live chat, a drawing pad, a timer and conversation prompts |
+| Bag · Collection | Your things, tools and health; fish, bugs, finds, monsters and plants |
+| Cooking · DIY · Tools | The kitchen and recipe book; crafting; tool upgrades and geodes |
+| Wardrobe · Build · House | Your look; decorate the meadow or furnish the room you're in; house upgrades and rooms |
+| Shopping | The beetle shop's seeds, pantry, farm, kitchen tools and furniture |
+| Jars · Events | The jar shelf and travel; seasonal events today and coming up |
+| Friends | Today's visitor and their request, the merchant, your meadow animals, jar friends' hearts and visitors you know |
+| Mine | How deep you've been, zones, bosses beaten, health and gear |
+| Settings | Your partner, the jar's name and time zone, reminders, rain, download everything, start over |
+
+Things you do in a place stay in that place: fishing, mining, the garden, foraging, bugs, the shipping crate, visitors' deliveries, the merchant, the jar shops, jar animals and spots, and farm buildings.
 
 **Building your home:**
 - **Upgrade the house:** tent → cabin → cottage → cottage with a loft. Upgrades cost pebbles, plus stone and ore from the cave. Each level allows more rooms (1, 2, 4, then 6).
@@ -243,6 +266,7 @@ Any static file server works. There is no build step.
 | `src/jar-life.js` | Panels for the animals, jar shops and spots, and the animals wandering |
 | `src/furniture-data.js` | The furniture sets and wall items, each drawn from a shape and two colours |
 | `src/outdoor-data.js` | Outdoor crafts and the craftable home pieces |
+| `src/phone.js` | The phone: every panel as an app, plus the Friends and Mine apps |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |
