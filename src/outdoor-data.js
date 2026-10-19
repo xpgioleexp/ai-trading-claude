@@ -87,17 +87,32 @@ const OUTDOOR = [
 
 export const OUTDOOR_BY_TYPE = {};
 export const OUTDOOR_GROUPS = ['Paths', 'Fences', 'Lights', 'Seats', 'Garden', 'Fun'];
-for (const [type, name, group, form, color, accent, needs, extra] of OUTDOOR) {
-  const flat = ['path', 'bricks', 'deck', 'tiles', 'mosaic', 'flowerbed', 'steps', 'clover'].includes(form);
-  const def = { type, name, group, form, color, accent, flat, ...(extra || {}) };
-  OUTDOOR_BY_TYPE[type] = def;
-  ITEMS['made_' + type] = { id: 'made_' + type, name, cat: 'made', shape: 'seed', color, price: 15, decor: type };
-  const craft = { id: 'out_' + type, name, category: 'Outdoor', group, needs, makes: { decor: type } };
-  CRAFTS.push(craft);
-  CRAFT_BY_ID[craft.id] = craft;
+export const FLAT_OUTDOOR = [];
+export const LIGHT_DECOR = new Set();
+const FLAT_FORMS = ['path', 'bricks', 'deck', 'tiles', 'mosaic', 'flowerbed', 'steps', 'clover'];
+
+// Adds outdoor pieces: each is crafted at the workbench (and can be bought in Build).
+export function addOutdoor(rows) {
+  for (const [type, name, group, form, color, accent, needs, extra] of rows) {
+    if (OUTDOOR_BY_TYPE[type]) continue;
+    const flat = FLAT_FORMS.includes(form);
+    const def = { type, name, group, form, color, accent, flat, needs, ...(extra || {}) };
+    OUTDOOR_BY_TYPE[type] = def;
+    if (flat) FLAT_OUTDOOR.push(type);
+    if (def.light) LIGHT_DECOR.add(type);
+    ITEMS['made_' + type] = { id: 'made_' + type, name, cat: 'made', shape: 'seed', color, price: 15, decor: type };
+    const craft = { id: 'out_' + type, name, category: 'Outdoor', group, needs, makes: { decor: type } };
+    CRAFTS.push(craft);
+    CRAFT_BY_ID[craft.id] = craft;
+  }
 }
-export const FLAT_OUTDOOR = Object.values(OUTDOOR_BY_TYPE).filter(d => d.flat).map(d => d.type);
-export const LIGHT_DECOR = new Set(Object.values(OUTDOOR_BY_TYPE).filter(d => d.light).map(d => d.type));
+addOutdoor(OUTDOOR);
+
+// What an outdoor piece costs to buy instead of make: about three times its materials.
+export function outdoorPrice(def) {
+  const total = Object.entries(def.needs || {}).reduce((t, [id, n]) => t + (id.startsWith('#') ? 12 : ITEMS[id]?.price || 10) * n, 0);
+  return Math.max(20, Math.round((total * 3) / 5) * 5);
+}
 
 // Home furniture you can craft as well as buy, a few from each set.
 const HOME_CRAFTS = [

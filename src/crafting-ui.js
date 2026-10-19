@@ -24,11 +24,30 @@ function needLabel(need) {
   return ITEMS[need]?.name || need;
 }
 
+// Long categories (home and outdoor) show one group at a time, or search results.
+const READY = 'Ready to make';
+const picked = {};
+let query = '';
+
 export function openCrafting(g, category = 'Furniture') {
   const s = g.state;
   const tabs = CATEGORIES.map(c => `<button class="tab ${c === category ? 'on' : ''}" data-cat="${esc(c)}" aria-pressed="${c === category}">${esc(c)}</button>`).join('');
-  const list = CRAFTS.filter(c => c.category === category);
-  const groups = [...new Set(list.map(c => c.group || ''))];
+  const all = CRAFTS.filter(c => c.category === category);
+  const allGroups = [...new Set(all.map(c => c.group || ''))];
+  const long = all.length > 40;
+  const q = query.trim().toLowerCase();
+  const group = picked[category] || allGroups[0];
+  const list = !long ? all
+    : q ? all.filter(c => c.name.toLowerCase().includes(q)).slice(0, 60)
+      : group === READY ? all.filter(c => !alreadyUnlocked(s, c) && planCraft(s, c))
+        : all.filter(c => (c.group || '') === group);
+  const groups = long && (q || group === READY) ? [''] : [...new Set(list.map(c => c.group || ''))];
+  const picker = long ? `<div class="picker">
+      <label class="sr" for="craft-group">Group</label>
+      <select id="craft-group">${[READY, ...allGroups].map(gr => `<option value="${esc(gr)}" ${gr === group ? 'selected' : ''}>${esc(gr)}</option>`).join('')}</select>
+      <label class="sr" for="craft-search">Search</label>
+      <input id="craft-search" type="search" placeholder="Search ${all.length} recipes" value="${esc(query)}" autocomplete="off">
+    </div>${!list.length ? `<p class="detail">${q ? 'Nothing matches that.' : 'Nothing you can make right now. Gather more wood, fiber and cloth.'}</p>` : ''}` : '';
   const row = c => {
     const done = alreadyUnlocked(s, c);
     const ready = !done && !!planCraft(s, c);
@@ -47,14 +66,24 @@ export function openCrafting(g, category = 'Furniture') {
   // Long lists (home and outdoor) are grouped, with the ones you can make right now first.
   const rows = groups.map(gr => {
     const items = list.filter(c => (c.group || '') === gr).sort((x, y) => (planCraft(s, y) ? 1 : 0) - (planCraft(s, x) ? 1 : 0));
-    return `${gr ? `<h3>${esc(gr)}</h3>` : ''}<ul class="list">${items.map(row).join('')}</ul>`;
+    return `${gr && !long ? `<h3>${esc(gr)}</h3>` : ''}<ul class="list">${items.map(row).join('')}</ul>`;
   }).join('');
   openSheet('Crafting', `
     <div class="tabs">${tabs}</div>
     <p class="detail small">${esc(WHERE[category])} Wood comes from shaking the fruit tree; fiber from foraging and harvesting. The beetle shop sells both.</p>
+    ${picker}
     ${rows}
     <div class="row-actions"><button class="btn ghost" id="tools">Tool upgrades</button></div>`, body => {
-    body.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => openCrafting(g, b.dataset.cat)));
+    body.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => { query = ''; openCrafting(g, b.dataset.cat); }));
+    body.querySelector('#craft-group')?.addEventListener('change', e => { picked[category] = e.target.value; query = ''; openCrafting(g, category); });
+    const search = body.querySelector('#craft-search');
+    search?.addEventListener('input', () => {
+      query = search.value;
+      openCrafting(g, category);
+      const again = document.querySelector('#craft-search');
+      again?.focus();
+      again?.setSelectionRange(again.value.length, again.value.length);
+    });
     body.querySelectorAll('[data-craft]').forEach(b => b.addEventListener('click', () => {
       const def = CRAFT_BY_ID[b.dataset.craft];
       const result = craft(s, def);

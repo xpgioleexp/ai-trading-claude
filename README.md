@@ -303,6 +303,13 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 - **Piecing skeletons together:** once every piece of an animal is in, put it together at the museum. One spot on the skeleton glows at a time; pick the piece that goes there. It's then on display for you both, with 60 pebbles per piece for whoever put it together.
 - **Fossil swap:** Hazel swaps 3 spare pieces (ones already on display) for one the museum is missing.
 
+**The big catalogue:** 973 pieces of furniture in 74 styles, 266 things for the walls, 123 wallpapers, 77 floors and 266 things for outside. 871 of them can be made at the workbench.
+- **58 new styles,** each with 14 pieces and 4 wall pieces in its own colours. Strawberry café, mint dream, lavender fields, honey bee, cat café, puppy palace, bunny burrow, frog pond, woodland critters, mushroom cottage, seashell cove, pirate ship, under the sea, tropical tiki, desert adobe, ski lodge, winter wonderland, spring blossom, summer picnic, autumn harvest, Halloween night, festive holiday, red lantern, zen retreat, spa day, greenhouse, grand library, bakery, retro diner, arcade, space station, starlight observatory, cloud kingdom, royal palace, fairy tale castle, wizard tower, robot lab, dino den, gallery, art studio, music room, toy box, nursery, farmhouse, industrial loft, mid-century, boho, Nordic, Victorian, camping, kawaii, gamer room, office, laundry day, bathhouse, kitchen deluxe, sunflower, moonlight and rainbow.
+- **New shapes:** arcade cabinets, thrones, hanging egg chairs, pillars, statues, fish tanks, book piles, gramophones, vending machines, easels, grandfather clocks, benches, little fountains, canopy beds, cradles, upright pianos, globes, telescopes and dollhouses; and for the walls banners, sconces, wall shelves, mounted fish, mosaics, quilts and string lights.
+- **Wallpapers and floors:** 24 wallpaper patterns (stripes, pinstripes, dots, check, plaid, flowers, stars, hearts, waves, brick, panels, diamonds, zigzag, scallops, leaves, wainscoting, damask, clouds, moons, rainbow stripes, herringbone and more) and 18 floor patterns (planks, herringbone, parquet, checker, tiles, flagstones, carpet, marble, terrazzo, tatami, hex tiles, mosaic, cobbles and more), in 16 colours.
+- **Outside:** 150 new outdoor pieces in new colours and styles (stone paths, brick roads, flower beds, picket fences, hedges, lamp posts, string lights, benches, swings, gnomes, birdhouses, arches, statues, windmills, fountains and more). Every outdoor piece can now be bought in Build as well as made at the workbench.
+- **Finding things:** Furnish has a style picker and a search box (search all 973 pieces at once), and so do the walls, wallpapers, floors, Build and the workbench's long lists, which also have a "Ready to make" view.
+
 ## Code
 
 | File | What it does |
@@ -311,6 +318,7 @@ Things you do in a place stay in that place: fishing, mining, the garden, foragi
 | `src/rules.js` | Game rules (bag, garden, fishing, mine layers, monsters and health, shop, crate, upgrades, new day). No drawing code, so it's tested and can move to the server later |
 | `src/world.js` | The jar's layout: tile grid and where each object sits |
 | `src/clock.js` | Day numbers, seasons, weather, time of day |
+| `src/catalog-data.js` | The big catalogue: furniture styles, wall pieces, wallpapers, floors and outdoor pieces, each a palette and a list of pieces |
 | `src/fossils.js` | Fossils: every animal and its pieces, relics, dig sites, the dig kit, the excavation game |
 | `src/museum.js` | Museum rules: wings, giving, milestones, skeletons, the fossil swap |
 | `src/museum-ui.js` | The museum's panels, the excavation game and piecing skeletons together |

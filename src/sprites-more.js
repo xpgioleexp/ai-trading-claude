@@ -168,7 +168,9 @@ export function zzzSprite() {
 // ---------- decorations ----------
 
 // Decorations that lie flat on the ground can be walked over.
-export const FLAT_DECOR = new Set(['pathstone', 'pathwood', 'picnic', 'moss', 'clover', 'puddle', 'lilypad', 'waterbowl', ...FLAT_OUTDOOR]);
+const FLAT_BASE = new Set(['pathstone', 'pathwood', 'picnic', 'moss', 'clover', 'puddle', 'lilypad', 'waterbowl']);
+// Flat decorations you can walk over. Outdoor pieces can be added later (catalog-data.js), so check them live.
+export const FLAT_DECOR = { has: type => FLAT_BASE.has(type) || FLAT_OUTDOOR.includes(type) };
 
 const TREE_SIZE = [24, 34];
 

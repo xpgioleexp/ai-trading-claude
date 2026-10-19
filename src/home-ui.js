@@ -130,6 +130,18 @@ export function openHome(g) {
 // ---------- furnishing a room ----------
 
 let furnishSet = 'Classic';
+let furnishQuery = '';
+let wallSet = 'Classic';
+const MAX_RESULTS = 60;
+const matches = (name, q) => name.toLowerCase().includes(q.trim().toLowerCase());
+const WALL_SETS = () => ['Classic', ...new Set(WALL_ITEMS.filter(w => w.set).map(w => w.set))];
+// A style picker and a search box, for catalogues too long to show at once.
+const pickerHtml = (sets, current, query, label) => `<div class="picker">
+  <label class="sr" for="pick-set">${label}</label>
+  <select id="pick-set">${sets.map(st => `<option value="${esc(st)}" ${st === current ? 'selected' : ''}>${esc(st)}</option>`).join('')}</select>
+  <label class="sr" for="pick-search">Search</label>
+  <input id="pick-search" type="search" placeholder="Search everything" value="${esc(query)}" autocomplete="off">
+</div>`;
 
 export function openFurnish(g, tab = 'furniture') {
   const room = S.rooms[g.roomId];
@@ -139,15 +151,18 @@ export function openFurnish(g, tab = 'furniture') {
   let inner = '';
   if (tab === 'furniture') {
     // Sets keep the catalogue short: pick one to browse.
-    const setChips = FURNITURE_SETS.map(st => `<button class="tab ${st === furnishSet ? 'on' : ''}" data-set="${esc(st)}" aria-pressed="${st === furnishSet}">${esc(st)}</button>`).join('');
-    const inSet = FURNITURE.filter(f => !f.special && (f.set || 'Classic') === furnishSet);
-    const cats = [...new Set(inSet.map(f => f.category))];
+    const searching = furnishQuery.trim().length > 0;
+    const found = searching ? FURNITURE.filter(f => !f.special && matches(f.name, furnishQuery)) : [];
+    const inSet = searching ? found.slice(0, MAX_RESULTS) : FURNITURE.filter(f => !f.special && (f.set || 'Classic') === furnishSet);
+    const cats = searching ? ['Results'] : [...new Set(inSet.map(f => f.category))];
+    const buyable = FURNITURE.filter(f => !f.special).length;
     const made = g.state.bag.filter(slot => ITEMS[slot.id]?.furniture && FURNITURE_BY_TYPE[ITEMS[slot.id].furniture]);
     inner = `${made.length ? `<h3>In your bag</h3><div class="decor-grid">${made.map(slot => `
         <button class="decor" data-place-made="${slot.id}"><img src="${pic('f-' + ITEMS[slot.id].furniture, furnitureSprite(ITEMS[slot.id].furniture))}" alt="" width="48" height="48"><span>${esc(ITEMS[slot.id].name)}</span><small>${slot.n} in bag</small></button>`).join('')}</div>` : ''}
-      <p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. Pick a piece, then tap the floor twice to place it. Some pieces can also be crafted at the workbench.</p>
-      <div class="tabs">${setChips}</div>
-      ${cats.map(cat => `${cats.length > 1 ? `<h3>${esc(cat)}</h3>` : ''}<div class="decor-grid">${inSet.filter(f => f.category === cat).map(f => `
+      <p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. ${buyable} pieces in ${FURNITURE_SETS.length} styles. Pick a piece, then tap the floor twice to place it. Lots can also be crafted at the workbench.</p>
+      ${pickerHtml(FURNITURE_SETS, furnishSet, furnishQuery, 'Style')}
+      ${searching ? `<p class="detail small">${found.length} found${found.length > MAX_RESULTS ? `, showing the first ${MAX_RESULTS}` : ''}.</p>` : ''}
+      ${cats.map(cat => `${cats.length > 1 ? `<h3>${esc(cat)}</h3>` : ''}<div class="decor-grid">${inSet.filter(f => searching || f.category === cat).map(f => `
         <button class="decor" data-buy="${f.type}" ${g.state.pebbles < f.price ? 'disabled' : ''}>
           <img src="${pic('f-' + f.type, furnitureSprite(f.type))}" alt="" width="48" height="48"><span>${esc(f.name)}</span><small>${f.price}</small></button>`).join('')}</div>`).join('')}`;
   } else if (tab === 'walls') {
@@ -160,12 +175,14 @@ export function openFurnish(g, tab = 'furniture') {
       }).join('')}</div>
       <label class="label" for="wall-slot">Hang it on</label>
       <select id="wall-slot">${WALL_SLOTS.map((_, i) => `<option value="${i}" ${taken.has(i) ? 'disabled' : ''}>Spot ${i + 1}${taken.has(i) ? ' (taken)' : ''}</option>`).join('')}</select>
-      <div class="decor-grid">${WALL_ITEMS.map(w => `<button class="decor" data-hang="${w.type}" ${g.state.pebbles < w.price || taken.size >= WALL_SLOTS.length ? 'disabled' : ''}>
+      ${pickerHtml(WALL_SETS(), wallSet, furnishQuery, 'Style')}
+      <div class="decor-grid">${WALL_ITEMS.filter(w => (furnishQuery.trim() ? matches(w.name, furnishQuery) : wallSet === 'Classic' ? !w.set : w.set === wallSet)).slice(0, MAX_RESULTS * 2).map(w => `<button class="decor" data-hang="${w.type}" ${g.state.pebbles < w.price || taken.size >= WALL_SLOTS.length ? 'disabled' : ''}>
         <img src="${pic('w-' + w.type, wallItemSprite(w.type), 40, 36)}" alt="" width="40" height="36"><span>${esc(w.name)}</span><small>${w.price}</small></button>`).join('')}</div>`;
   } else if (tab === 'paper' || tab === 'floor') {
-    const list = tab === 'paper' ? WALLPAPERS : FLOORS;
+    const list = (tab === 'paper' ? WALLPAPERS : FLOORS).filter(o => !furnishQuery.trim() || matches(o.name, furnishQuery));
     const current = tab === 'paper' ? room.wallpaper : room.floor;
-    inner = `<div class="decor-grid">${list.map(o => `<button class="decor ${o.id === current ? 'on' : ''}" data-surface="${o.id}" ${o.id !== current && g.state.pebbles < o.price ? 'disabled' : ''}>
+    inner = `<div class="picker"><label class="sr" for="pick-search">Search</label><input id="pick-search" type="search" placeholder="Search ${tab === 'paper' ? 'wallpapers' : 'floors'}" value="${esc(furnishQuery)}" autocomplete="off"></div>
+      <div class="decor-grid">${list.map(o => `<button class="decor ${o.id === current ? 'on' : ''}" data-surface="${o.id}" ${o.id !== current && g.state.pebbles < o.price ? 'disabled' : ''}>
         <img src="${pic((tab === 'paper' ? 'wp-' : 'fl-') + o.id, tab === 'paper' ? tileOf(wallpaperTile(o.id)) : tileOf(floorTile(o.id)))}" alt="" width="48" height="48">
         <span>${esc(o.name)}</span><small>${o.id === current ? 'In use' : o.price ? o.price : 'Free'}</small></button>`).join('')}</div>`;
   } else if (tab === 'here') {
@@ -179,8 +196,20 @@ export function openFurnish(g, tab = 'furniture') {
       <div class="row-actions"><button class="btn ghost" id="house">Build and add rooms</button></div>`;
   }
   openSheet(room.name, `<div class="tabs">${tabs}</div>${inner}`, body => {
-    body.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => openFurnish(g, b.dataset.tab)));
-    body.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => { furnishSet = b.dataset.set; openFurnish(g, 'furniture'); }));
+    body.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { furnishQuery = ''; openFurnish(g, b.dataset.tab); }));
+    body.querySelector('#pick-set')?.addEventListener('change', e => {
+      if (tab === 'walls') wallSet = e.target.value; else furnishSet = e.target.value;
+      furnishQuery = '';
+      openFurnish(g, tab);
+    });
+    const search = body.querySelector('#pick-search');
+    search?.addEventListener('input', () => {
+      furnishQuery = search.value;
+      openFurnish(g, tab);
+      const again = document.querySelector('#pick-search');
+      again?.focus();
+      again?.setSelectionRange(again.value.length, again.value.length);
+    });
     body.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => {
       closeSheet();
       g.startPlacing({ type: b.dataset.buy, furniture: true });

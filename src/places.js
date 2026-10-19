@@ -30,17 +30,29 @@ function decorIcon(type, season) {
 
 // ---------- build ----------
 
+let buildCat = '';
+let buildQuery = '';
+
 export function openBuild(g, tab = 'shop') {
   const tabs = [['shop', 'Decorations'], ['placed', 'In the jar'], ['residents', 'Residents']]
     .map(([id, label]) => `<button class="tab ${id === tab ? 'on' : ''}" data-tab="${id}" aria-pressed="${id === tab}">${label}</button>`).join('');
   let inner = '';
   if (tab === 'shop') {
-    const cats = [...new Set(C.decorations.map(d => d.category))];
+    // Decorations and every outdoor piece; one category at a time, or search them all.
+    const shop = [...C.decorations, ...(C.outdoorShop || [])];
+    const allCats = [...new Set(shop.map(d => d.category))];
+    if (!allCats.includes(buildCat)) buildCat = allCats[0];
+    const q = buildQuery.trim().toLowerCase();
+    const shown = q ? shop.filter(d => d.name.toLowerCase().includes(q)).slice(0, 60) : shop.filter(d => d.category === buildCat);
+    const cats = q ? ['Results'] : [buildCat];
     const made = g.state.bag.filter(slot => ITEMS[slot.id]?.decor && C.decorByType[ITEMS[slot.id].decor]);
     inner = `${made.length ? `<h3>Made by you</h3><div class="decor-grid">${made.map(slot => `
         <button class="decor" data-place-made="${slot.id}"><img src="${decorIcon(ITEMS[slot.id].decor, g.season)}" alt="" width="48" height="51"><span>${esc(ITEMS[slot.id].name)}</span><small>${slot.n} in bag</small></button>`).join('')}</div>` : ''}
-      <p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. Pick something, then tap a free spot in the jar.</p>
-      ${cats.map(cat => `<h3>${esc(cat)}</h3><div class="decor-grid">${C.decorations.filter(d => d.category === cat).map(d => `
+      <p class="detail">You have <strong>${g.state.pebbles}</strong> pebbles. ${shop.length} things for outside. Pick something, then tap a free spot in the jar. Outdoor pieces can also be made at the workbench for less.</p>
+      <div class="picker"><label class="sr" for="build-cat">Category</label>
+        <select id="build-cat">${allCats.map(c => `<option value="${esc(c)}" ${c === buildCat ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+        <label class="sr" for="build-search">Search</label><input id="build-search" type="search" placeholder="Search everything" value="${esc(buildQuery)}" autocomplete="off"></div>
+      ${cats.map(cat => `<h3>${esc(cat)}</h3><div class="decor-grid">${shown.map(d => `
         <button class="decor" data-buy="${d.type}" ${g.state.pebbles < d.price ? 'disabled' : ''}>
           <img src="${decorIcon(d.type, g.season)}" alt="" width="48" height="51"><span>${esc(d.name)}</span><small>${d.price}</small></button>`).join('')}</div>`).join('')}`;
   } else if (tab === 'placed') {
@@ -61,6 +73,15 @@ export function openBuild(g, tab = 'shop') {
   openSheet('Build', `${home}<div class="tabs">${tabs}</div>${inner}`, body => {
     body.querySelector('#build-home').addEventListener('click', () => openHome(g));
     body.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => openBuild(g, b.dataset.tab)));
+    body.querySelector('#build-cat')?.addEventListener('change', e => { buildCat = e.target.value; buildQuery = ''; openBuild(g, 'shop'); });
+    const search = body.querySelector('#build-search');
+    search?.addEventListener('input', () => {
+      buildQuery = search.value;
+      openBuild(g, 'shop');
+      const again = document.querySelector('#build-search');
+      again?.focus();
+      again?.setSelectionRange(again.value.length, again.value.length);
+    });
     body.querySelectorAll('[data-buy]').forEach(b => b.addEventListener('click', () => {
       closeSheet();
       g.startPlacing({ type: b.dataset.buy });

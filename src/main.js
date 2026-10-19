@@ -44,6 +44,7 @@ import { openEventStand, eventDocs, countMushroom } from './events-ui.js';
 import { MONSTERS } from './mine-data.js';
 import { FARM_BY_TYPE } from './farm-data.js';
 import { OUTDOOR_BY_TYPE } from './outdoor-data.js';
+import './catalog-data.js'; // the big catalogue: furniture sets, wall pieces, wallpapers, floors, outdoor pieces
 import { collect as collectFarmItem } from './farm.js';
 
 const SAVE_KEY = 'little-us-terrarium';
