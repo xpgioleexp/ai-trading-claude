@@ -154,7 +154,7 @@ export function mapForageSpots(seed, day, mapId) {
   const own = MAP_FORAGE[mapId].map(([id, , , , , rare]) => ({ id, rare: !!rare }));
   const seasonal = FORAGE.filter(f => f.season === map.season).map(f => ({ id: f.id, rare: f.rare }));
   const pool = [...own, ...own, ...seasonal];
-  return shuffle(rand, mapOpenTiles(map)).slice(0, map.west ? 8 : 5).map(t => ({ c: t.c, r: t.r, id: pickWeighted(rand, pool, f => (f.rare ? 1 : 6)).id }));
+  return shuffle(rand, mapOpenTiles(map)).slice(0, map.west ? 16 : 5).map(t => ({ c: t.c, r: t.r, id: pickWeighted(rand, pool, f => (f.rare ? 1 : 6)).id }));
 }
 
 // extra: { weather, pond, wx, day } for fish that only bite at some times, in some weather or in one pool.

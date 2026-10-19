@@ -557,3 +557,15 @@ body {
 .picker select, .picker input { font: inherit; font-size: 17px; min-height: 40px; padding: 4px 8px; border: 2px solid var(--wood-dark); background: var(--linen); color: var(--ink); }
 .picker select { flex: 1 1 160px; min-width: 0; }
 .picker input { flex: 2 1 180px; min-width: 0; }
+
+/* the world map */
+.map-wrap { overflow: hidden; border: 3px solid var(--wood-dark); background: #E9DCC0; }
+.map-wrap canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; cursor: crosshair; }
+.map-key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 2px 0 8px; vertical-align: middle; }
+.map-key.you { background: #E0703A; } .map-key.partner { background: #5F7FB5; } .map-key.pin { background: #C9283A; }
+.map-key.mark { background: #B5653A; border-radius: 0; }
+
+/* the old journal */
+details summary { cursor: pointer; padding: 6px 0; }
+.list li.page small { display: block; margin-top: 2px; }
+.list li.page small.by { color: var(--wood-dark); font-style: italic; }

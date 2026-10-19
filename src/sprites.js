@@ -26,6 +26,7 @@ export const SEASON_GROUND = {
   jungle: ['#5E9A4A', '#4A7F3A', '#7FB55A'],
   moss: ['#5E7A5A', '#4A634A', '#7F9A6E'],
   cloud: ['#4A4670', '#3E3A62', '#6A66A0'],
+  stone: ['#A9A397', '#8E897E', '#C4BFB3'],
 };
 
 // ---------- helpers ----------

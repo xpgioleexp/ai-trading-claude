@@ -54,7 +54,8 @@ export function addBugs(list) {
 }
 
 const RARITY = { common: 60, uncommon: 22, rare: 6 };
-export const BUGS_AT_ONCE = 4;
+// The world is big, so a good handful of bugs are out at once.
+export const BUGS_AT_ONCE = 10;
 
 // extra: { wx, day } for bugs that need a rainbow, frost or a full moon.
 export function bugAvailable(bug, season, hour, weather, mapId = null, extra = {}) {

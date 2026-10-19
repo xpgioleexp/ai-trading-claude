@@ -202,6 +202,15 @@ Special furniture uses the same `furniture_<type>` names as the rest: canopy_bed
 
 Lanterns in the sky and shooting stars are drawn as light effects in `src/scene.js` (`drawEventSky`). The snowman reuses `snowman`. New item icons: puffball, glowcap, truffle, star_fragment. New furniture: `furniture_fish_trophy` and `furniture_mushroom_lamp` (16 × 16).
 
+### The wider world
+
+| Name | Size | What it is |
+|---|---|---|
+| `landmark_<art>_<w>x<h>` | 16 px per tile wide, plus extra height for tall ones | Landmarks: cottage, big_tree, statue, stone_circle, watchtower, cairn, windmill, gazebo, lighthouse, boathouse, barn, apiary, temple, obelisk, arch, fairy_ring, signpost, pyramid, pagoda, shrine, igloo, shipwreck, observatory, totem, bridge, well, campfire, tent, market, sundial, fountain, treehouse |
+| `scenery_<art>` | 16 wide, 16 to 26 tall | Scattered scenery: rock, pebbles, bush, berrybush, reeds, cattail, pillar, rubble, glowshroom, stump, flowers, tallgrass, crystal, bones, shell, icerock, lantern, log, hay, beehive, gravestone, sunflower, driftwood, cactus_small, coral, starstone |
+
+The new grounds (stone, and the regions' moss, sand and blossom) are `ground_<name>_<0-3>` tiles. The page glint over landmarks and the phone map are drawn in code (`src/scene.js` `pageGlint`, `src/world-map.js`).
+
 ### Wildlife
 
 Every new fish and bug (`src/wildlife-data.js`) is an item icon, `item_<id>` (16 × 16); they use the generic fish and bug shapes for now. Wild animals (`src/wild.js`, 158 of them) are drawn with `critterSprite(shape, colour, accent)`, 16 × 18 in two frames, so real art is `critter_<animal id>` or one per shape. New shapes: bat, snake, mouse, seal.

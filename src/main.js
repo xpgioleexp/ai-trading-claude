@@ -9,6 +9,8 @@ import { weatherNow } from './weather.js';
 import { digSites, sitesDug, makeExcavation, pickFind } from './fossils.js';
 import { missingFossils } from './museum.js';
 import { openMuseum, openExcavation } from './museum-ui.js';
+import { explore } from './world-map.js';
+import { refreshLoreSpots, loreAtLandmark, loreInMine, loreAfterDig, loreWithFish } from './lore-ui.js';
 import { weatherHere, syncWeather, weatherSpotAt, useWeatherSpot, updateWeather, tapLeaf, partnerClose } from './weather-life.js';
 import { drawScene, tileCenter, pointToTile, W, H, MEADOW_W, CAM_MIN, CAMY_MIN, CAMY_MAX, camBounds, setHeight, roomOffset, BASE_H } from './scene.js';
 import { loadOverrides, clearIconURLs } from './sprites.js';
@@ -173,6 +175,7 @@ function tapFossil(c, r) {
       digs.delete(key);
       save();
       gained(ex.part);
+      setTimeout(() => loreAfterDig(g), 1200);
     });
   });
   return true;
@@ -403,7 +406,7 @@ function habitats() {
       mapTiles[map.id] = {
         flower: open, ground: open,
         tree: mapNear(map, ['palm', 'pine', 'hive', 'arch', 'cactus', 'bigtree', 'bamboo', 'bigshroom', 'fern', 'decotree'], 2),
-        pond: mapNear(map, ['water', 'water2', 'water3', 'water4'], 1),
+        pond: mapNear(map, map.objects.filter(o => /^water/.test(o.id)).map(o => o.id), 1),
       };
     }
     return mapTiles[map.id];
@@ -855,6 +858,8 @@ function ready() {
 }
 
 function useObject(o) {
+  if (PONDS.includes(o.id)) return startFishing(o);
+  if (o.kind === 'landmark' || o.kind === 'scenery') return visitPlace(o);
   switch (o.id) {
     case 'tent': return ready() && enterHome();
     case 'museum': return ready() && openMuseum(g);
@@ -891,6 +896,13 @@ function useObject(o) {
       if (g.state.mine.deepest >= 11) return UI.openElevator(g, enterMine);
       return enterMine(1);
   }
+}
+
+// A landmark or a bit of scenery in the wider world.
+function visitPlace(o) {
+  if (ready() && loreAtLandmark(g, o)) return;
+  if (o.sign) return UI.toast(`The sign says: “${o.sign}”`);
+  UI.toast(o.kind === 'landmark' ? `${o.name}.` : o.name);
 }
 
 // ---------- building ----------
@@ -1131,6 +1143,7 @@ function useMapObject(map, o) {
   const day = g.mapDaily;
   if (o.id === 'door') return ready() && openTravel(g);
   if (/^water/.test(o.id)) return startFishing(o);
+  if (o.kind === 'landmark' || o.kind === 'scenery') return visitPlace(o);
   if (o.kind === 'shop') return openJarShop(g, map.id);
   if (o.kind === 'spot') return ready() && runSpot(g, o);
   if (o.fruit) {
@@ -1254,6 +1267,7 @@ function landFish(f) {
   popItem(id, f.bobber.x, f.bobber.y - 8);
   const note = isNew ? ' New to your log!' : record ? ' A new record!' : '';
   endFishing(`You caught a ${item.name.toLowerCase()}! ${size} cm.${note}`, id);
+  if (C.ready && S.ready) setTimeout(() => loreWithFish(g, id), 1200);
   const caught = Object.values(g.state.log.fish).reduce((s, e) => s + e.count, 0);
   if (caught >= 5) T.noticeDiscovery('spring');
 }
@@ -1282,6 +1296,7 @@ function enterMine(layer) {
   if (g.state.hp == null) g.state.hp = g.maxHp;
   R.reachLayer(g.state, layer);
   save();
+  if (C.ready && S.ready) setTimeout(() => loreInMine(g), 800);
   placePlayer(R.MINE_START.c, R.MINE_START.r);
   UI.updateHud(g);
   T.noticeDiscovery('moon-cave');
@@ -1650,6 +1665,8 @@ function frame(now) {
   }
   updateMeteors();
   updateWeather(g, dt, { splash: onSplash });
+  // The map fills in as you walk.
+  if ((g.scene === 'jar' || g.scene === 'map') && explore(g.state, g.scene === 'map' ? g.mapId : 'meadow', g.player.c, g.player.r)) save();
   updateMonsters(dt);
   updateFishing(dt);
   updateAction(dt);
@@ -1713,6 +1730,7 @@ async function bootShared() {
     if (['house', 'rooms', 'furniture', 'wallitems', 'ready'].includes(kind)) syncHome();
     if (kind === 'goodnights') checkGoodnight();
     if (kind === 'kitchen') { noticeInvite(); maybeStartPart(g); maybeFinish(g); }
+    if (kind === 'lore' || kind === 'ready' || kind === 'people') refreshLoreSpots(g);
     refreshClock();
     UI.updateHud(g);
     UI.refreshSheet();

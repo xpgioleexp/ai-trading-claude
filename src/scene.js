@@ -1,5 +1,7 @@
 // Draws the jar, its world and the mine onto the game canvas.
-import { COLS, MEADOW_COLS, MEADOW_WEST, MEADOW_NORTH, MEADOW_SOUTH, ROWS, TILE, OBJECTS, BEDS, PONDS } from './world.js';
+import { COLS, MEADOW_COLS, MEADOW_WEST, MEADOW_NORTH, MEADOW_SOUTH, ROWS, TILE, OBJECTS, BEDS, PONDS, MEADOW_REGIONS } from './world.js';
+import { regionAt } from './regions.js';
+import { landmarkSprite, scenerySprite } from './landmark-art.js';
 import { EVENT_SPOT, SNOWMAN_SPOT, meteorAt } from './events.js';
 import { LIGHT_DECOR } from './outdoor-data.js';
 import { bedStage, bandOf, MINE_ENTRY } from './rules.js';
@@ -185,26 +187,30 @@ function drawJarWorld(ctx, g) {
   const X0 = MEADOW_LEFT, WW = MEADOW_W - MEADOW_LEFT, cam = Math.round(g.camX || 0), camY = Math.round(g.camY || 0);
   // North rows sit above row 0, so the sky and hills move up; the soil moves down.
   const NT = MEADOW_NORTH * TILE, ST = MEADOW_SOUTH * TILE;
-  px(ctx, X0, -NT, WW, H + NT + ST, skyColor(g));
-  ctx.save();
-  ctx.translate(0, -NT);
-  drawBackdrop(ctx, g, WW, X0);
-  ctx.restore();
+  const view = viewOf(g);
+  px(ctx, view.x0, Math.max(-NT, view.y0), W + 32, H + 32, skyColor(g));
+  if (view.y0 < GY - NT) ctx.drawImage(backdropCanvas(g, WW, X0), X0, -NT);
 
-  // Grass, including the strips beside the tile grid.
+  // Grass, including the strips beside the tile grid. Only what's on screen.
   const [base, dark] = [grassTile(season, 0), grassTile(season, 1)];
-  for (let x = X0; x < X0 + WW; x += TILE) {
-    for (let y = GY - 8 - NT; y < SOIL_TOP + ST; y += TILE) ctx.drawImage((x + y) % 32 ? base : dark, x, y);
-  }
-  for (let r = -MEADOW_NORTH; r < ROWS + MEADOW_SOUTH; r++) {
-    for (let c = -MEADOW_WEST; c < MEADOW_COLS; c++) {
+  const sx0 = Math.max(X0, Math.floor(view.x0 / TILE) * TILE), sx1 = Math.min(X0 + WW, view.x1 + TILE);
+  const sy0 = GY - 8 - NT + Math.max(0, Math.floor((view.y0 - (GY - 8 - NT)) / TILE) * TILE), sy1 = Math.min(SOIL_TOP + ST, view.y1 + TILE);
+  for (let x = sx0; x < sx1; x += TILE) for (let y = sy0; y < sy1; y += TILE) ctx.drawImage((x + y) % 32 ? base : dark, x, y);
+  const { c0, c1, r0, r1 } = tileRange(view, -MEADOW_WEST, MEADOW_COLS, -MEADOW_NORTH, ROWS + MEADOW_SOUTH);
+  for (let r = r0; r < r1; r++) {
+    for (let c = c0; c < c1; c++) {
       const v = hashString(c + ':' + r) % 4;
-      ctx.drawImage(grassTile(season, v), GX + c * TILE, GY + r * TILE);
+      ctx.drawImage(grassTile(regionAt(MEADOW_REGIONS, c, r)?.ground || season, v), GX + c * TILE, GY + r * TILE);
     }
   }
   px(ctx, X0, GY - 9 - NT, WW, 2, shade(SEASON_EDGE[season], -0.2));
 
-  for (const id of PONDS) drawPond(ctx, g, id);
+  for (const id of PONDS) {
+    const o = OBJECTS.find(p => p.id === id);
+    if (onScreen(view, o)) drawPond(ctx, g, id);
+  }
+  // Flat scenery (flowers, pebbles) lies on the ground.
+  for (const o of OBJECTS) if (o.flat && o.kind === 'scenery' && onScreen(view, o)) ctx.drawImage(scenerySprite(o.art, season), GX + o.c * TILE, GY + o.r * TILE);
   drawWeatherGround(ctx, g);
   drawDigSites(ctx, g);
   const cave = OBJECTS.find(o => o.id === 'cave');
@@ -251,6 +257,9 @@ function drawJarWorld(ctx, g) {
     items.push({ y: GY + (o.r + o.h) * TILE, draw: () => ctx.drawImage(img, x, y) });
   };
   for (const o of OBJECTS) {
+    if (!onScreen(view, o, 3)) continue;
+    if (o.kind === 'landmark') { at(o, landmarkSprite(o.art, o.w, o.h), 0, o.walkable ? 0 : -1); if (g.loreSpots?.has(o.id)) pageGlint(items, ctx, g, o); continue; }
+    if (o.kind === 'scenery') { if (!o.flat) at(o, scenerySprite(o.art, season), 0, -1); continue; }
     if (o.id === 'tent') at(o, houseSprite(g.houseLevel || 0, g.night), 0, 2);
     if (o.id === 'museum') at(o, museumSprite(), 0, 2);
     if (o.id === 'mailbox') at(o, mailboxSprite(g.unreadMail), 0, -2);
@@ -401,6 +410,50 @@ function drawEventSky(ctx, g) {
 }
 
 const SEASON_EDGE = { spring: PAL.grass, summer: '#9DB86E', autumn: '#C2B070', winter: '#E6EDEE' };
+
+// A little page fluttering over a landmark where a journal page is waiting.
+function pageGlint(items, ctx, g, o) {
+  const x = GX + (o.c + o.w / 2) * TILE, y = GY + o.r * TILE - 14 + Math.sin(g.t * 3) * 2;
+  items.push({ y: 1e6, draw: () => {
+    px(ctx, x - 4, y - 5, 8, 9, '#F7F2E8'); px(ctx, x - 4, y - 5, 8, 1, '#D9C9A8');
+    for (let i = 0; i < 3; i++) px(ctx, x - 2, y - 2 + i * 2, 5, 1, '#9C8266');
+    if (Math.floor(g.t * 4) % 2) px(ctx, x + 4, y - 7, 2, 2, '#FFFFFF');
+  } });
+}
+
+// What part of the world is on screen, in world pixels.
+function viewOf(g) {
+  const x0 = Math.round(g.camX || 0), y0 = Math.round(g.camY || 0);
+  return { x0, y0, x1: x0 + W, y1: y0 + H };
+}
+// Tile columns and rows on screen, clamped to the world.
+function tileRange(view, cMin, cMax, rMin, rMax) {
+  return {
+    c0: Math.max(cMin, Math.floor((view.x0 - GX) / TILE) - 1), c1: Math.min(cMax, Math.ceil((view.x1 - GX) / TILE) + 1),
+    r0: Math.max(rMin, Math.floor((view.y0 - GY) / TILE) - 1), r1: Math.min(rMax, Math.ceil((view.y1 - GY) / TILE) + 1),
+  };
+}
+// Is an object (or anything with c, r, w, h) near the screen? pad: extra tiles for tall art.
+function onScreen(view, o, pad = 1) {
+  if (!o) return false;
+  const x = GX + o.c * TILE, y = GY + o.r * TILE;
+  return x + (o.w || 1) * TILE >= view.x0 - pad * TILE && x <= view.x1 + pad * TILE && y + (o.h || 1) * TILE >= view.y0 - pad * TILE && y <= view.y1 + pad * TILE * 3;
+}
+
+// The hills behind the meadow, drawn once into a picture as wide as the world.
+const backdrops = new Map();
+function backdropCanvas(g, width, x0) {
+  const key = [g.season, width, x0].join('|');
+  if (!backdrops.has(key)) {
+    const c = document.createElement('canvas');
+    c.width = width; c.height = GY;
+    const cx = c.getContext('2d');
+    cx.translate(-x0, 0);
+    drawBackdrop(cx, g, width, x0);
+    backdrops.set(key, c);
+  }
+  return backdrops.get(key);
+}
 
 function drawBackdrop(ctx, g, width = W, x0 = 0) {
   // Small pines and hills behind the meadow, inside the glass.
@@ -765,14 +818,18 @@ function drawMapWorld(ctx, g) {
   // Wide jars are drawn in world space; drawScene slides them by the camera.
   const X0 = -(map.west || 0) * TILE, WW = GX * 2 + (map.cols || COLS) * TILE - X0, cam = Math.round(g.camX || 0), camY = Math.round(g.camY || 0);
   const NT = (map.north || 0) * TILE, ST = (map.south || 0) * TILE;
-  px(ctx, X0, -NT, WW, H + NT + ST, skyColor(g));
-  ctx.save();
-  ctx.translate(0, -NT);
-  drawBackdrop(ctx, g, WW, X0);
-  ctx.restore();
+  const view = viewOf(g);
+  px(ctx, view.x0, Math.max(-NT, view.y0), W + 32, H + 32, skyColor(g));
+  if (view.y0 < GY - NT) ctx.drawImage(backdropCanvas(g, WW, X0), X0, -NT);
   const ground = map.ground;
-  for (let x = X0; x < X0 + WW; x += TILE) for (let y = GY - 8 - NT; y < SOIL_TOP + ST; y += TILE) ctx.drawImage(grassTile(ground, (x + y) % 32 ? 0 : 1), x, y);
-  for (let r = -(map.north || 0); r < ROWS + (map.south || 0); r++) for (let c = -(map.west || 0); c < (map.cols || COLS); c++) ctx.drawImage(grassTile(ground, hashString(map.id + c + ':' + r) % 4), GX + c * TILE, GY + r * TILE);
+  const sx0 = Math.max(X0, Math.floor(view.x0 / TILE) * TILE), sx1 = Math.min(X0 + WW, view.x1 + TILE);
+  const sy0 = GY - 8 - NT + Math.max(0, Math.floor((view.y0 - (GY - 8 - NT)) / TILE) * TILE), sy1 = Math.min(SOIL_TOP + ST, view.y1 + TILE);
+  for (let x = sx0; x < sx1; x += TILE) for (let y = sy0; y < sy1; y += TILE) ctx.drawImage(grassTile(ground, (x + y) % 32 ? 0 : 1), x, y);
+  const tr = tileRange(view, -(map.west || 0), map.cols || COLS, -(map.north || 0), ROWS + (map.south || 0));
+  for (let r = tr.r0; r < tr.r1; r++) for (let c = tr.c0; c < tr.c1; c++) {
+    ctx.drawImage(grassTile((map.regions && regionAt(map.regions, c, r)?.ground) || ground, hashString(map.id + c + ':' + r) % 4), GX + c * TILE, GY + r * TILE);
+  }
+  for (const o of map.objects) if (o.flat && o.kind === 'scenery' && onScreen(view, o)) ctx.drawImage(scenerySprite(o.art, map.season), GX + o.c * TILE, GY + o.r * TILE);
   // water
   for (const o of map.objects) {
     const kind = o.spot === 'hot_spring' ? 'spring' : o.kind;
@@ -819,6 +876,9 @@ function drawMapWorld(ctx, g) {
     items.push({ y: yb, draw: () => ctx.drawImage(img, x, yb - img.height) });
   };
   for (const o of map.objects) {
+    if (!onScreen(view, o, 3)) continue;
+    if (o.kind === 'landmark') { at(o, landmarkSprite(o.art, o.w, o.h)); if (g.loreSpots?.has(o.id)) pageGlint(items, ctx, g, o); continue; }
+    if (o.kind === 'scenery') { if (!o.flat) at(o, scenerySprite(o.art, map.season)); continue; }
     if (o.id === 'door') at(o, doorSprite());
     if (o.id === 'palm') at(o, palmSprite(!daily?.shaken?.[o.id]));
     if (o.id === 'hive') at(o, hiveSprite(!daily?.shaken?.[o.id]));

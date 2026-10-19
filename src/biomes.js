@@ -4,6 +4,7 @@
 import { ITEMS } from './data.js';
 import { MAPS, addMap } from './maps.js';
 import { ROWS } from './world.js';
+import { JAR_WEST, JAR_COLS, JAR_NORTH, JAR_SOUTH, addJarRegions } from './jar-regions.js';
 import { addBugs } from './bugs.js';
 import { FURNITURE, FURNITURE_BY_TYPE } from './home.js';
 import { rngFor, shuffle } from './rng.js';
@@ -221,11 +222,9 @@ for (const [id, objs] of Object.entries(MORE_OBJECTS)) {
 
 // Every jar is three screens wide, like the meadow: its west side, the jar as
 // it was in the middle (door and all), and its east side.
-export const JAR_WEST = 17;
-export const JAR_COLS = 34;
+// The sizes live in jar-regions.js, with the regions all around each jar.
+export { JAR_WEST, JAR_COLS, JAR_NORTH, JAR_SOUTH };
 // ...and taller: rows above the top of the screen and below the bottom.
-export const JAR_NORTH = 8;
-export const JAR_SOUTH = 8;
 const WIDE = {
   beach: [
     { id: 'palm_w1', kind: 'palm', name: 'Palm tree', c: -6, r: 2, fruit: 'coconut' },
@@ -317,6 +316,7 @@ for (const [id, extras] of Object.entries(WIDE)) {
   for (const o of map.objects) if (o.kind === 'sea') { o.c = -JAR_WEST; o.w = JAR_WEST + JAR_COLS; o.h = ROWS + JAR_SOUTH - o.r; }
   for (const o of extras) map.objects.push({ w: 1, h: 1, ...o });
 }
+addJarRegions(MAPS);
 
 // ---------- furniture from the jar shops and the animals ----------
 

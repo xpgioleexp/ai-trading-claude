@@ -30,7 +30,7 @@ test('there are lots of fossils, every piece is an item, and every place has som
 test('dig sites are the same for both of you and finds come from the place', () => {
   const tiles = forageTiles();
   assert.deepEqual(digSites('m1', 20001, 'meadow', tiles), digSites('m1', 20001, 'meadow', tiles));
-  assert.equal(digSites('m1', 20001, 'meadow', tiles).length, 3);
+  assert.equal(digSites('m1', 20001, 'meadow', tiles).length, 6);
   for (let i = 0; i < 200; i++) {
     const id = pickFind(rngFor('m1', 'find', i), 'beach');
     const s = PART_INFO[id] && SPECIMENS.find(x => x.id === PART_INFO[id].specimen);

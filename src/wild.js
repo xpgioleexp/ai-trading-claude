@@ -1,6 +1,6 @@
 // Wild animals: visitors that wander through the meadow and the jars at their
 // own times (see conditions.js). Walk up and tap one to spot it; it goes in
-// your wildlife journal, with pebbles the first time. Up to three are out at
+// your wildlife journal, with pebbles the first time. Up to six are out at
 // once, the same ones for both of you.
 import { rngFor, pickWeighted } from './rng.js';
 import { conditionsMet } from './conditions.js';
@@ -185,7 +185,7 @@ export const WILD = ROWS.map(([id, name, shape, color, accent, behavior, rarity,
   id, name, species: name.toLowerCase(), shape, color, accent, behavior, rarity, places, ...conds, wild: true, lines: [],
 }));
 export const WILD_BY_ID = Object.fromEntries(WILD.map(w => [w.id, w]));
-export const WILD_AT_ONCE = 3;
+export const WILD_AT_ONCE = 6;
 const WEIGHT = { common: 60, uncommon: 25, rare: 7, legend: 2 };
 export const SPOT_PEBBLES = { common: 20, uncommon: 50, rare: 150, legend: 500 };
 

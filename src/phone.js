@@ -22,6 +22,8 @@ import { MONSTERS, SWORD_DAMAGE } from './mine-data.js';
 import { WEATHER_NAMES, WEATHER_TEXT, forecast, LEAVES_PER_DAY } from './weather.js';
 import { BUGS } from './bugs.js';
 import { openMuseum } from './museum-ui.js';
+import { openMapFresh } from './world-map.js';
+import { openJournal as openOldJournal } from './lore-ui.js';
 import { readyToMount } from './museum.js';
 
 const $ = sel => document.querySelector(sel);
@@ -67,6 +69,8 @@ const APPS = [
     badge: g => S.ready && !S.deliveries?.[String(g.today)] },
   { id: 'weather', name: 'Weather', icon: '🌦️', color: '#6F97C9', text: 'Today\'s weather, tomorrow\'s forecast, and what the weather brings', open: g => openWeather(g),
     badge: g => !!(g.wx?.rainbow || ['storm', 'blizzard'].includes(g.wx?.base)) },
+  { id: 'lore', name: 'Old journal', icon: '📜', color: '#9C7046', text: 'The keepers\' story, torn into pages and hidden all over the world', needs: 'ready', open: g => openOldJournal(g) },
+  { id: 'map', name: 'Map', icon: '🧭', color: '#7A9A5A', text: 'A map of everywhere you\'ve explored, with your pins', open: g => openMapFresh(g) },
   { id: 'museum', name: 'Museum', icon: '🦴', color: '#B9A07A', text: 'Fish, bugs, gems, fossils and artifacts on display, and skeletons to piece together', needs: 'ready',
     open: g => openMuseum(g, 'fossils', false), badge: () => readyToMount(S.museum).length > 0 },
   { id: 'mine', name: 'Mine', icon: '⛏️', color: '#5A4440', text: 'How deep you\'ve been, bosses and health', open: g => openMine(g) },

@@ -260,11 +260,11 @@ export function pickFind(rand, place, missing = null) {
 
 // ---------- dig sites ----------
 
-// Cracks in the ground: three in the meadow and two in each jar every day,
+// Cracks in the ground: six in the meadow and four in each jar every day,
 // the same spots for both of you. Each of you digs your own.
 export function digSites(seed, day, place, tiles, taken = new Set()) {
   const rand = rngFor(seed, 'fossil-sites', place, day);
-  const n = place === 'meadow' ? 3 : 2;
+  const n = place === 'meadow' ? 6 : 4;
   return shuffle(rand, tiles.filter(t => !taken.has(t.c + ',' + t.r))).slice(0, n).map(t => ({ c: t.c, r: t.r }));
 }
 

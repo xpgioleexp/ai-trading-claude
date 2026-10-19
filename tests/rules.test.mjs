@@ -50,7 +50,7 @@ test('a new day resets bites, pays the crate and keeps forage stable', () => {
   const s = R.newState('seed-a', 20000);
   R.rollover(s, 20000);
   assert.equal(s.daily.bites, DAILY_BITES);
-  assert.equal(s.daily.forage.length, 6);
+  assert.equal(s.daily.forage.length, 18);
   assert.deepEqual(s.daily.forage, R.forageSpots('seed-a', 20000));
   R.addItem(s, 'carp', 2);
   R.putInCrate(s, 'carp', 2);
