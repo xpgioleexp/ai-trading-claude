@@ -18,7 +18,7 @@ test('every item has a name, price and known category', () => {
   for (const item of Object.values(ITEMS)) {
     assert.ok(item.name, item.id);
     assert.ok(item.price > 0, item.id);
-    assert.ok(['fish', 'junk', 'crop', 'seed', 'forage', 'mineral', 'fossil'].includes(item.cat), item.id);
+    assert.ok(['fish', 'junk', 'crop', 'seed', 'forage', 'mineral', 'fossil', 'artifact', 'loot'].includes(item.cat), item.id);
   }
   assert.equal(FISH.length, 25);
   assert.equal(CROPS.length, 16);

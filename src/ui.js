@@ -1,12 +1,12 @@
 // Panels, toasts and the HUD: the parts of the game drawn as HTML over the jar.
 import {
-  ITEMS, FISH, CROPS, FORAGE, TREE_FRUIT, MINERALS, BAG_SLOTS, TOOL_TIERS, ROD_ZONE, PICK_POWER,
+  ITEMS, FISH, CROPS, MINE_LAYERS, FORAGE, TREE_FRUIT, MINERALS, BAG_SLOTS, TOOL_TIERS, ROD_ZONE, PICK_POWER,
   SKIN_TONES, HAIR_COLORS, HAIR_STYLES, OUTFIT_COLORS, OUTFIT_STYLES,
 } from './data.js';
 import { HATS, MATERIALS_FOR_SALE } from './crafting.js';
 import { BUGS, BUG_BY_ID } from './bugs.js';
 import * as R from './rules.js';
-import { iconURL } from './sprites.js';
+import { iconURL, monsterSprite } from './sprites.js';
 import { avatarSprite } from './avatar.js';
 import { dayOfSeason } from './clock.js';
 import { S, partnerId } from './shared.js';
@@ -15,6 +15,7 @@ import { rngFor } from './rng.js';
 import { MAPS, MAP_FISH_IDS, MAP_FORAGE_IDS } from './maps.js';
 import { furnitureStockHtml, bindFurnitureStock } from './visitors-ui.js';
 import { EVENT_ITEM_IDS, EVENTS } from './events.js';
+import { CAVE_FISH_IDS, GROTTO_IDS, MONSTERS, MONSTER_IDS, SWORD_DAMAGE, GEODES, BANDS, healOf } from './mine-data.js';
 
 const $ = s => document.querySelector(s);
 
@@ -100,7 +101,7 @@ export function updateHud(g) {
   const weather = { sun: 'Clear', rain: 'Rain', snow: 'Snow', fog: 'Fog' }[g.weather];
   const when = `${cap(g.season)} ${dayOfSeason(g.today)} · ${g.debugHour != null ? `${g.debugHour}:00 (test)` : time}`;
   $('#clock').textContent = g.scene === 'mine'
-    ? `${R.BAND_NAMES[R.bandOf(g.layer)]} layer ${g.layer} of 30`
+    ? `${R.BAND_NAMES[R.bandOf(g.layer)]} · layer ${g.layer} of ${MINE_LAYERS}${g.mine && R.ROOM_NAMES[g.mine.kind] ? ` · ${R.ROOM_NAMES[g.mine.kind]}` : ''} · ♥ ${g.state.hp ?? 100}/${R.maxHp(g.state)}`
     : g.scene === 'home'
       ? `${g.room?.name || 'Home'} · tap Build to furnish`
       : g.scene === 'map'
@@ -129,6 +130,8 @@ export function openBag(g) {
     <div class="tools">
       <div><span class="label">Fishing rod</span><strong>${TOOL_TIERS[s.tools.rod]}</strong></div>
       <div><span class="label">Pickaxe</span><strong>${TOOL_TIERS[s.tools.pick]}</strong></div>
+      <div><span class="label">Sword</span><strong>${TOOL_TIERS[s.tools.sword || 0]}</strong></div>
+      <div><span class="label">Health</span><strong>${s.hp ?? R.maxHp(s)} / ${R.maxHp(s)}</strong></div>
       <div><span class="label">Bites left today</span><strong>${s.daily.bites}</strong></div>
     </div>
     <div class="row-actions" id="bag-actions"></div>
@@ -142,7 +145,17 @@ export function openBag(g) {
       const extra = item.cat === 'fish' && s.log.fish[item.id] ? ` · Best ${s.log.fish[item.id].best} cm` : '';
       body.querySelector('#bag-detail').textContent = `${item.name} · ${catName(item.cat)} · Sells for ${item.price} pebbles${extra}`;
       const actions = body.querySelector('#bag-actions');
-      actions.innerHTML = partnerId() ? `<button class="btn ghost" id="give">Give 1 to your partner</button>` : '';
+      const heal = healOf(item);
+      actions.innerHTML = (heal ? `<button class="btn" id="eat">Eat (+${heal} health)</button>` : '')
+        + (partnerId() ? `<button class="btn ghost" id="give">Give 1 to your partner</button>` : '');
+      actions.querySelector('#eat')?.addEventListener('click', () => {
+        const got = R.eat(s, item.id);
+        if (!got) return toast('You\'re already at full health.');
+        g.save();
+        toast(`Yum. +${got} health.`, item.id);
+        updateHud(g);
+        openBag(g);
+      });
       actions.querySelector('#give')?.addEventListener('click', async () => {
         if (!R.removeItem(s, item.id, 1)) return;
         g.save();
@@ -158,7 +171,7 @@ export function openBag(g) {
 }
 
 function catName(cat) {
-  return { fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', bug: 'Bug', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
+  return { artifact: 'Artifact', loot: 'Monster loot', fish: 'Fish', junk: 'Junk', crop: 'Crop', seed: 'Seeds', forage: 'Forage', mineral: 'Mineral', fossil: 'Fossil', dish: 'Dish', bug: 'Bug', material: 'Material', toy: 'Toy', gift: 'Gift', made: 'Made by you' }[cat];
 }
 
 // ---------- collection log ----------
@@ -166,12 +179,14 @@ function catName(cat) {
 export function openLog(g, tab = 'fish') {
   const s = g.state;
   const groups = {
-    fish: [...FISH.map(f => f.id), ...MAP_FISH_IDS],
+    fish: [...FISH.map(f => f.id), ...MAP_FISH_IDS, ...CAVE_FISH_IDS],
+    monsters: MONSTER_IDS,
     bugs: BUGS.map(b => b.id),
     finds: MINERALS.map(m => m.id),
-    nature: [...CROPS.map(c => c.id), ...FORAGE.map(f => f.id), ...Object.values(TREE_FRUIT).map(f => f.id), ...MAP_FORAGE_IDS, ...EVENT_ITEM_IDS],
+    nature: [...CROPS.map(c => c.id), ...FORAGE.map(f => f.id), ...Object.values(TREE_FRUIT).map(f => f.id), ...MAP_FORAGE_IDS, ...EVENT_ITEM_IDS, ...GROTTO_IDS],
   };
   const ids = groups[tab];
+  if (tab === 'monsters') return openMonsterLog(g, ids);
   const found = ids.filter(id => s.log.found[id]).length;
   const cells = ids.map(id => {
     const item = ITEMS[id];
@@ -180,10 +195,11 @@ export function openLog(g, tab = 'fish') {
     if (tab === 'fish' && have) note = `${s.log.fish[id]?.best ?? '?'} cm`;
     else if (tab === 'fish') note = fishHint(item);
     else if (tab === 'bugs') note = have ? `${s.log.bugs?.[id]?.count || 1} caught` : fishHint(BUG_BY_ID[id]);
+    else if (!have && item.cave) note = item.bands ? `${BANDS[item.bands[0]].name} lake` : 'Mushroom grotto';
     else if (!have) note = item.map ? MAPS[item.map].name : item.event ? EVENTS.find(e => e.id === item.event).name : item.season ? cap(item.season) : '';
     return `<li class="${have ? 'got' : 'missing'}">${icon(id, have ? '' : 'silhouette')}<span class="name">${have ? esc(item.name) : '???'}</span><span class="note">${esc(note)}</span></li>`;
   }).join('');
-  const tabs = [['fish', 'Fish'], ['bugs', 'Bugs'], ['finds', 'Mine finds'], ['nature', 'Garden & forage']]
+  const tabs = LOG_TABS
     .map(([id, label]) => `<button class="tab ${id === tab ? 'on' : ''}" data-tab="${id}" aria-pressed="${id === tab}">${label}</button>`).join('');
   openSheet('Collection log', `
     <div class="tabs">${tabs}</div>
@@ -191,6 +207,29 @@ export function openLog(g, tab = 'fish') {
     <ul class="log">${cells}</ul>`, body => {
     body.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => openLog(g, b.dataset.tab)));
   });
+}
+
+const LOG_TABS = [['fish', 'Fish'], ['bugs', 'Bugs'], ['finds', 'Mine finds'], ['monsters', 'Monsters'], ['nature', 'Garden & forage']];
+
+function openMonsterLog(g, ids) {
+  const s = g.state;
+  const beaten = s.log.monsters || {};
+  const cells = ids.map(id => {
+    const m = MONSTERS[id], n = beaten[id] || 0;
+    return `<li class="${n ? 'got' : 'missing'}"><img class="icon ${n ? '' : 'silhouette'}" src="${monsterIcon(id)}" alt="" width="32" height="32"><span class="name">${n ? esc(m.name) : '???'}</span><span class="note">${esc(n ? `${n} beaten` : `${BANDS[m.band].name}${m.boss ? ' boss' : ''}`)}</span></li>`;
+  }).join('');
+  const tabs = LOG_TABS.map(([id, label]) => `<button class="tab ${id === 'monsters' ? 'on' : ''}" data-tab="${id}" aria-pressed="${id === 'monsters'}">${label}</button>`).join('');
+  openSheet('Collection log', `
+    <div class="tabs">${tabs}</div>
+    <p class="detail">${ids.filter(id => beaten[id]).length} of ${ids.length} beaten. Bosses live on every tenth layer.</p>
+    <ul class="log">${cells}</ul>`, body => {
+    body.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => openLog(g, b.dataset.tab)));
+  });
+}
+
+function monsterIcon(id) {
+  const img = monsterSprite(id, 0, false);
+  return img.toDataURL ? img.toDataURL() : '';
 }
 
 function fishHint(f) {
@@ -281,17 +320,32 @@ export function openWorkbench(g) {
     <ul class="list">
       ${card('rod', 'Fishing rod', t => `Catch zone ${ROD_ZONE[s.tools.rod]} → ${ROD_ZONE[t]}`)}
       ${card('pick', 'Pickaxe', t => `Power ${PICK_POWER[s.tools.pick]} → ${PICK_POWER[t]}`)}
+      ${card('sword', 'Sword', t => `Damage ${SWORD_DAMAGE[s.tools.sword || 0]} → ${SWORD_DAMAGE[t]}`)}
     </ul>
+    ${geodeRows(s)}
     <div class="row-actions"><button class="btn ghost" id="to-craft">Back to crafting</button></div>`, body => {
     body.querySelector('#to-craft').addEventListener('click', () => g.openCrafting?.());
     body.querySelectorAll('[data-tool]').forEach(b => b.addEventListener('click', () => {
       if (R.upgradeTool(s, b.dataset.tool)) {
         g.save();
-        toast(`Your ${b.dataset.tool === 'rod' ? 'fishing rod' : 'pickaxe'} is now ${TOOL_TIERS[s.tools[b.dataset.tool]]}!`);
+        toast(`Your ${{ rod: 'fishing rod', pick: 'pickaxe', sword: 'sword' }[b.dataset.tool]} is now ${TOOL_TIERS[s.tools[b.dataset.tool]]}!`);
         openWorkbench(g);
       }
     }));
+    body.querySelectorAll('[data-crack]').forEach(b => b.addEventListener('click', () => {
+      const got = R.crackGeode(s, b.dataset.crack);
+      if (!got) return toast('Your bag is full.');
+      g.save();
+      toast(`Crack! There was ${ITEMS[got].name.toLowerCase()} inside.`, got);
+      openWorkbench(g);
+    }));
   });
+}
+
+function geodeRows(s) {
+  const have = GEODES.filter(id => R.countItem(s, id));
+  if (!have.length) return '<p class="detail small">Geodes from the mine can be cracked open here.</p>';
+  return `<h3>Crack geodes</h3><ul class="list">${have.map(id => `<li>${icon(id)}<span class="name">${esc(ITEMS[id].name)}<small>${R.countItem(s, id)} in bag</small></span><button class="btn small" data-crack="${id}">Crack one</button></li>`).join('')}</ul>`;
 }
 
 // ---------- garden ----------

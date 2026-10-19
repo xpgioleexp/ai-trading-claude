@@ -98,13 +98,30 @@ Any static file server works. There is no build step.
 - **What's different:** each jar has its own fish (15 in all), forage (5 new spots a day), 10 fishing bites a day and bugs found nowhere else (5 in all). The weather follows the meadow's, except in the snow jar.
 - **Together:** you see each other when you're in the same jar. Building only works in the forest jar.
 
+**The mine:**
+- **Ores (11):** coal, copper, tin, iron, silver, gold, cobalt, mythril, obsidian, emberite and starmetal, plus meteorites.
+- **Gems (18):** quartz up to diamonds, plus garnet, jade, opal, aquamarine, sapphire, moonstone, onyx, fire opal, sunstone, star sapphire and the very rare prismatic shard.
+- **Fossils and artifacts:** 10 fossils and 5 artifacts (old coins, a clay pot, a lost ring, an ancient doll and a star map), different in each zone.
+- **Geodes:** 4 kinds. Crack them open at the workbench for a random gem or ore.
+- **Special rooms:** layers ending in 5 are a different room each day:
+  - **Treasure room:** 3 chests of pebbles and loot.
+  - **Mushroom grotto:** cave plants to pick.
+  - **Underground lake:** 5 bites a day, with cave fish such as the blind cavefish, ghost shrimp, crystal carp, ice eel, lava eel and void angler.
+  - **Monster den:** extra monsters and ore.
+- **Monsters (12) and bosses (6):** slimes, grubs, bats, rock crabs (they look like rocks until you get close), crystal sprites, wisps, magma slimes, fire bats, star jellies and void moths. Layers ending in 0 hold the zone's boss: the king slime, stone golem, crystal wyrm, cave yeti, ember golem and star guardian.
+- **Fighting:** tap a monster to fight it with your sword. Monsters come at you when you're close. They drop loot to sell, and boss loot is worth a lot. The first time you beat each boss, your max health goes up by 20.
+- **Health:** shown in the top bar and on screen in the mine. It refills each morning. Eat dishes, crops, fruit, berries or mushrooms from the Bag to heal. If it runs out you faint and wake up by the cave with half your health, and you keep everything.
+- **Tools:** the rod, pickaxe and the new sword each have 7 tiers: Basic, Copper, Iron, Gold, Cobalt, Obsidian and Starmetal. Upgrade them at the workbench with ore.
+- **Collection log:** a new **Monsters** tab, plus cave fish, grotto plants and all the new finds.
+- **Playing together:** you both get the same cave layout each day. Monsters move separately on each of your screens.
+
 **The rules:**
 - **Real time:** the jar follows the real clock, so mornings, nights and new days happen when they do for you.
 - **Seasons:** each season lasts one real week.
 - **Weather:** changes daily. Rain waters the garden for you.
 - **Fish:** 25 kinds. Which ones bite depends on the season, the time of day and the weather. The pond gives 10 bites a day.
 - **Garden:** 16 crops. A crop grows one step each day after it's watered, and it never dies if you skip a day.
-- **Mine:** 30 layers in 3 bands (Soil, Stone, Crystal). Rocks come back every day, and the deepest layer you've reached is saved.
+- **Mine:** 60 layers in 6 zones that each look different: Soil, Stone, Crystal, Frost, Ember and Starfall. Every layer is a small cave with walls and rocks. One plain rock per layer hides the ladder down. Rocks come back every day, and the elevator in the cave takes you to the top of any zone you've reached.
 - **Collection log:** tracks every fish, find and crop you've collected, plus your biggest catch of each fish.
 
 ## Code
@@ -112,7 +129,7 @@ Any static file server works. There is no build step.
 | File | What it does |
 |---|---|
 | `src/data.js` | All content: fish, crops, forage, minerals, tools, avatar options. Add a row to add content |
-| `src/rules.js` | Game rules (bag, garden, fishing, mine, shop, crate, upgrades, new day). No drawing code, so it's tested and can move to the server later |
+| `src/rules.js` | Game rules (bag, garden, fishing, mine layers, monsters and health, shop, crate, upgrades, new day). No drawing code, so it's tested and can move to the server later |
 | `src/world.js` | The jar's layout: tile grid and where each object sits |
 | `src/clock.js` | Day numbers, seasons, weather, time of day |
 | `src/rng.js` | Seeded randomness, so a day's forage, weather and mine layers are the same on every device |
@@ -139,6 +156,7 @@ Any static file server works. There is no build step.
 | `src/visitors-ui.js` | Their panels |
 | `src/events.js` | Seasonal events: the calendar, mushrooms, festival scoring, meteors and the snowman |
 | `src/events-ui.js` | The event stand and each event's panel |
+| `src/mine-data.js` | The mine's zones, rocks, ores, gems, fossils, artifacts, geodes, cave fish, grotto plants and monsters |
 | `src/bugs.js` | Bugs: who's out when, where they appear and catching them |
 | `src/home-art.js` | Placeholder art for the house, furniture, wall items, wallpapers and floors |
 | `src/hangout.js` | The live picnic hangout |

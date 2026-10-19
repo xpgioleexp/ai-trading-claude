@@ -30,6 +30,7 @@ import {
   recordFestivalCatch, spawnMeteor, meteorAt, catchStar, LANTERN_PRIZE,
 } from './events.js';
 import { openEventStand, eventDocs, countMushroom } from './events-ui.js';
+import { MONSTERS } from './mine-data.js';
 
 const SAVE_KEY = 'little-us-terrarium';
 const SPEED = 52; // pixels per second
@@ -386,10 +387,7 @@ function placePlayer(c, r) {
 }
 
 function walkable(c, r) {
-  if (g.scene === 'mine') {
-    if (!inBounds(c, r)) return false;
-    return !g.rocks.some(rock => rock.c === c && rock.r === r && !g.mineBroken.has(rock.id));
-  }
+  if (g.scene === 'mine') return mineOpen(c, r, false);
   if (g.scene === 'home') return roomWalkable(c, r, g.furnitureBlocked) || (c === DOOR.c && r === DOOR.r);
   if (g.scene === 'map') return mapWalkable(MAPS[g.mapId], c, r);
   return isWalkable(c, r, g.decorBlocked);
@@ -948,6 +946,7 @@ function useMapObject(map, o) {
 
 // Fishing in another jar uses that jar's own bites.
 function bites() {
+  if (g.scene === 'mine') return R.caveBites(g.state);
   return g.scene === 'map' ? g.mapDaily : g.state.daily;
 }
 
@@ -986,7 +985,8 @@ function tapWhileFishing() {
   if (f.phase === 'cast' || f.phase === 'wait') return endFishing('Too soon. Wait for the ! before you tap.');
   if (f.phase !== 'bite') return;
   spendBite();
-  const c = g.scene === 'map' ? mapCatch(Math.random, g.mapId, g.hour) : R.rollCatch(Math.random, g.season, g.hour, g.weather);
+  const c = g.scene === 'mine' ? R.caveCatch(Math.random, R.bandOf(g.layer))
+    : g.scene === 'map' ? mapCatch(Math.random, g.mapId, g.hour) : R.rollCatch(Math.random, g.season, g.hour, g.weather);
   const item = ITEMS[c.id];
   if (item.cat === 'junk') {
     const n = R.addItem(g.state, c.id, 1);
@@ -1056,30 +1056,100 @@ function landFish(f) {
 
 function enterMine(layer) {
   closeSheetQuietly();
+  cancelAction();
   g.scene = 'mine';
   g.layer = layer;
-  g.rocks = R.layerRocks(g.state.seed, g.today, layer);
-  g.mineBroken = new Set(R.layerState(g.state, layer).broken);
+  g.mine = R.layerMap(g.state.seed, g.today, layer);
+  g.rocks = g.mine.rocks;
+  g.mineWalls = new Set(g.mine.walls);
+  const ls = R.layerState(g.state, layer);
+  g.mineBroken = new Set(ls.broken);
+  g.mineOpened = new Set(ls.opened);
+  g.minePicked = new Set(ls.picked);
+  g.monsters = g.mine.monsters.filter(m => !ls.slain.includes(m.id)).map(m => {
+    const def = MONSTERS[m.kind];
+    const p = tileCenter(m.c, m.r);
+    return { ...m, x: p.x, y: p.y + FEET, hp: def.hp, maxHp: def.hp, stepAt: g.t + 1 + Math.random(), attackAt: 0, hidden: !!def.hides, from: null };
+  });
   g.hits = new Map();
+  g.maxHp = R.maxHp(g.state);
+  if (g.state.hp == null) g.state.hp = g.maxHp;
   R.reachLayer(g.state, layer);
   save();
   placePlayer(R.MINE_START.c, R.MINE_START.r);
   UI.updateHud(g);
   T.noticeDiscovery('moon-cave');
   if (layer >= 21) T.noticeDiscovery('crystal-pool');
+  const room = R.ROOM_NAMES[g.mine.kind];
+  const boss = g.monsters.find(m => MONSTERS[m.kind].boss);
+  if (boss) UI.toast(`${MONSTERS[boss.kind].name} lives on this layer. Careful!`);
+  else if (room) UI.toast(`${room}!`);
+  else if (layer % 10 === 1 && layer > 1) UI.toast(`Welcome to the ${R.BAND_NAMES[R.bandOf(layer)]} zone.`);
 }
 
 function leaveMine() {
   cancelAction();
   g.scene = 'jar';
+  g.monsters = [];
   const cave = OBJECTS.find(o => o.id === 'cave');
   placePlayer(cave.c, cave.r - 1);
   UI.updateHud(g);
 }
 
-function tapMine(c, r) {
+// Open floor in the mine. Rocks, walls, chests and the lake block the way.
+function mineOpen(c, r, flying) {
+  if (!inBounds(c, r) || g.mineWalls.has(c + ',' + r)) return false;
+  const p = g.mine?.pool;
+  if (p && c >= p.c && c < p.c + p.w && r >= p.r && r < p.r + p.h) return false;
+  if (g.mine?.chests.some(ch => ch.c === c && ch.r === r)) return false;
+  if (flying) return true;
+  return !g.rocks.some(rock => rock.c === c && rock.r === r && !g.mineBroken.has(rock.id));
+}
+
+function monsterAt(x, y) {
+  return g.monsters.find(m => {
+    const big = MONSTERS[m.kind].boss;
+    return Math.abs(x - m.x) < (big ? 14 : 10) && y > m.y - (big ? 28 : 20) && y < m.y + 6;
+  });
+}
+
+function tapMine(c, r, x, y) {
+  const mo = monsterAt(x, y);
+  if (mo && !mo.hidden) {
+    fight(mo);
+    return;
+  }
   if (c === R.MINE_ENTRY.c && r === R.MINE_ENTRY.r) {
     walkTo(c, r, leaveMine);
+    return;
+  }
+  const chest = g.mine.chests.find(ch => ch.c === c && ch.r === r);
+  if (chest) {
+    walkNextTo([{ c, r }], () => {
+      const res = R.openChest(g.state, g.layer, chest.id);
+      if (!res) return UI.toast('You already opened this one.');
+      g.mineOpened.add(chest.id);
+      save();
+      const p = tileCenter(c, r);
+      for (const d of res.got) popItem(d.id, p.x, p.y - 6);
+      UI.toast(`Treasure! +${res.pebbles} pebbles${res.got.length ? ` and ${res.got.map(d => `${d.n} ${ITEMS[d.id].name}`).join(', ')}` : ''}.`);
+    });
+    return;
+  }
+  const fi = g.mine.forage.findIndex((f, i) => f.c === c && f.r === r && !g.minePicked.has(i));
+  if (fi >= 0) {
+    walkTo(c, r, () => {
+      const id = g.mine.forage[fi].id;
+      if (!R.pickGrotto(g.state, g.layer, fi, id)) return UI.toast('Your bag is full.');
+      g.minePicked.add(fi);
+      save();
+      gained(id);
+    });
+    return;
+  }
+  const pool = g.mine.pool;
+  if (pool && c >= pool.c && c < pool.c + pool.w && r >= pool.r && r < pool.r + pool.h) {
+    walkNextTo(footprintTiles(pool), () => startFishing(pool));
     return;
   }
   const rock = g.rocks.find(k => k.c === c && k.r === r);
@@ -1091,11 +1161,91 @@ function tapMine(c, r) {
     walkTo(c, r, () => {
       if (g.layer >= MINE_LAYERS) return;
       enterMine(g.layer + 1);
-      if (g.layer === MINE_LAYERS) UI.toast('You reached the bottom of the jar!');
+      if (g.layer === MINE_LAYERS) UI.toast('You reached the very bottom of the jar!');
     });
     return;
   }
-  if (inBounds(c, r)) walkTo(c, r);
+  if (walkable(c, r)) walkTo(c, r);
+}
+
+// ---------- monsters ----------
+
+function fight(mo) {
+  cancelAction();
+  const near = Math.max(Math.abs(mo.c - g.player.c), Math.abs(mo.r - g.player.r)) <= 1;
+  if (near) g.action = { kind: 'fight', monster: mo, timer: 0 };
+  else walkNextTo([{ c: mo.c, r: mo.r }], () => { if (g.monsters.includes(mo)) g.action = { kind: 'fight', monster: mo, timer: 0 }; });
+}
+
+function hitMonster(mo) {
+  const def = MONSTERS[mo.kind];
+  mo.hp -= R.swordDamage(g.state);
+  mo.flashUntil = g.t + 0.15;
+  mo.stepAt = Math.max(mo.stepAt, g.t + 0.35);
+  if (mo.hp > 0) return;
+  g.monsters = g.monsters.filter(m => m !== mo);
+  if (g.action?.monster === mo) g.action = null;
+  const res = R.defeatMonster(g.state, g.layer, mo);
+  save();
+  for (const d of res?.got || []) popItem(d.id, mo.x, mo.y - 10);
+  if (res?.firstBoss) {
+    g.maxHp = R.maxHp(g.state);
+    UI.toast(`You beat the ${def.name.toLowerCase()}! Your health grows to ${g.maxHp}.`);
+  } else UI.toast(`You beat the ${def.name.toLowerCase()}!${res?.got.length ? ` +${ITEMS[res.got[0].id].name}` : ''}`, res?.got[0]?.id);
+  UI.updateHud(g);
+}
+
+function updateMonsters(dt) {
+  if (g.scene !== 'mine') return;
+  const p = g.player;
+  for (const mo of g.monsters) {
+    const def = MONSTERS[mo.kind];
+    const target = tileCenter(mo.c, mo.r);
+    mo.x += (target.x - mo.x) * Math.min(1, dt / def.step * 3);
+    mo.y += (target.y + FEET - mo.y) * Math.min(1, dt / def.step * 3);
+    const dist = Math.max(Math.abs(mo.c - p.c), Math.abs(mo.r - p.r));
+    if (mo.hidden) {
+      if (dist <= 1) { mo.hidden = false; UI.toast('That rock was a rock crab!'); mo.stepAt = g.t + 0.6; }
+      continue;
+    }
+    if (dist <= 1) {
+      // A short wind-up when it first reaches you, then it attacks every so often.
+      if (!mo.close) {
+        mo.close = true;
+        mo.attackAt = Math.max(mo.attackAt, g.t + 0.6);
+      }
+      if (g.t >= mo.attackAt && !g.fishing) {
+        mo.attackAt = g.t + def.rate;
+        hurtPlayer(def.dmg);
+        if (g.scene !== 'mine') return;
+      }
+      continue;
+    }
+    mo.close = false;
+    if (g.t < mo.stepAt) continue;
+    mo.stepAt = g.t + def.step;
+    const chase = dist <= 6;
+    const steps = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dc, dr]) => ({ c: mo.c + dc, r: mo.r + dr }))
+      .filter(t => mineOpen(t.c, t.r, def.flies) && !(t.c === p.c && t.r === p.r) && !g.monsters.some(o => o !== mo && o.c === t.c && o.r === t.r));
+    if (!steps.length) continue;
+    let next;
+    if (chase) next = steps.sort((a, b) => (Math.abs(a.c - p.c) + Math.abs(a.r - p.r)) - (Math.abs(b.c - p.c) + Math.abs(b.r - p.r)))[0];
+    else if (Math.random() < 0.5) next = steps[Math.floor(Math.random() * steps.length)];
+    if (next) { mo.c = next.c; mo.r = next.r; }
+  }
+}
+
+function hurtPlayer(dmg) {
+  const hp = R.hurt(g.state, dmg);
+  g.hurtUntil = g.t + 0.2;
+  if (navigator.vibrate) try { navigator.vibrate(30); } catch { /* not allowed */ }
+  UI.updateHud(g);
+  if (hp > 0) return;
+  // Fainting: you wake up by the cave with half your health. Nothing is lost.
+  g.state.hp = Math.ceil(R.maxHp(g.state) / 2);
+  save();
+  leaveMine();
+  UI.toast('You fainted! A friendly bat carried you back up. Eat something to get your health back.');
 }
 
 function updateAction(dt) {
@@ -1103,6 +1253,23 @@ function updateAction(dt) {
   if (!a) return;
   a.timer -= dt;
   if (a.timer > 0) return;
+  if (a.kind === 'fight') {
+    const mo = a.monster;
+    if (!g.monsters.includes(mo)) { g.action = null; return; }
+    if (Math.max(Math.abs(mo.c - g.player.c), Math.abs(mo.r - g.player.r)) > 1) {
+      g.action = null;
+      fight(mo);
+      return;
+    }
+    g.player.dir = Math.abs(mo.x - g.player.x) > Math.abs(mo.y - g.player.y)
+      ? (mo.x < g.player.x ? DIRS.left : DIRS.right) : (mo.y < g.player.y ? DIRS.up : DIRS.down);
+    g.player.pose = 'swing';
+    g.player.frame = (g.player.frame + 1) % 2;
+    a.timer = 0.4;
+    hitMonster(mo);
+    if (!g.action) g.player.pose = 'walk';
+    return;
+  }
   const rock = a.rock;
   const done = (g.hits.get(rock.id) || 0) + 1;
   g.hits.set(rock.id, done);
@@ -1157,7 +1324,7 @@ function onPointerDown(e) {
   const { x, y } = canvasPoint(e);
   if (g.scene === 'jar' && g.meteors.length && tapMeteor(x, y)) return;
   const { c, r } = pointToTile(x, y);
-  if (g.scene === 'mine') tapMine(c, r);
+  if (g.scene === 'mine') tapMine(c, r, x, y);
   else if (g.scene === 'home') tapHome(c, r);
   else if (g.scene === 'map') tapMap(c, r, x, y);
   else tapJar(c, r, x, y);
@@ -1249,6 +1416,7 @@ function frame(now) {
     updateBugs(dt);
   }
   updateMeteors();
+  updateMonsters(dt);
   updateFishing(dt);
   updateAction(dt);
   g.effects = g.effects.filter(e => g.t - e.t0 < 1.3);
@@ -1324,7 +1492,7 @@ function start(hotData = {}) {
   const today = dayNumber(new Date()) + (saved?.dayOffset || 0);
   g = {
     state: R.migrate(saved, seed, today),
-    scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(),
+    scene: 'jar', layer: 0, rocks: [], mineBroken: new Set(), hits: new Map(), mine: null, mineWalls: new Set(), monsters: [], maxHp: 100,
     player: { c: START_TILE.c, r: START_TILE.r, x: 0, y: 0, dir: DIRS.down, frame: 0, pose: 'walk', path: [] },
     residents: [], bugs: [], bugKey: '', visitors: [], visitorKey: '', events: [], eventsToday: [], eventKey: '', mushrooms: [], meteors: [], snowman: false, crouch, sneak: null, decor: [], decorBlocked: new Set(), others: [], selected: null, build: null,
     mapId: null, mapDaily: null, enterMap, leaveMap,
@@ -1333,7 +1501,7 @@ function start(hotData = {}) {
     openCrafting: () => openCrafting(g),
     openTools: () => UI.openWorkbench(g),
     fishing: null, action: null, effects: [], hold: false, t: 0, today,
-    debugHour: null, save, startPlacing, animalReacts, resetMine,
+    debugHour: null, save, startPlacing, animalReacts, resetMine, enterMine,
   };
   placePlayer(START_TILE.c, START_TILE.r);
   checkNewDay();

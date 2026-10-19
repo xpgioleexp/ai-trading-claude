@@ -7,6 +7,10 @@ import {
 import { rngFor, randInt, pickWeighted, shuffle } from './rng.js';
 import { seasonOf, weatherOf, isWet, isNightHour } from './clock.js';
 import { BEDS, COLS, ROWS, forageTiles } from './world.js';
+import {
+  BANDS, ROCKS, ROCK_TABLE, FOSSILS_BY_BAND, ARTIFACTS_BY_BAND, GEODE_CONTENTS, GROTTO_BY_BAND, CAVE_FISH_IDS, CAVE_BITES,
+  MONSTERS, monstersOfBand, bossOfBand, START_HP, BOSS_HP_BONUS, SWORD_DAMAGE, healOf,
+} from './mine-data.js';
 
 export const STATE_VERSION = 1;
 
@@ -19,11 +23,12 @@ export function newState(seed, today) {
     pebbles: START_PEBBLES,
     bag: [{ id: starter.id + '_seed', n: 3 }],
     avatar: { skin: 1, hairStyle: 0, hairColor: 1, outfit: 0, outfitStyle: 1, made: false },
-    tools: { rod: 0, pick: 0 },
+    tools: { rod: 0, pick: 0, sword: 0 },
     garden: BEDS.map(() => ({ crop: null, count: 0, last: -1 })),
     crate: [],
     log: { fish: {}, found: {} },
-    mine: { deepest: 0 },
+    mine: { deepest: 0, bosses: {} },
+    hp: START_HP,
     daily: null,
     dayOffset: 0,
     rewards: {},
@@ -53,6 +58,7 @@ export function rollover(state, today) {
     shook: false,
     mine: {},
   };
+  state.hp = maxHp(state);
   if (isWet(weatherOf(state.seed, today))) {
     let watered = 0;
     state.garden.forEach((bed, i) => { if (waterBed(state, i, today)) watered++; });
@@ -229,72 +235,145 @@ export function shakeTree(state, today) {
 }
 
 // ---------- Mine ----------
+// Six zones of ten layers (see mine-data.js). Each layer is a little cave map:
+// walls, rocks, and sometimes monsters, a treasure room, a grotto or a lake.
 
 export function bandOf(layer) {
-  return Math.min(2, Math.floor((layer - 1) / 10));
+  return Math.min(BANDS.length - 1, Math.floor((layer - 1) / 10));
 }
 
-export const BAND_NAMES = ['Soil', 'Stone', 'Crystal'];
-
-const ROCK_TABLE = [
-  { stone: 60, copper: 25, quartz: 6, fossil: 5, geode: 4 },
-  { stone: 50, copper: 10, iron: 25, amethyst: 5, topaz: 4, geode: 4, fossil: 2 },
-  { stone: 45, iron: 15, gold: 20, crystal: 8, emerald: 4, ruby: 3, diamond: 1, geode: 4 },
-];
-
-const ROCK_HP = { stone: 2, copper: 3, iron: 4, gold: 5, quartz: 3, amethyst: 4, topaz: 4, crystal: 5, emerald: 5, ruby: 5, diamond: 6, geode: 3, fossil: 3 };
+export const BAND_NAMES = BANDS.map(b => b.name);
 
 export const MINE_ENTRY = { c: 8, r: 0 };
 export const MINE_START = { c: 8, r: 1 };
+const key = (c, r) => c + ',' + r;
+const nearEntry = (c, r) => Math.abs(c - MINE_ENTRY.c) <= 1 && r <= 2;
 
-// The rocks on one mine layer for one day. Same seed, day and layer give the same rocks.
-export function layerRocks(seed, day, layer) {
+export const ROOM_NAMES = { normal: '', treasure: 'Treasure room', grotto: 'Mushroom grotto', lake: 'Underground lake', den: 'Monster den', boss: 'Boss cave' };
+
+// Layers ending in 0 hold the zone's boss. Layers ending in 5 are a special room, different each day.
+export function layerKind(seed, day, layer) {
+  if (layer % 10 === 0) return 'boss';
+  if (layer % 5 === 0) {
+    const rooms = ['treasure', 'grotto', 'lake', 'den'];
+    return rooms[Math.floor(rngFor(seed, 'room', day, layer)() * rooms.length)];
+  }
+  return 'normal';
+}
+
+export const POOL = { c: 5, r: 5, w: 7, h: 3 };
+const inPool = (c, r) => c >= POOL.c && c < POOL.c + POOL.w && r >= POOL.r && r < POOL.r + POOL.h;
+
+// Clumps of cave wall, then anything walls cut off from the ladder up becomes wall too,
+// so every open tile can be reached.
+function caveWalls(rand, band, kind) {
+  const walls = new Set();
+  if (kind === 'treasure' || kind === 'grotto') return walls;
+  const clumps = Math.round(COLS * ROWS * BANDS[band].walls / 2.5);
+  for (let i = 0; i < clumps; i++) {
+    let c = randInt(rand, 0, COLS - 1), r = randInt(rand, 0, ROWS - 1);
+    for (let k = randInt(rand, 2, 6); k > 0; k--) {
+      if (!nearEntry(c, r) && !(kind === 'lake' && inPool(c, r))) walls.add(key(c, r));
+      if (rand() < 0.5) c += rand() < 0.5 ? -1 : 1; else r += rand() < 0.5 ? -1 : 1;
+      c = Math.max(0, Math.min(COLS - 1, c));
+      r = Math.max(0, Math.min(ROWS - 1, r));
+    }
+  }
+  const blocked = (c, r) => walls.has(key(c, r)) || (kind === 'lake' && inPool(c, r));
+  const seen = new Set([key(MINE_START.c, MINE_START.r)]);
+  const todo = [MINE_START];
+  while (todo.length) {
+    const t = todo.pop();
+    for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const c = t.c + dc, r = t.r + dr, k = key(c, r);
+      if (c < 0 || r < 0 || c >= COLS || r >= ROWS || seen.has(k) || blocked(c, r)) continue;
+      seen.add(k);
+      todo.push({ c, r });
+    }
+  }
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    if (!seen.has(key(c, r)) && !(kind === 'lake' && inPool(c, r))) walls.add(key(c, r));
+  }
+  return walls;
+}
+
+// One layer for one day. Same seed, day and layer give the same cave for both of you.
+export function layerMap(seed, day, layer) {
   const rand = rngFor(seed, 'mine', day, layer);
   const band = bandOf(layer);
-  const open = [];
+  const kind = layerKind(seed, day, layer);
+  const walls = caveWalls(rand, band, kind);
+  let open = [];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (Math.abs(c - MINE_ENTRY.c) <= 1 && r <= 2) continue;
+      if (nearEntry(c, r) || walls.has(key(c, r)) || (kind === 'lake' && inPool(c, r))) continue;
       open.push({ c, r });
     }
   }
+  open = shuffle(rand, open);
+  const take = n => open.splice(0, n);
+  const counts = { normal: [14, 22], den: [18, 26], boss: [6, 9], treasure: [5, 7], grotto: [6, 8], lake: [7, 10] }[kind];
   const table = Object.entries(ROCK_TABLE[band]);
-  const count = 14 + randInt(rand, 0, 8);
-  const rocks = shuffle(rand, open).slice(0, count).map((t, id) => {
-    const kind = pickWeighted(rand, table, ([, w]) => w)[0];
-    return { id, c: t.c, r: t.r, kind, hp: ROCK_HP[kind] * (band + 1), ladder: false };
+  const rocks = take(randInt(rand, counts[0], counts[1])).map((t, id) => {
+    const rk = pickWeighted(rand, table, ([, w]) => w)[0];
+    // The den is rich in ore.
+    const kindOf = kind === 'den' && rk === table[0][0] && rand() < 0.4 ? table[2][0] : rk;
+    return { id, c: t.c, r: t.r, kind: kindOf, hp: ROCKS[kindOf].hp * (band + 1), ladder: false };
   });
   if (layer < MINE_LAYERS) {
-    const stones = rocks.filter(r => r.kind === 'stone');
-    const pick = stones.length ? stones : rocks;
+    const plain = rocks.filter(r => ROCKS[r.kind].style === 'plain');
+    const pick = plain.length ? plain : rocks;
     pick[Math.floor(rand() * pick.length)].ladder = true;
   }
-  return rocks;
+  const chests = kind === 'treasure' ? take(3).map((t, id) => ({ id, c: t.c, r: t.r })) : [];
+  const forage = kind === 'grotto'
+    ? take(7).map((t, i) => ({ c: t.c, r: t.r, id: GROTTO_BY_BAND[band][rand() < 0.7 ? 0 : 1] }))
+    : [];
+  // Monsters stay away from the ladder you came down.
+  const far = open.filter(t => Math.max(Math.abs(t.c - MINE_START.c), Math.abs(t.r - MINE_START.r)) >= 4);
+  const kinds = monstersOfBand(band);
+  let n = { normal: layer <= 2 ? 1 : 2 + Math.min(3, Math.floor((layer % 10) / 3)), den: 7, boss: 1 }[kind] || 0;
+  const monsters = [];
+  if (kind === 'boss' && far.length) {
+    const t = far.shift();
+    monsters.push({ id: 0, kind: bossOfBand(band), c: t.c, r: t.r });
+  }
+  for (const t of far.slice(0, n)) {
+    const k = layer <= 2 ? kinds[0] : kinds[Math.floor(rand() * kinds.length)];
+    monsters.push({ id: monsters.length, kind: k, c: t.c, r: t.r });
+  }
+  return { layer, band, kind, walls: [...walls], rocks, chests, forage, monsters, pool: kind === 'lake' ? POOL : null };
+}
+
+export function layerRocks(seed, day, layer) {
+  return layerMap(seed, day, layer).rocks;
 }
 
 export function rockHits(rock, pickTier) {
   return Math.ceil(rock.hp / PICK_POWER[pickTier]);
 }
 
-const ORE_ITEM = { copper: 'copper_ore', iron: 'iron_ore', gold: 'gold_ore' };
-const GEM_ITEM = { quartz: 'quartz', amethyst: 'amethyst', topaz: 'topaz', crystal: 'crystal_shard', emerald: 'emerald', ruby: 'ruby', diamond: 'diamond' };
-
 export function rockDrops(seed, day, layer, rock) {
   const rand = rngFor(seed, 'drop', day, layer, rock.id);
-  if (rock.kind === 'stone') {
-    const drops = [{ id: 'stone', n: randInt(rand, 1, 2) }];
-    if (rand() < 0.08) drops.push({ id: 'copper_ore', n: 1 });
-    return drops;
+  const band = bandOf(layer);
+  const def = ROCKS[rock.kind];
+  if (def.drop === 'fossil') return [{ id: FOSSILS_BY_BAND[band][Math.floor(rand() * FOSSILS_BY_BAND[band].length)], n: 1 }];
+  if (def.drop === 'artifact') return [{ id: ARTIFACTS_BY_BAND[band][Math.floor(rand() * ARTIFACTS_BY_BAND[band].length)], n: 1 }];
+  const drops = [{ id: def.drop, n: def.n ? randInt(rand, def.n[0], def.n[1]) : 1 }];
+  if (def.style === 'plain' && rand() < 0.1) {
+    const ores = Object.keys(ROCK_TABLE[band]).filter(k => ROCKS[k].style === 'ore');
+    drops.push({ id: ROCKS[ores[Math.floor(rand() * ores.length)]].drop, n: 1 });
   }
-  if (ORE_ITEM[rock.kind]) return [{ id: ORE_ITEM[rock.kind], n: randInt(rand, 1, 3) }];
-  if (GEM_ITEM[rock.kind]) return [{ id: GEM_ITEM[rock.kind], n: 1 }];
-  if (rock.kind === 'geode') return [{ id: 'geode', n: 1 }];
-  return [{ id: FOSSILS[Math.floor(rand() * FOSSILS.length)], n: 1 }];
+  return drops;
 }
 
 export function layerState(state, layer) {
   if (!state.daily.mine[layer]) state.daily.mine[layer] = { broken: [] };
-  return state.daily.mine[layer];
+  const ls = state.daily.mine[layer];
+  ls.slain = ls.slain || [];
+  ls.opened = ls.opened || [];
+  ls.picked = ls.picked || [];
+  return ls;
 }
 
 // Breaks a rock and puts its drops in the bag. Returns the drops that fit.
@@ -314,9 +393,121 @@ export function reachLayer(state, layer) {
   state.mine.deepest = Math.max(state.mine.deepest, layer);
 }
 
-// Layers you can start from: the top of each band you've reached.
+// Layers you can start from: the top of each zone you've reached.
 export function elevatorStops(deepest) {
-  return [1, 11, 21].filter(s => s === 1 || deepest >= s);
+  return BANDS.map((b, i) => i * 10 + 1).filter(s => s === 1 || deepest >= s);
+}
+
+// ---------- treasure, grottos and lakes ----------
+
+export function chestLoot(seed, day, layer, chestId) {
+  const rand = rngFor(seed, 'chest', day, layer, chestId);
+  const band = bandOf(layer);
+  const good = Object.keys(ROCK_TABLE[band]).filter(k => ['gem', 'ore', 'geode'].includes(ROCKS[k].style));
+  const items = [];
+  for (let i = randInt(rand, 2, 3); i > 0; i--) {
+    const rk = good[Math.floor(rand() * good.length)];
+    items.push({ id: ROCKS[rk].drop, n: ROCKS[rk].style === 'ore' ? randInt(rand, 2, 4) : 1 });
+  }
+  if (rand() < 0.4) items.push({ id: ARTIFACTS_BY_BAND[band][Math.floor(rand() * ARTIFACTS_BY_BAND[band].length)], n: 1 });
+  return { pebbles: randInt(rand, 20, 60) * (band + 1), items };
+}
+
+export function openChest(state, layer, chestId) {
+  const ls = layerState(state, layer);
+  if (ls.opened.includes(chestId)) return null;
+  ls.opened.push(chestId);
+  const loot = chestLoot(state.seed, state.daily.day, layer, chestId);
+  state.pebbles += loot.pebbles;
+  const got = [];
+  for (const d of loot.items) {
+    const n = addItem(state, d.id, d.n);
+    if (n) got.push({ id: d.id, n });
+  }
+  return { pebbles: loot.pebbles, got };
+}
+
+export function pickGrotto(state, layer, index, id) {
+  const ls = layerState(state, layer);
+  if (ls.picked.includes(index) || bagFull(state, id)) return false;
+  ls.picked.push(index);
+  addItem(state, id, 1);
+  return true;
+}
+
+export function caveBites(state) {
+  if (!state.daily.cave) state.daily.cave = { bites: CAVE_BITES };
+  return state.daily.cave;
+}
+
+export function caveCatch(rand, band) {
+  const pool = CAVE_FISH_IDS.map(id => ITEMS[id]).filter(f => f.bands.includes(band));
+  const fish = pickWeighted(rand, pool, f => RARITY_WEIGHT[f.rarity]);
+  const size = Math.round((fish.size[0] + rand() * (fish.size[1] - fish.size[0])) * 10) / 10;
+  return { id: fish.id, size };
+}
+
+// Cracks one geode open. Returns what was inside, or null.
+export function crackGeode(state, geodeId, rand = Math.random) {
+  const inside = GEODE_CONTENTS[geodeId];
+  if (!inside || countItem(state, geodeId) < 1) return null;
+  const id = inside[Math.floor(rand() * inside.length)];
+  removeItem(state, geodeId, 1);
+  if (!addItem(state, id, 1)) {
+    addItem(state, geodeId, 1);
+    return null;
+  }
+  return id;
+}
+
+// ---------- health and monsters ----------
+
+export function maxHp(state) {
+  return START_HP + Object.keys(state.mine.bosses || {}).length * BOSS_HP_BONUS;
+}
+
+export function hurt(state, dmg) {
+  state.hp = Math.max(0, (state.hp ?? maxHp(state)) - dmg);
+  return state.hp;
+}
+
+// Eats one of something. Returns how much it healed, or 0.
+export function eat(state, id) {
+  const heal = healOf(ITEMS[id]);
+  const max = maxHp(state);
+  if (!heal || (state.hp ?? max) >= max || !removeItem(state, id, 1)) return 0;
+  const before = state.hp ?? max;
+  state.hp = Math.min(max, before + heal);
+  return state.hp - before;
+}
+
+export function swordDamage(state) {
+  return SWORD_DAMAGE[state.tools.sword || 0];
+}
+
+// Records a defeated monster and gives its drops. A boss also raises your health the first time.
+export function defeatMonster(state, layer, monster, rand = Math.random) {
+  const ls = layerState(state, layer);
+  if (ls.slain.includes(monster.id)) return null;
+  ls.slain.push(monster.id);
+  const def = MONSTERS[monster.kind];
+  state.log.monsters = state.log.monsters || {};
+  state.log.monsters[monster.kind] = (state.log.monsters[monster.kind] || 0) + 1;
+  const got = [];
+  for (const [id, chance] of def.drops) {
+    if (rand() < chance) {
+      const n = addItem(state, id, 1);
+      if (n) got.push({ id, n });
+    }
+  }
+  let firstBoss = false;
+  if (def.boss) {
+    state.mine.bosses = state.mine.bosses || {};
+    firstBoss = !state.mine.bosses[monster.kind];
+    state.mine.bosses[monster.kind] = true;
+    if (firstBoss) state.hp = maxHp(state);
+  }
+  return { got, firstBoss };
 }
 
 // ---------- Shop, crate and upgrades ----------

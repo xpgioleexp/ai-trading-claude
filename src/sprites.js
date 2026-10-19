@@ -2,6 +2,7 @@
 // listed in assets/manifest.json with the same name replaces it (see docs/ASSETS.md).
 import { ITEMS, CROP_BY_ID } from './data.js';
 import { hashString } from './rng.js';
+import { ROCKS, BANDS, MONSTERS } from './mine-data.js';
 
 export const PAL = {
   grass: '#A8BE7C', grassShade: '#829D62', grassHi: '#C2CE95',
@@ -524,34 +525,120 @@ export function cropSprite(cropId, stage) {
   });
 }
 
-const ROCK_LOOK = {
-  stone: null, copper: '#D0844A', iron: '#E3DED5', gold: '#EBC54A', quartz: '#F4F2EE', amethyst: '#9C6FC0',
-  topaz: '#E8B04A', crystal: '#A9E0E8', emerald: '#3FA86A', ruby: '#C92F4A', diamond: '#F2FAFF', geode: 'geode', fossil: 'fossil',
-};
+// Rock base colour for each mine zone.
+const ROCK_BASE = [PAL.stone, '#8A8378', '#7D8796', '#A9C3CC', '#5A4440', '#4A4466'];
 
 export function rockSprite(kind, band) {
   return sprite(`rock_${kind}_${band}`, 16, 16, ctx => {
-    const base = [PAL.stone, '#8A8378', '#7D8796'][band];
-    const fill = kind === 'fossil' ? '#CDBF9F' : kind === 'geode' ? '#857B70' : base;
+    const def = ROCKS[kind] || ROCKS.stone;
+    const look = ITEMS[def.drop]?.color;
+    const fill = def.tint || (def.style === 'fossil' ? '#CDBF9F' : def.style === 'geode' ? shade(look || '#857B70', -0.15) : ROCK_BASE[band]);
     disc(ctx, 8, 9, 7, shade(fill, -0.35));
     disc(ctx, 8, 8.5, 6.5, fill);
     disc(ctx, 6, 6, 3, shade(fill, 0.25));
     px(ctx, 2, 14, 12, 1, PAL.inkDeep);
-    const look = ROCK_LOOK[kind];
-    if (look === 'fossil') {
+    if (def.style === 'fossil') {
       px(ctx, 6, 8, 4, 1, '#8F7F62');
       px(ctx, 6, 9, 1, 2, '#8F7F62');
       px(ctx, 7, 11, 4, 1, '#8F7F62');
-    } else if (look === 'geode') {
+    } else if (def.style === 'geode') {
       px(ctx, 7, 7, 2, 4, '#5E5650');
       px(ctx, 8, 8, 1, 2, '#B7A6D9');
-    } else if (look && ['copper', 'iron', 'gold'].includes(kind)) {
+    } else if (def.style === 'ore') {
       for (const [x, y] of [[4, 8], [9, 6], [7, 11], [11, 10]]) px(ctx, x, y, 2, 2, look);
-    } else if (look) {
+    } else if (def.style === 'gem') {
       px(ctx, 7, 3, 3, 6, look);
       px(ctx, 6, 5, 5, 3, look);
       px(ctx, 7, 4, 1, 3, PAL.linenHi);
       px(ctx, 10, 9, 2, 3, look);
+    }
+  });
+}
+
+// A tile of cave wall for each zone.
+export function caveWallSprite(band) {
+  return sprite('cave_wall_' + band, 16, 16, ctx => {
+    const wall = BANDS[band].wall;
+    px(ctx, 0, 0, 16, 16, shade(wall, 0.15));
+    px(ctx, 0, 12, 16, 4, shade(wall, -0.2));
+    px(ctx, 2, 3, 5, 3, shade(wall, 0.3));
+    px(ctx, 9, 7, 4, 2, shade(wall, 0.3));
+    if (band === 2) { px(ctx, 10, 2, 2, 5, '#B9A8E0'); px(ctx, 12, 4, 2, 3, '#A9E0E8'); }
+    if (band === 3) { px(ctx, 1, 0, 14, 2, '#E9F2F6'); px(ctx, 4, 2, 1, 3, '#E9F2F6'); }
+    if (band === 4) { px(ctx, 3, 9, 6, 2, '#E8603A'); px(ctx, 5, 10, 2, 1, '#F2C46A'); }
+    if (band === 5) { px(ctx, 4, 5, 1, 1, '#F2E48A'); px(ctx, 11, 2, 1, 1, '#FFFFFF'); px(ctx, 8, 10, 1, 1, '#F2E48A'); }
+  });
+}
+
+export function chestSprite(open) {
+  return sprite('chest_' + (open ? 1 : 0), 16, 16, ctx => {
+    px(ctx, 1, 6, 14, 9, PAL.woodShade);
+    px(ctx, 2, 7, 12, 7, PAL.wood);
+    px(ctx, 1, 9, 14, 1, '#E8C25A');
+    if (open) {
+      px(ctx, 1, 2, 14, 4, PAL.woodShade);
+      px(ctx, 3, 6, 10, 2, '#1E1A18');
+    } else {
+      px(ctx, 1, 3, 14, 4, PAL.wood);
+      px(ctx, 1, 3, 14, 1, PAL.woodHi);
+      px(ctx, 7, 8, 2, 3, '#E8C25A');
+    }
+  });
+}
+
+// Monsters, by shape. Bosses are drawn bigger.
+export function monsterSprite(kind, frame, flash) {
+  const def = MONSTERS[kind];
+  const size = def.boss ? 26 : 16;
+  return sprite(`monster_${kind}_${frame}_${flash ? 1 : 0}`, size, size, ctx => {
+    const s = size / 16;
+    const P = (x, y, w, h, c) => px(ctx, Math.round(x * s), Math.round(y * s), Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)), c);
+    const D = (x, y, r, c) => disc(ctx, x * s, y * s, r * s, c);
+    const col = flash ? '#FFFFFF' : def.color, dark = flash ? '#FFFFFF' : shade(def.color, -0.3);
+    const up = frame ? 1 : 0;
+    const eyes = (y, gap = 3) => { P(8 - gap, y, 1.5, 1.5, PAL.inkDeep); P(8 + gap - 1, y, 1.5, 1.5, PAL.inkDeep); };
+    switch (def.shape) {
+      case 'slime':
+        D(8, 11 - up * 0.5, 6 + up * 0.4, dark); D(8, 10.5 - up * 0.5, 5.5, col); P(5, 7, 2, 2, shade(col, 0.4)); eyes(10);
+        if (kind === 'big_slime') { P(5, 3, 6, 2, '#E8C25A'); P(5, 2, 1, 1, '#E8C25A'); P(8, 1, 1, 2, '#E8C25A'); P(10, 2, 1, 1, '#E8C25A'); }
+        break;
+      case 'grub':
+        for (let i = 0; i < 4; i++) D(3 + i * 3, 11 - (i % 2 ? up : 0), 2.6, i % 2 ? dark : col);
+        P(13, 9, 1, 1, PAL.inkDeep);
+        break;
+      case 'bat':
+        D(8, 8, 3, col);
+        P(1, 6 - up * 2, 5, 3, dark); P(10, 6 - up * 2, 5, 3, dark);
+        P(6, 4, 1, 2, col); P(9, 4, 1, 2, col); eyes(8, 2);
+        break;
+      case 'crab':
+        D(8, 10, 5.5, dark); D(8, 9.5, 5, col);
+        P(1, 7 - up, 3, 3, dark); P(12, 7 - up, 3, 3, dark);
+        for (const x of [3, 5, 10, 12]) P(x, 14, 1, 2, dark);
+        eyes(8);
+        break;
+      case 'wisp':
+        D(8, 8 - up, 5, shade(col, -0.1)); D(8, 7 - up, 3.5, col);
+        P(6, 12 - up, 1, 3, col); P(9, 13 - up, 1, 2, col); eyes(7);
+        break;
+      case 'golem':
+        P(3, 4 - up * 0.5, 10, 8, dark); P(4, 5 - up * 0.5, 8, 6, col);
+        P(1, 6, 2, 6, dark); P(13, 6, 2, 6, dark); P(4, 12, 3, 4, dark); P(9, 12, 3, 4, dark);
+        P(6, 7, 1.5, 1.5, '#F2C46A'); P(9, 7, 1.5, 1.5, '#F2C46A');
+        break;
+      case 'wyrm':
+        for (let i = 0; i < 5; i++) D(3 + i * 2.6, 10 + Math.sin(i + up) * 2, 3, i % 2 ? dark : col);
+        D(14, 7, 2.6, col); P(14, 6, 1, 1, PAL.inkDeep); P(13, 3, 1, 2, '#B9A8E0');
+        break;
+      case 'jelly':
+        D(8, 6 - up, 5.5, col); P(3, 6 - up, 10, 3, col);
+        for (const x of [4, 7, 10, 12]) P(x, 9 - up, 1, 5 + (x % 3), shade(col, -0.2));
+        eyes(5 - up);
+        break;
+      case 'moth':
+        P(1, 4 - up, 6, 7, dark); P(9, 4 - up, 6, 7, dark); P(2, 5 - up, 4, 2, col); P(10, 5 - up, 4, 2, col);
+        P(7, 4, 2, 9, col); P(6, 2, 1, 2, col); P(9, 2, 1, 2, col);
+        break;
     }
   });
 }

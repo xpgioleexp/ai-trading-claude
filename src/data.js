@@ -107,20 +107,23 @@ export const MINERALS = [
 export const FOSSILS = ['amber_beetle', 'shell_fossil', 'fern_fossil', 'tiny_bone'];
 
 // Tool tiers. Upgrades are made at the workbench.
-export const TOOL_TIERS = ['Basic', 'Copper', 'Iron', 'Gold'];
+export const TOOL_TIERS = ['Basic', 'Copper', 'Iron', 'Gold', 'Cobalt', 'Obsidian', 'Starmetal'];
 export const UPGRADE_COST = [
   null,
   { ore: 'copper_ore', count: 5, pebbles: 150 },
   { ore: 'iron_ore', count: 5, pebbles: 400 },
   { ore: 'gold_ore', count: 5, pebbles: 900 },
+  { ore: 'cobalt_ore', count: 5, pebbles: 1500 },
+  { ore: 'obsidian', count: 5, pebbles: 3000 },
+  { ore: 'starmetal_ore', count: 5, pebbles: 6000 },
 ];
-export const ROD_ZONE = [30, 36, 42, 48]; // catch-zone height in the fishing minigame
-export const PICK_POWER = [1, 2, 3, 4];
+export const ROD_ZONE = [30, 36, 42, 48, 52, 56, 60]; // catch-zone height in the fishing minigame
+export const PICK_POWER = [1, 2, 3, 4, 5, 7, 9];
 
 export const BAG_SLOTS = 24;
 export const STACK = 99;
 export const DAILY_BITES = 10;
-export const MINE_LAYERS = 30;
+export const MINE_LAYERS = 60; // six zones of ten, see mine-data.js
 export const START_PEBBLES = 150;
 
 // Build one registry of everything that can sit in the bag.

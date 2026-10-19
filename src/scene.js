@@ -2,9 +2,10 @@
 import { COLS, ROWS, TILE, OBJECTS, BEDS } from './world.js';
 import { EVENT_SPOT, SNOWMAN_SPOT, meteorAt } from './events.js';
 import { bedStage, bandOf, MINE_ENTRY } from './rules.js';
+import { BANDS, MONSTERS } from './mine-data.js';
 import {
   PAL, px, disc, shade, grassTile, itemIcon, mailboxSprite, crateSprite, workbenchSprite,
-  stallSprite, treeSprite, benchSprite, caveSprite, bedSprite, cropSprite, rockSprite, ladderHoleSprite,
+  stallSprite, treeSprite, benchSprite, caveSprite, bedSprite, cropSprite, rockSprite, caveWallSprite, chestSprite, monsterSprite, ladderHoleSprite,
   ladderUpSprite, bunnySprite, heartSprite,
 } from './sprites.js';
 import { avatarSprite, DIRS } from './avatar.js';
@@ -628,15 +629,12 @@ function drawSleepers(ctx, g, bed, x, y) {
 
 // ---------- the mine ----------
 
-const BAND_COLORS = [
-  { wall: '#5A4332', floor: '#7A5A3E', speck: '#8E6C4C' },
-  { wall: '#4E4A45', floor: '#6E6A62', speck: '#827D73' },
-  { wall: '#33394A', floor: '#4B5468', speck: '#5D6880' },
-];
+const POOL_COLORS = ['#4F7A8A', '#4F6F8A', '#6A5FA0', '#7FB5C9', '#D9603A', '#3A2F66'];
 
 function drawMine(ctx, g) {
   const band = bandOf(g.layer);
-  const col = BAND_COLORS[band];
+  const col = BANDS[band];
+  const m = g.mine;
   px(ctx, 0, 0, W, H, col.wall);
   // ceiling with hanging rock
   for (let i = 0; i < 16; i++) {
@@ -650,6 +648,23 @@ function drawMine(ctx, g) {
     px(ctx, hx % W, GY - 6 + ((hx >>> 9) % (ROWS * TILE + 12)), 2, 1, col.speck);
   }
   px(ctx, 0, SOIL_TOP + 6, W, H, shade(col.wall, -0.2));
+
+  if (m?.pool) {
+    const p = m.pool, x = GX + p.c * TILE, y = GY + p.r * TILE;
+    roundRect(ctx, x - 2, y - 2, p.w * TILE + 4, p.h * TILE + 4, 10, shade(col.wall, 0.1));
+    roundRect(ctx, x, y, p.w * TILE, p.h * TILE, 8, POOL_COLORS[band]);
+    for (let i = 0; i < 5; i++) px(ctx, x + 10 + i * 20, y + 10 + (i % 2) * 18 + Math.round(Math.sin(g.t + i) * 2), 6, 1, shade(POOL_COLORS[band], 0.35));
+  }
+  for (const k of m?.walls || []) {
+    const [c, r] = k.split(',').map(Number);
+    ctx.drawImage(caveWallSprite(band), GX + c * TILE, GY + r * TILE);
+  }
+  (m?.forage || []).forEach((f, i) => {
+    if (g.minePicked?.has(i)) return;
+    const p = tileCenter(f.c, f.r);
+    ctx.drawImage(itemIcon(f.id), p.x - 8, p.y - 10);
+    if (Math.floor(g.t * 2 + i) % 3 === 0) px(ctx, p.x + 4, p.y - 10, 1, 1, PAL.linenHi);
+  });
 
   const items = [];
   const up = ladderUpSprite();
@@ -677,22 +692,51 @@ function drawMine(ctx, g) {
       },
     });
   }
+  for (const c of m?.chests || []) {
+    const p = tileCenter(c.c, c.r);
+    items.push({ y: p.y + 6, draw: () => ctx.drawImage(chestSprite(g.mineOpened?.has(c.id)), p.x - 8, p.y - 9) });
+  }
+  for (const mo of g.monsters || []) {
+    const def = MONSTERS[mo.kind];
+    const flash = g.t < (mo.flashUntil || 0);
+    // A hidden rock crab looks just like a rock.
+    const img = mo.hidden ? rockSprite('stone', band) : monsterSprite(mo.kind, Math.floor(g.t * 3 + mo.id) % 2, flash);
+    items.push({ y: mo.y, draw: () => {
+      const bob = def.flies && !mo.hidden ? Math.round(Math.sin(g.t * 4 + mo.id) * 2) - 4 : 0;
+      ctx.drawImage(img, Math.round(mo.x - img.width / 2), Math.round(mo.y - img.height + 2 + bob));
+      if (mo.hp < mo.maxHp) {
+        const w = def.boss ? 24 : 14;
+        px(ctx, Math.round(mo.x - w / 2), Math.round(mo.y - img.height - 3 + bob), w, 2, PAL.inkDeep);
+        px(ctx, Math.round(mo.x - w / 2), Math.round(mo.y - img.height - 3 + bob), Math.round(w * mo.hp / mo.maxHp), 2, '#D9533C');
+      }
+    } });
+  }
   items.push({ y: g.player.y, draw: () => drawPlayer(ctx, g) });
   for (const o of g.others) {
     if (o.scene === 'mine' && o.layer === g.layer) items.push({ y: o.y, draw: () => drawAvatarAt(ctx, o, o.look, false, g.t) });
   }
   items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
+  if (g.fishing) drawLine(ctx, g);
 
-  // Deeper bands are darker; the lantern lights around you.
+  // Deeper zones are darker; the lantern lights around you.
   if (band > 0) {
     ctx.save();
     const grad = ctx.createRadialGradient(g.player.x, g.player.y - 8, 20, g.player.x, g.player.y - 8, 150);
     grad.addColorStop(0, 'rgba(10,8,12,0)');
-    grad.addColorStop(1, `rgba(10,8,12,${band === 1 ? 0.45 : 0.62})`);
+    grad.addColorStop(1, `rgba(10,8,12,${Math.min(0.75, 0.35 + band * 0.08)})`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
+  // You got hit: a quick red flash.
+  if (g.t < (g.hurtUntil || 0)) {
+    ctx.fillStyle = 'rgba(217,83,60,0.25)';
+    ctx.fillRect(0, 0, W, H);
+  }
+  // Health, top left.
+  const max = g.maxHp || 100, hp = Math.max(0, g.state.hp ?? max);
+  px(ctx, 30, 62, 62, 7, PAL.inkDeep);
+  px(ctx, 31, 63, Math.round(60 * hp / max), 5, hp / max < 0.3 ? '#D9533C' : '#7FC95A');
 }
 
 // ---------- effects, glass and fishing UI ----------

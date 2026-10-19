@@ -131,6 +131,17 @@ The door in the meadow leads to three more jars, each with its own ground and pi
 
 Item icons for the jars: sardine, mackerel, flounder, sea_bream, pufferfish, octopus, clownfish, bluefin_tuna, ice_smelt, arctic_char, snow_trout, glacier_pike, petal_minnow, rose_koi, blossom_carp, seashell, sea_glass, starfish, coral, icicle, frost_lily, rose, lily, lavender_sprig, coconut, honey. The jar bugs are hermit_crab, sand_beetle, ice_beetle, rose_chafer and orchid_mantis.
 
+### The mine (expanded)
+
+| Name | Size | What it is |
+|---|---|---|
+| `rock_<kind>_<zone 0-5>` | 16 × 16 | Every rock kind in `ROCKS` in `src/mine-data.js`, for the zone it appears in |
+| `cave_wall_<zone 0-5>` | 16 × 16 | A tile of cave wall for each zone: Soil, Stone, Crystal, Frost, Ember, Starfall |
+| `chest_0` / `chest_1` | 16 × 16 | Treasure chest, closed and open |
+| `monster_<kind>_<frame 0-1>_<flash 0-1>` | 16 × 16 (bosses 26 × 26) | Each monster in `MONSTERS`, two frames, plus a white hit flash |
+
+New item icons: every ore, gem, fossil, artifact, geode, cave fish, grotto plant and monster loot listed in `src/mine-data.js`. The underground lake is drawn in code in `drawMine`.
+
 ### Visitors and the merchant
 
 | Name | Size | What it is |
