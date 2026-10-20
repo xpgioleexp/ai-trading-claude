@@ -13,8 +13,10 @@ import {
   WOOD_D,
   WOOD_L,
 } from './art-style.js';
+import { paintCollectible } from './collectible-art.js';
 // All item silhouettes stay in the same 16 × 16 slot. Shape follows the item family.
 export function paintItem(c, item) {
+  if (paintCollectible(c, item)) return true;
   const col = item.color || WOOD,
     d = tint(col, -0.28),
     l = tint(col, 0.3),

@@ -1,4 +1,5 @@
 import { paintCritter } from './creature-art.js';
+import { paintSpecialFurniture, paintWallDetail } from './furniture-details.js';
 import {
   R,
   oval,
@@ -49,7 +50,12 @@ const ALIASES = {
 };
 export function paintFurniture(ctx, def, W, H) {
   if (def.plush) {
-    paintCritter(ctx, def.plush.shape, def.plush.color, def.plush.accent, 0);
+    const toy = document.createElement('canvas');
+    toy.width = 16;
+    toy.height = 18;
+    paintCritter(toy.getContext('2d'), def.plush.shape, def.plush.color, def.plush.accent, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(toy, Math.floor((W - 14) / 2), H - 16, 14, 16);
     return true;
   }
   const type = def.type,
@@ -69,6 +75,7 @@ export function paintFurniture(ctx, def, W, H) {
         cactus_pot: '#6F925B',
       }[form] ||
       '#C68F89';
+  if (paintSpecialFurniture(ctx, def, W, H, form)) return true;
   const d = tint(c, -0.27),
     l = tint(c, 0.28),
     ad = tint(a, -0.24),
@@ -113,6 +120,11 @@ export function paintFurniture(ctx, def, W, H) {
         y = canopy ? H - 24 : low ? H - 26 : 3;
       p(1, y, W - 2, 7, c);
       p(2, y + 1, W - 4, 4, c);
+      if (!low && !canopy) {
+        oval(ctx, W / 2, y + 1, W / 2 - 3, 2, d);
+        oval(ctx, W / 2 - 1, y, W / 2 - 4, 1, c);
+        r(4, y + 3, W - 9, 1, l);
+      }
       r(4, y + 2, W - 8, 1, l);
       b(2, y + 7, W - 4, H - y - 10, '#D5C5A4');
       r(3, y + 8, W - 6, H - y - 13, CREAM);
@@ -126,6 +138,18 @@ export function paintFurniture(ctx, def, W, H) {
       b(2, by, W - 4, H - by - 3, a);
       r(3, by + 1, W - 6, 2, al);
       r(W - 5, by + 3, 2, H - by - 7, ad);
+      r(3, by, W - 7, 1, '#F3E9CF');
+      r(3, by + 1, 1, H - by - 6, al);
+      poly(
+        ctx,
+        [
+          [W - 5, by + 2],
+          [W - 2, by],
+          [W - 2, H - 5],
+          [W - 5, H - 3],
+        ],
+        ad,
+      );
       for (let x = 5; x < W - 6; x += 6) {
         r(x, by + 5, 2, 2, al);
         r(x + 1, by + 7, 2, 1, ad);
@@ -190,6 +214,22 @@ export function paintFurniture(ctx, def, W, H) {
         r(W - 3, H - 10, 2, 1, l);
       }
       if (W > 20) r(Math.round(W / 2), H - 7, 1, 3, ad);
+      if (form === 'sofa' && W > 20) {
+        box(ctx, 5, H - 12, 5, 5, al);
+        r(6, H - 11, 2, 1, '#F3E9CF');
+        poly(
+          ctx,
+          [
+            [W - 10, H - 12],
+            [W - 5, H - 12],
+            [W - 4, H - 4],
+            [W - 9, H - 4],
+          ],
+          a,
+        );
+        r(W - 8, H - 10, 1, 5, al);
+        r(W - 6, H - 6, 1, 2, ad);
+      }
       if (form === 'chair' || form === 'bench')
         for (let x = 5; x < W - 4; x += 4) r(x, y + 2, 1, H - 13, d);
       if (form === 'throne') {
@@ -629,6 +669,7 @@ export function paintFurniture(ctx, def, W, H) {
   }
 }
 export function paintWall(ctx, def) {
+  if (paintWallDetail(ctx, def)) return true;
   const form = def.form || def.type,
     c = def.color || WOOD,
     a = def.accent || '#79AAA4';

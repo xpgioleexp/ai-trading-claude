@@ -14,7 +14,9 @@ import {
   WOOD_D,
 } from './art-style.js';
 import { paintFurniture } from './furniture-art.js';
+import { paintOutdoorDetail } from './outdoor-details.js';
 export function paintOutdoor(c, def, W, H) {
+  if (paintOutdoorDetail(c, def, W, H)) return true;
   const f = def.form,
     col = def.color || WOOD,
     a = def.accent || '#C68F89',

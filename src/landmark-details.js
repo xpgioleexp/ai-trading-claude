@@ -16,7 +16,9 @@ import {
   WOOD_D,
   WOOD_L,
 } from './art-style.js';
+import { paintLandmarkProp } from './landmark-props.js';
 export function paintLandmark(c, art, W, H) {
+  if (paintLandmarkProp(c, art, W, H)) return true;
   const r = (x, y, w, h, col) => R(c, x, y, w, h, col),
     stone = '#C4BFB3',
     sd = '#8E897E';

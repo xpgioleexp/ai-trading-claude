@@ -18,7 +18,7 @@ For the shared shapes, lighting, depth, and procedural painters, see [the dimens
 }
 ```
 
-3. Reload the game. Anything not listed keeps its placeholder.
+3. Reload the game. Anything not listed keeps its procedural art.
 
 ## Rules for every image
 
@@ -170,16 +170,16 @@ The waterfall, hot spring steam, starry sky and glade mist are drawn in code in 
 ### Furniture sets and outdoor crafts
 
 - **Furniture:** every piece in `src/furniture-data.js` is `furniture_<type>`. Each one is 16 px per tile wide and tall, plus a little extra height for tall pieces (shelves, lamps, fridges, tall plants).
-  - The placeholder art is drawn from the piece's `form` and its two colours, in `drawForm` in `src/home-art.js`.
+  - The procedural art is drawn from the piece's `form` and its two colours, in `drawForm` in `src/home-art.js`.
   - For a matching look, make each set (Cottage, Modern, Cabin, Japanese, Seaside, Fairy, Retro, Study, Kitchen, Bathroom, Playroom, Plants, Lights, Hobbies) as one sheet.
 - **Wall items:** `wall_<type>`, 20 × 18, for the 20 new types in `src/furniture-data.js`.
 - **Outdoor crafts:** `decor_<type>`, 16 × 16, or 16 × 28 for tall ones (lamp posts, torches, arches, signposts, flags, the windmill, wind chime, totem, scarecrow, bird feeder).
   - Paths, flower beds and lawns are flat and drawn under everything.
-  - The full list is in `src/outdoor-data.js`, and the placeholders are in `drawOutdoor` in `src/sprites-more.js`.
+  - The full list is in `src/outdoor-data.js`, and the procedural painters are in `drawOutdoor` in `src/sprites-more.js`.
 
 ### The phone
 
-The phone and its 24 app icons are styled in CSS (`style.css`, "the phone"). The icons are emoji placeholders, set in `APPS` in `src/phone.js`. For real icons, make 24 square icons (52 × 52 shown, drawn at 26 × 26 or 52 × 52), one per app id, and send them to Claude to wire up.
+The phone has 28 app icons, drawn at 26 × 26 in `src/phone-art.js` and used by `APPS` in `src/phone.js`. Each procedural icon is cached under `phone_<app id>`; PNGs can replace them through the same manifest. The phone layout is styled in `style.css`.
 
 ### Meadow neighbours and wildlife
 
@@ -215,7 +215,7 @@ The new grounds (stone, and the regions' moss, sand and blossom) are `ground_<na
 
 ### Wildlife
 
-Every new fish and bug (`src/wildlife-data.js`) is an item icon, `item_<id>` (16 × 16); they use the generic fish and bug shapes for now. Wild animals (`src/wild.js`, 158 of them) are drawn with `critterSprite(shape, colour, accent)`, 16 × 18 in two frames, so real art is `critter_<animal id>` or one per shape. New shapes: bat, snake, mouse, seal.
+Every new fish and bug (`src/wildlife-data.js`) is an item icon, `item_<id>` (16 × 16); their icons use fish and bug body plans, markings, fins, wings, legs, and shells. Wild animals (`src/wild.js`, 158 of them) are drawn with `critterSprite(shape, colour, accent)`, 16 × 18 in two frames, so real art is `critter_<animal id>` or one per shape. New shapes: bat, snake, mouse, seal.
 
 ### The big catalogue
 
@@ -228,7 +228,7 @@ Every piece in `src/catalog-data.js` is drawn from a shape (`form`) and its styl
 | `museum` | 48 × 44 | The museum building in the north hills of the meadow |
 | `dig_site` | 16 × 16 | A crack in the ground with a bit of bone poking out |
 
-Skeletons are drawn in code from each animal's body plan (`src/museum-art.js`), one piece at a time, so missing pieces show faintly. Plans: theropod, raptor, sauropod, horned, plated, armored, duckbill, dome, flyer, bird, marine, fish, shark, mammal, turtle, croc, snake, bug. Real art could be one 64 × 40 image per piece per animal (`skeleton_<animal>_<piece>`) layered on a stand. New item icons: every fossil piece (`fossil_<animal>_<piece>`, or `fossil_<animal>` for one-piece fossils; 375 in all, see `src/fossils.js`) and 32 relics. They all use the generic fossil and item shapes for now. New furniture (special, from museum milestones): fish_model, grand_aquarium, bug_case, butterfly_cabinet, gem_display, crystal_cluster, mini_skeleton, trex_skull_display, artifact_pedestal, ancient_vase.
+Skeletons are drawn in code from each animal's body plan (`src/museum-art.js`), one piece at a time, so missing pieces show faintly. Plans: theropod, raptor, sauropod, horned, plated, armored, duckbill, dome, flyer, bird, marine, fish, shark, mammal, turtle, croc, snake, bug. Real art could be one 64 × 40 image per piece per animal (`skeleton_<animal>_<piece>`) layered on a stand. New item icons: every fossil piece (`fossil_<animal>_<piece>`, or `fossil_<animal>` for one-piece fossils; 375 in all, see `src/fossils.js`) and 32 relics. Their icons use the specimen's body plan and part key; relics have object-specific silhouettes. New furniture (special, from museum milestones): fish_model, grand_aquarium, bug_case, butterfly_cabinet, gem_display, crystal_cluster, mini_skeleton, trex_skull_display, artifact_pedestal, ancient_vase.
 
 ### Weather
 

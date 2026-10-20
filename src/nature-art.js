@@ -14,7 +14,9 @@ import {
   WOOD_D,
   WOOD_L,
 } from './art-style.js';
+import { paintGardenDetail } from './garden-art.js';
 export function paintNature(c, type, w, h, season = 'spring') {
+  if (paintGardenDetail(c, type, w, h, season)) return true;
   const base = season === 'autumn' ? '#C98A44' : season === 'winter' ? '#B7CABE' : '#6F925B',
     dark = season === 'autumn' ? '#9A5E30' : '#3F604A',
     bottom = h - 1,

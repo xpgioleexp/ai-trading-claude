@@ -312,45 +312,48 @@ export function paintHouse(
   h,
   { level = 1, night = false, wall = WOOD, roofColor = '#A96E75' } = {},
 ) {
-  const top = Math.round(h * 0.48),
-    front = w - 13,
-    back = w - 4,
-    bottom = h - 4,
-    peak = Math.round(w * 0.38);
-  // The front is square to the player, with a receding right wall.
+  const top = Math.round(h * 0.46),
+    front = Math.round(w * 0.77),
+    back = w - 2,
+    left = w < 24 ? 1 : 3,
+    bottom = h - 3,
+    depth = Math.max(2, Math.round(w * 0.12)),
+    peak = Math.round(w * 0.36),
+    ridge = Math.round(w * 0.17),
+    r = (x, y, ww, hh, col) => R(c, x, y, ww, hh, col),
+    small = w < 32;
+  // Front gable plus a roof plane and right wall receding to the same vanishing direction.
   poly(
     c,
     [
-      [4, top],
+      [left, top],
       [front, top],
       [front, bottom],
-      [4, bottom],
+      [left, bottom],
+    ],
+    tint(wall, -0.3),
+  );
+  r(left + 1, top + 1, front - left - 2, bottom - top - 1, wall);
+  poly(
+    c,
+    [
+      [front, top],
+      [back, top - depth],
+      [back, bottom - depth],
+      [front, bottom],
     ],
     tint(wall, -0.28),
   );
-  R(c, 5, top + 1, front - 6, bottom - top - 1, wall);
-  poly(
-    c,
-    [
-      [front, top],
-      [back, top - 5],
-      [back, bottom - 5],
-      [front, bottom],
-    ],
-    tint(wall, -0.27),
-  );
-  line(c, front + 1, top + 1, front + 1, bottom - 1, tint(wall, -0.38));
   for (let y = top + 4; y < bottom - 1; y += 4) {
-    R(c, 6, y, front - 7, 1, tint(wall, -0.12));
-    line(c, front + 1, y, back - 1, y - 4, tint(wall, -0.36));
+    r(left + 1, y, front - left - 2, 1, tint(wall, -0.12));
+    line(c, front, y, back - 1, y - depth, tint(wall, -0.36));
   }
-  // A pitched roof with a broad shingled plane and a visible front gable.
   poly(
     c,
     [
-      [2, top + 1],
+      [left - 1, top + 1],
       [peak, 4],
-      [front + 2, top + 1],
+      [front + 1, top + 1],
     ],
     tint(roofColor, -0.3),
   );
@@ -358,78 +361,86 @@ export function paintHouse(
     c,
     [
       [peak, 4],
-      [peak + 8, 0],
-      [w - 1, top - 5],
-      [front + 2, top + 1],
+      [peak + ridge, 0],
+      [w - 1, top - depth],
+      [front + 1, top + 1],
     ],
     roofColor,
   );
   poly(
     c,
     [
-      [3, top],
+      [left, top],
       [peak, 5],
-      [front, top],
+      [front - 1, top],
     ],
-    tint(roofColor, -0.1),
+    tint(roofColor, -0.08),
   );
   for (let y = 8; y < top; y += 3) {
     const t = (y - 4) / (top - 4),
-      left = peak + (front - peak) * t;
-    line(c, left, y, Math.min(w - 2, left + 8), y - 4, tint(roofColor, -0.23));
-    for (let x = 4; x < front - 3; x += 5) {
-      if (x > peak - (peak - 2) * t && x < left)
-        R(c, x + (Math.floor(y / 3) % 2), y, 3, 1, tint(roofColor, 0.13));
+      edge = peak + (front - peak) * t;
+    line(c, edge, y, Math.min(w - 2, edge + ridge), y - depth, tint(roofColor, -0.23));
+    for (let x = left + 2; x < front - 1; x += 5)
+      if (x > peak - (peak - left) * t && x < edge)
+        r(x + (Math.floor(y / 3) % 2), y, 2, 1, tint(roofColor, 0.2));
+  }
+  line(c, left - 1, top + 1, peak, 4, WOOD_L);
+  line(c, peak, 4, front + 1, top + 1, tint(roofColor, -0.38));
+  line(c, front + 1, top + 1, w - 1, top - depth, tint(roofColor, -0.4));
+  line(c, peak, 4, peak + ridge, 0, tint(roofColor, 0.3));
+  if (!small) {
+    box(c, w - 12, 2, 4, 8, '#9A958A');
+    r(w - 13, 1, 6, 2, '#C4BFB3');
+    r(w - 11, 5, 2, 1, '#6E6A62');
+  }
+  if (level > 2 && w > 40) {
+    roof(c, peak - 5, top * 0.37, 13, 6, roofColor);
+    box(c, peak - 3, top * 0.37 + 6, 9, 7, wall);
+    windowPane(c, peak - 2, top * 0.37 + 7, 6, 5, night);
+  }
+  const dw = Math.max(3, Math.round(w * 0.14)),
+    dh = Math.min(17, Math.round(h * 0.3)),
+    dx = Math.round((front + left - dw) / 2),
+    ww = Math.max(2, Math.round(w * 0.13)),
+    wh = Math.min(9, Math.round(h * 0.17)),
+    wy = bottom - dh + 1;
+  box(c, dx, bottom - dh, dw, dh, WOOD_D);
+  r(dx + 1, bottom - dh + 2, Math.max(1, dw - 2), dh - 3, WOOD);
+  r(dx + 1, bottom - dh + 2, 1, dh - 3, WOOD_L);
+  r(dx + dw - 2, bottom - dh / 2, 1, 1, '#E8C25A');
+  for (const x of [left + 1, front - ww - 1]) {
+    windowPane(c, x, wy, ww, wh, night);
+    if (w > 35) {
+      plank(c, x - 1, bottom - 4, ww + 2, 3, WOOD);
+      leaf(c, x + 1, bottom - 5, 2, 2);
+      leaf(c, x + ww - 2, bottom - 5, 2, 2);
+      r(x + 1, bottom - 6, 1, 1, '#E4B4A3');
     }
   }
-  line(c, 2, top + 1, peak, 4, WOOD_L);
-  line(c, peak, 4, front + 2, top + 1, tint(roofColor, -0.38), 2);
-  line(c, front + 2, top + 1, w - 1, top - 5, tint(roofColor, -0.4), 2);
-  line(c, peak, 4, peak + 8, 0, tint(roofColor, 0.3));
-  box(c, w - 15, 2, 5, 9, '#9A958A');
-  R(c, w - 16, 1, 7, 2, '#C4BFB3');
-  R(c, w - 14, 5, 3, 1, '#6E6A62');
-  if (level > 2) {
-    roof(c, peak - 5, top * 0.38, 13, 6, roofColor);
-    box(c, peak - 3, top * 0.38 + 6, 9, 7, wall);
-    windowPane(c, peak - 2, top * 0.38 + 7, 6, 5, night);
+  if (back - front > 3) {
+    poly(
+      c,
+      [
+        [front + 2, top + 4],
+        [back - 1, top + 4 - depth],
+        [back - 1, top + 10 - depth],
+        [front + 2, top + 10],
+      ],
+      WOOD_D,
+    );
+    poly(
+      c,
+      [
+        [front + 2, top + 5],
+        [back - 2, top + 5 - depth],
+        [back - 2, top + 9 - depth],
+        [front + 2, top + 9],
+      ],
+      night ? '#F2D39A' : '#79AAA4',
+    );
   }
-  const dx = Math.round((front + 4) / 2) - 4;
-  box(c, dx, bottom - 15, 8, 15, WOOD_D);
-  R(c, dx + 1, bottom - 13, 5, 12, WOOD);
-  R(c, dx + 2, bottom - 12, 1, 10, WOOD_L);
-  R(c, dx + 5, bottom - 7, 1, 1, '#E8C25A');
-  windowPane(c, 7, bottom - 15, 7, 8, night);
-  windowPane(c, front - 10, bottom - 15, 7, 8, night);
-  // The side window is a small parallelogram, matching the receding wall.
-  poly(
-    c,
-    [
-      [front + 3, top + 4],
-      [back - 2, top + 2],
-      [back - 2, top + 9],
-      [front + 3, top + 11],
-    ],
-    WOOD_D,
-  );
-  poly(
-    c,
-    [
-      [front + 4, top + 5],
-      [back - 3, top + 4],
-      [back - 3, top + 8],
-      [front + 4, top + 9],
-    ],
-    night ? '#F2D39A' : '#79AAA4',
-  );
-  for (const x of [8, front - 9]) {
-    R(c, x - 1, bottom - 4, 8, 3, WOOD_D);
-    leaf(c, x + 1, bottom - 5, 2, 2);
-    leaf(c, x + 4, bottom - 5, 2, 2);
-    R(c, x + 1, bottom - 6, 1, 1, '#E4B4A3');
-  }
-  plank(c, dx - 2, h - 4, 12, 4, '#9A958A');
-  R(c, dx - 1, h - 3, 9, 1, '#C4BFB3');
+  plank(c, dx - 1, h - 3, dw + 3, 3, '#9A958A');
+  r(dx, h - 3, dw + 1, 1, '#C4BFB3');
 }
 // Inner-edge lighting and contact shadows stay within the native canvas; PNG overrides bypass this.
 export function finishPixels(canvas, name) {

@@ -22,7 +22,8 @@ try {
     try {
       const url = new URL(req.url, 'http://localhost'),
         isBase = url.pathname.startsWith('/base/'),
-        prefix = isBase ? '/base/' : '/current/';
+        structural = url.pathname.startsWith('/structural/'),
+        prefix = isBase ? '/base/' : structural ? '/structural/' : '/current/';
       if (!url.pathname.startsWith(prefix)) {
         res.writeHead(404);
         res.end();
@@ -36,7 +37,16 @@ try {
         res.end();
         return;
       }
-      const body = await readFile(path);
+      let body = await readFile(path);
+      if (structural && relative === 'src/art-style.js') {
+        const source = body.toString(),
+          stripped = source.replace(
+            /(export function finishPixels\([^)]*\)\s*\{)/,
+            '$1\nreturn;\n',
+          );
+        if (stripped === source) throw new Error('Could not disable the shared material finish');
+        body = Buffer.from(stripped);
+      }
       res.writeHead(200, {
         'content-type':
           {
@@ -101,6 +111,7 @@ try {
       )
         failures.push('Exports: ' + name);
     const { phoneIconURL } = await import('/current/src/phone-art.js');
+    const phoneImages = new Set();
     for (const id of [
       'today',
       'questions',
@@ -130,16 +141,40 @@ try {
       'museum',
       'mine',
       'settings',
-    ])
-      if (!phoneIconURL(id).startsWith('data:image/png')) failures.push('Phone icon ' + id);
-    return { variants: after.rows.length, changed, failures };
+    ]) {
+      const icon = phoneIconURL(id);
+      if (!icon.startsWith('data:image/png')) failures.push('Phone icon ' + id);
+      phoneImages.add(icon);
+    }
+    if (phoneImages.size !== 28) failures.push('Each phone app must have its own distinct picture');
+    const raw = await artCases('/structural/');
+    const structuralUnchanged = raw.rows
+      .filter(({ id, canvas }) => hash(canvas).hash === hash(old.get(id)).hash)
+      .map((r) => r.id);
+    const { painterCoverage } = await import('/current/tests/art-coverage.mjs');
+    const coverage = await painterCoverage('/current/', after);
+    return { variants: after.rows.length, changed, failures, structuralUnchanged, coverage };
   });
   assert.deepEqual(result.failures, []);
   assert.ok(result.variants > 6500);
-  assert.ok(result.changed > result.variants * 0.95);
+  assert.equal(result.changed, result.variants);
+  assert.deepEqual(
+    result.structuralUnchanged,
+    [],
+    'Every variant must change before the shared material finish',
+  );
+  assert.deepEqual(
+    result.coverage.failures,
+    [],
+    'Every registered form needs a nonblank redesigned painter',
+  );
   console.log(
     `PASS ${result.variants} sprite variants: original dimensions and exports; no new blanks; ${result.changed} updated renders; 28 pixel phone icons.`,
   );
+  console.log(
+    'PASS every variant also differs with the shared finish disabled; zero old-painter fallbacks.',
+  );
+  console.log('Painter coverage: ' + JSON.stringify(result.coverage.counts));
   // Exercise the PNG override path: the painted style must never alter supplied image files.
   const image = await page.evaluate(() => {
     const c = document.createElement('canvas');
@@ -164,6 +199,22 @@ try {
     true,
   );
   console.log('PASS PNG overrides bypass procedural painting and preserve their dimensions.');
+  await page.goto(origin + '/current/docs/art-preview/index.html');
+  await page.waitForFunction(() => document.querySelector('#status').textContent.includes('6,980'));
+  const first = await page.locator('figcaption').first().textContent();
+  await page.click('#next');
+  assert.notEqual(await page.locator('figcaption').first().textContent(), first);
+  await page.selectOption('#family', 'furniture');
+  await page.fill('#search', 'furniture:jukebox');
+  assert.equal(await page.locator('figure').count(), 1);
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+      false,
+    );
+  }
+  console.log('PASS art gallery search, family filter, pagination, and mobile/desktop layout.');
 } finally {
   await browser?.close();
   await new Promise((resolve) => (server ? server.close(resolve) : resolve()));
