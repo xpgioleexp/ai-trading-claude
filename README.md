@@ -426,4 +426,6 @@ Run the tests with `npm test`.
 
 ## Art
 
+**App icon:** `assets/icon/` has the icon (a glass jar with a heart sprout growing inside) at 1024, 512, 192, 180, 64 and 32 pixels. Use `icon-1024.png` for app stores and social profiles. `make-icon.py` redraws it.
+
 All art is currently drawn in code as placeholders. To replace a piece with real art, drop a PNG in `assets/` and list it in `assets/manifest.json`. The game uses it instead. [docs/ASSETS.md](docs/ASSETS.md) lists every sprite name, size and rule for ChatGPT.
