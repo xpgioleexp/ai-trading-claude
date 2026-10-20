@@ -318,7 +318,7 @@ function drawJarWorld(ctx, g) {
     const bx = Math.round(b.x + (flying ? Math.sin(g.t * 1.3 + b.phase) * 3 : 0));
     const by = Math.round(b.y - (flying ? 8 + Math.sin(g.t * 2 + b.phase) * 2 : 0));
     items.push({ y: b.y, draw: () => {
-      if (def.kind === 'firefly' && g.night && flap) {
+      if (def.kind === 'firefly' && g.night) {
         ctx.fillStyle = 'rgba(255,240,150,0.35)';
         ctx.fillRect(bx - 4, by - 3, 10, 8);
       }
@@ -770,7 +770,6 @@ function drawWeatherGround(ctx, g) {
     const cx = Math.round(g.camX || 0), cy = Math.round(g.camY || 0);
     for (let i = 0; i < 60; i++) {
       const hx = hashString('frost' + i);
-      if ((Math.floor(g.t * 1.5) + i) % 5 === 0) continue;
       const fx = cx + 20 + hx % 280, fy = cy + GY + (hx >>> 9) % (H - GY - 40);
       px(ctx, fx, fy, 1, 1, '#8FC3D9');
       px(ctx, fx - 1, fy + 1, 3, 1, 'rgba(143,195,217,0.6)');
@@ -797,13 +796,6 @@ function drawNight(ctx, g) {
   glow(GX + (tent.c + 2.2) * TILE, GY + tent.r * TILE + 20, 26, 0.35);
   // Lamps, torches and lanterns you've made glow at night.
   if (g.scene === 'jar') for (const d of g.decor) if (LIGHT_DECOR.has(d.type)) glow(GX + d.c * TILE + 8, GY + d.r * TILE - 2, 22, 0.4);
-  if (g.season === 'summer' || g.season === 'spring') {
-    for (let i = 0; i < 9; i++) {
-      const fx = ox + 40 + ((i * 37 + Math.sin(g.t * 0.7 + i) * 18) % 250);
-      const fy = oy + GY + 20 + ((i * 29 + Math.cos(g.t * 0.5 + i * 2) * 14) % 130);
-      if (Math.floor(g.t * 3 + i) % 3) glow(fx, fy, 4, 0.9);
-    }
-  }
   ctx.restore();
 }
 
