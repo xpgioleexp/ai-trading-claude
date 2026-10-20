@@ -7,9 +7,8 @@ import { MAPS, MAP_ORDER } from './maps.js';
 import { crittersIn, SHOPS } from './biomes.js';
 import { nameOf } from './together.js';
 
-// FOR TESTING: every jar is open so you can look around. Set this back to
-// false to make jars cost pebbles again.
-export const PREVIEW_ALL_JARS = true;
+// FOR TESTING: set to true to open every jar without paying pebbles.
+export const PREVIEW_ALL_JARS = false;
 
 export function jarUnlocked(id) {
   return PREVIEW_ALL_JARS || !!S.jars[id]?.unlocked;

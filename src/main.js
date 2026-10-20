@@ -32,6 +32,7 @@ import { openCrafting } from './crafting-ui.js';
 import { BUG_BY_ID, spawnBugs, timeBlock, alertRate, NOTICE_TILES, catchBug } from './bugs.js';
 import { MAPS, mapWalkable, mapObjectAt, mapOpenTiles, mapNear, mapCatch, mapWeather, mapDaily } from './maps.js';
 import { openTravel } from './travel.js';
+import { jarDay, isUnlocked, lockedText, UNLOCK_NOTES } from './unlocks.js';
 import { openPhone, closePhone, phoneOpen, phoneHasNews } from './phone.js';
 import './biomes.js';
 import { syncCritters, updateCritters, critterAt, openCritter, spotWild, openJarShop, runSpot, digAt } from './jar-life.js';
@@ -498,6 +499,7 @@ function checkNewDay() {
   if (g.scene === 'map' && events.length) g.mapDaily = mapDaily(g.state, g.mapId, g.today, g.state.seed, DAILY_BITES);
   if (!events.length && g.state.daily.day === g.today && g.lastDay === g.today) return;
   g.lastDay = g.today;
+  if (S.ready) setTimeout(noteUnlocks, 1500);
   if (g.scene === 'mine') leaveMine();
   for (const e of events) {
     if (e.type === 'payout') UI.toast(`Good morning! The crate paid ${e.amount} pebbles.`);
@@ -740,7 +742,7 @@ function tapJar(c, r, x, y) {
   if (visitor) return talkTo(visitor);
   const critter = critterAt(g, x, y);
   if (critter) return walkNextTo([{ c: critter.c, r: critter.r }], () => (critter.def.wild ? spotWild(g, critter) : ready() && openCritter(g, critter)));
-  if (eventStandAt(x, y)) return walkNextTo([EVENT_SPOT], () => ready() && openEventStand(g));
+  if (eventStandAt(x, y)) return walkNextTo([EVENT_SPOT], () => ready() && gate('events', 'The event stand') && openEventStand(g));
   if (tapMushroom(c, r)) return;
   if (tapWeather(c, r)) return;
   if (tapFossil(c, r)) return;
@@ -782,7 +784,7 @@ function tapJar(c, r, x, y) {
         UI.toast(od.swing ? `You sway gently on the ${od.name.toLowerCase()}.` : `You sit on the ${od.name.toLowerCase()} for a while.`);
       } else if (FARM_BY_TYPE[deco.type]) collectFarm(deco);
       else if (deco.type === 'log') T.noticeDiscovery('hollow-log');
-      else if (deco.type === 'campfire') ready() && openKitchen(g);
+      else if (deco.type === 'campfire') ready() && gate('cooking', 'Cooking') && openKitchen(g);
       else UI.toast(C.decorByType[deco.type]?.name || 'A decoration');
     });
     return;
@@ -861,23 +863,40 @@ function ready() {
   return false;
 }
 
+// Places in the world open with their phone app, over the jar's first week.
+function gate(id, name) {
+  const day = jarDay(S.world, g.today);
+  if (isUnlocked(id, day)) return true;
+  UI.toast(lockedText(id, day, name));
+  return false;
+}
+
+// Once a morning in the first week, say what just opened.
+function noteUnlocks() {
+  const day = jarDay(S.world, g.today);
+  if (!UNLOCK_NOTES[day] || g.state.unlockNoted === day) return;
+  g.state.unlockNoted = day;
+  save();
+  UI.toast(`New in your jar today: ${UNLOCK_NOTES[day]}`);
+}
+
 function useObject(o) {
   if (PONDS.includes(o.id)) return startFishing(o);
   if (o.kind === 'landmark' || o.kind === 'scenery') return visitPlace(o);
   switch (o.id) {
     case 'tent': return ready() && enterHome();
-    case 'museum': return ready() && openMuseum(g);
+    case 'museum': return ready() && gate('museum', 'The museum') && openMuseum(g);
     case 'mailbox': return ready() && T.openMailbox(g, UI.letters(g));
     case 'crate': return UI.openCrate(g);
-    case 'workbench': return openCrafting(g);
+    case 'workbench': return gate('diy', 'The workbench') && openCrafting(g);
     case 'stall': return UI.openShop(g);
-    case 'board': return ready() && T.openBoard(g);
-    case 'well': return ready() && T.openDreams(g);
-    case 'easel': return ready() && T.openCalendar(g);
+    case 'board': return ready() && gate('missions', 'The notice board') && T.openBoard(g);
+    case 'well': return ready() && gate('dreams', 'The wishing well') && T.openDreams(g);
+    case 'easel': return ready() && gate('dates', 'The calendar') && T.openCalendar(g);
     case 'picnic':
       g.player.pose = 'sit';
       g.player.dir = DIRS.down;
-      if (!ready()) return;
+      if (!ready() || !gate('hangout', 'The hangout')) return;
       T.noticeDiscovery('picnic-oak');
       return openHangout(g);
     case 'tree': {
@@ -895,8 +914,9 @@ function useObject(o) {
       g.player.dir = DIRS.down;
       return ready() && T.openToday(g);
     case 'pond': case 'pond2': case 'pond3': case 'pond4': case 'pond5': case 'pond6': return startFishing(o);
-    case 'door': return ready() && openTravel(g);
+    case 'door': return ready() && gate('jars', 'The jar shelf') && openTravel(g);
     case 'cave':
+      if (!gate('mine', 'The mine')) return;
       if (g.state.mine.deepest >= 11) return UI.openElevator(g, enterMine);
       return enterMine(1);
   }
@@ -1726,7 +1746,7 @@ async function bootShared() {
     }
   }
   onShared(kind => {
-    if (kind === 'world' || kind === 'ready') adoptWorldSeed();
+    if (kind === 'world' || kind === 'ready') { adoptWorldSeed(); setTimeout(noteUnlocks, 1500); }
     if (kind === 'garden') pullGarden();
     if (kind === 'decor' || kind === 'ready') syncDecor();
     if (kind === 'animals' || kind === 'ready') syncResidents();

@@ -74,7 +74,7 @@ The jar animals each have their own behaviour too:
 
 The daily visitor strolls around their spot in their own way.
 
-**For testing:** every jar on the shelf is open for now (`PREVIEW_ALL_JARS` in `src/travel.js`). Set it to `false` to make jars cost pebbles again.
+Jars cost pebbles to open. For testing, set `PREVIEW_ALL_JARS` in `src/travel.js` to `true` to open them all.
 
 
 | Tap | What happens |
@@ -120,6 +120,18 @@ The daily visitor strolls around their spot in their own way.
 | Friends | Today's visitor and their request, the merchant, your meadow animals, jar friends' hearts and visitors you know |
 | Mine | How deep you've been, zones, bosses beaten, health and gear |
 | Settings | Your partner, the jar's name and time zone, reminders, rain, download everything, start over |
+
+**Your first week:** a new jar opens up a little each day, so there's always something new and it's never too much at once. Locked apps show a 🔒 on the phone, and each morning a note says what just opened. A jar older than a week has everything open (`src/unlocks.js`).
+
+| Day | Opens |
+|---|---|
+| 1 | Today, questions, mail, the meadow, fishing, the garden, the shop, your bag and collection, wardrobe, weather |
+| 2 | Missions, dates, the hangout, cooking, friends |
+| 3 | The mine, tool upgrades, DIY crafting |
+| 4 | Building, your house, dreams, the journal and scrapbook |
+| 5 | The museum, the map, discoveries |
+| 6 | The old journal, seasonal events |
+| 7 | The jar shelf |
 
 **Pebbles for doing things together:** each of you gets these once per thing.
 

@@ -530,6 +530,9 @@ body {
 .phone-app:focus-visible .phone-icon { outline: 3px solid var(--ink); outline-offset: 2px; }
 .phone-name { font-family: var(--font-body); font-size: 16px; line-height: 1; text-align: center; }
 .phone-dot { position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: #d9533c; box-shadow: 0 0 0 2px #f6e9c9; }
+.phone-app.locked .phone-icon { filter: grayscale(0.85) brightness(0.9); opacity: 0.55; }
+.phone-app.locked .phone-name { opacity: 0.55; }
+.phone-lock { position: absolute; bottom: -4px; right: -4px; font-size: 13px; font-style: normal; line-height: 1; }
 .phone-home { align-self: center; width: 90px; height: 6px; border-radius: 3px; border: 0; background: #3a2e28; margin-top: 4px; cursor: pointer; padding: 0; }
 .phone-home::before { content: ''; display: block; height: 30px; margin-top: -12px; }
 #sheet-back { margin-right: 8px; }

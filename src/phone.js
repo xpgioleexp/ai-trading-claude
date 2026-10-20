@@ -26,6 +26,7 @@ import { openMuseum } from './museum-ui.js';
 import { openMapFresh } from './world-map.js';
 import { openJournal as openOldJournal } from './lore-ui.js';
 import { readyToMount } from './museum.js';
+import { jarDay, isUnlocked, lockedText } from './unlocks.js';
 
 const $ = sel => document.querySelector(sel);
 const esc = UI.esc;
@@ -81,8 +82,11 @@ export const APP_IDS = APPS.map(a => a.id);
 
 // Something new in any app: shows a dot on the phone button.
 export function phoneHasNews(g) {
-  return APPS.some(a => { try { return !!a.badge?.(g); } catch { return false; } });
+  return APPS.some(a => { try { return appOpen(g, a.id) && !!a.badge?.(g); } catch { return false; } });
 }
+
+// Apps open up over your jar's first week (see unlocks.js).
+export const appOpen = (g, id) => isUnlocked(id, jarDay(S.world, g.today));
 
 export function openPhone(g) {
   UI.closeSheet();
@@ -93,11 +97,14 @@ export function openPhone(g) {
     <div class="phone-body" role="dialog" aria-label="Phone">
       <div class="phone-status"><span>${esc(time)}</span><span>${esc(String(g.state.pebbles))} pebbles</span></div>
       <div class="phone-title">${esc(S.world?.name || 'Our little jar')}</div>
-      <div class="phone-grid">${APPS.map(a => `
-        <button class="phone-app" type="button" data-app="${a.id}" title="${esc(a.text)}">
-          <span class="phone-icon" style="background:${a.color}"><img src="${phoneIconURL(a.id)}" width="26" height="26" alt="" style="image-rendering:pixelated;width:78%;height:78%;object-fit:contain">${a.badge?.(g) ? '<i class="phone-dot" aria-label="new"></i>' : ''}</span>
+      <div class="phone-grid">${APPS.map(a => {
+        const open = appOpen(g, a.id);
+        return `
+        <button class="phone-app ${open ? '' : 'locked'}" type="button" data-app="${a.id}" title="${esc(open ? a.text : lockedText(a.id, jarDay(S.world, g.today), a.name))}">
+          <span class="phone-icon" style="background:${a.color}"><img src="${phoneIconURL(a.id)}" width="26" height="26" alt="" style="image-rendering:pixelated;width:78%;height:78%;object-fit:contain">${open && a.badge?.(g) ? '<i class="phone-dot" aria-label="new"></i>' : ''}${open ? '' : '<i class="phone-lock" aria-label="locked">🔒</i>'}</span>
           <span class="phone-name">${esc(a.name)}</span>
-        </button>`).join('')}</div>
+        </button>`;
+      }).join('')}</div>
       <button class="phone-home" type="button" aria-label="Close the phone"></button>
     </div>`;
   phone.hidden = false;
@@ -119,6 +126,7 @@ export function phoneOpen() {
 export function openApp(g, id) {
   const app = APPS.find(a => a.id === id);
   if (!app) return;
+  if (!appOpen(g, id)) return UI.toast(lockedText(id, jarDay(S.world, g.today), app.name));
   if (app.needs === 'ready' && !ready(g)) return;
   closePhone();
   // The app's panel gets a "Phone" button that brings you back here.
