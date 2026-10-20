@@ -1,4 +1,3 @@
-import {phoneIconURL} from './phone-art.js';
 // Your phone, like in Animal Crossing: every panel in the game is an app here.
 // Opening an app closes the phone; the app's "Phone" button brings you back.
 import { S, partnerId, answerFor } from './shared.js';
@@ -95,7 +94,7 @@ export function openPhone(g) {
       <div class="phone-title">${esc(S.world?.name || 'Our little jar')}</div>
       <div class="phone-grid">${APPS.map(a => `
         <button class="phone-app" type="button" data-app="${a.id}" title="${esc(a.text)}">
-          <span class="phone-icon" style="background:${a.color}"><img src="${phoneIconURL(a.id)}" width="26" height="26" alt="" style="image-rendering:pixelated;width:78%;height:78%;object-fit:contain">${a.badge?.(g) ? '<i class="phone-dot" aria-label="new"></i>' : ''}</span>
+          <span class="phone-icon" style="background:${a.color}">${a.icon}${a.badge?.(g) ? '<i class="phone-dot" aria-label="new"></i>' : ''}</span>
           <span class="phone-name">${esc(a.name)}</span>
         </button>`).join('')}</div>
       <button class="phone-home" type="button" aria-label="Close the phone"></button>

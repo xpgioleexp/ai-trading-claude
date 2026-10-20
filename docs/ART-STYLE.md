@@ -34,3 +34,5 @@ CHROMIUM_PATH=/usr/bin/chromium npm run test:art
 ```
 
 Install Chromium separately if it is not available, then set `CHROMIUM_PATH` to its executable. The browser check renders 6,980 variants from the real registries, compares native dimensions and public exports with the original art, rejects new blank sprites, and checks pixel phone icons and PNG override behavior. It uses the pre-art commit `ef67b2f72cbe4d325adcc559d68d3e740ca0c9c1`; fetch that commit in shallow clones before running. `ART_BASE_REF` can select another available baseline when deliberately updating the comparison.
+
+The phone still uses its emoji icons: in the first pixel version several apps shared one picture (Today and Mail, DIY and Tools, the whole bottom row). `src/phone-art.js` is kept but not used yet; give each of the 28 apps its own distinct picture before switching `src/phone.js` back to it.
