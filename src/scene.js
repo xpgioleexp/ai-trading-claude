@@ -949,7 +949,7 @@ function drawMapWorld(ctx, g) {
   if (map.night) {
     for (let i = 0; i < 40; i++) {
       const hx = hashString('star' + i);
-      if ((Math.floor(g.t * 2) + i) % 7) px(ctx, 20 + hx % 280, 20 + (hx >>> 8) % 70, 1, 1, '#FFFFFF');
+      px(ctx, 20 + hx % 280, 20 + (hx >>> 8) % 70, 1, 1, '#FFFFFF');
     }
   }
   if (map.dim) {
