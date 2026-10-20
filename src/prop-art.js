@@ -109,15 +109,27 @@ export function paintProp(c, name, W, H, state = 0) {
       return true;
     }
     case 'bed': {
-      box(c, 0, 1, 16, 15, WOOD_D);
-      r(1, 2, 13, 1, WOOD_L);
-      r(2, 4, 11, 10, state ? '#5A4130' : '#7A5A3E');
-      for (let y = 5; y < 14; y += 4) {
-        r(3, y, 9, 1, state ? '#352A23' : '#5A4130');
-        r(3, y + 1, 8, 1, state ? '#6D523A' : '#9C7650');
-        for (const x of [4, 9]) r(x, y + 2, 1, 1, state ? '#B7D4BD' : '#B88D60');
+      // A tilled soil patch seen from above: soft corners, crumbly speckles and
+      // three uneven furrows. Nothing regular, so it reads as earth, not wood.
+      const soil = state ? '#4A372A' : '#7A5A3E',
+        dark = state ? '#36281F' : '#5E4430',
+        light = state ? '#5E4636' : '#93704D';
+      r(1, 0, 14, 16, soil);
+      r(0, 1, 16, 14, soil);
+      for (let y = 1; y < 15; y++)
+        for (let x = 1; x < 15; x++) {
+          const n = (x * 73 + y * 151 + x * y * 7) % 23;
+          if (n < 3) r(x, y, 1, 1, dark);
+          else if (n > 20) r(x, y, 1, 1, light);
+        }
+      for (const [y, gap] of [[4, 6], [8, 11], [12, 4]]) {
+        r(2, y - 1, 12, 1, light);
+        r(2, y, 12, 1, dark);
+        r(gap, y - 1, 2, 2, soil);
       }
-      r(1, 14, 13, 1, WOOD);
+      r(1, 15, 14, 1, dark);
+      r(15, 1, 1, 14, dark);
+      if (state) for (const [x, y] of [[6, 6], [10, 10], [3, 13]]) r(x, y, 1, 1, '#7E9C94');
       return true;
     }
     case 'chest': {

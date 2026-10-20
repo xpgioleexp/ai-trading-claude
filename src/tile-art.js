@@ -400,9 +400,13 @@ export function paintGround(c, kind, variant, colors) {
     r(x + 1, y - 3, 1, 3, light);
     r(x + 2, y - 1, 1, 1, dark);
     r((x + 7) % 14, (y + 6) % 14, 2, 1, tint(base, 0.07));
+    // A tiny, soft flower on one tile in four: small enough not to read as a pattern.
     if (variant === 3) {
-      r(5, 10, 1, 2, tint(base, -0.1));
-      flower(c, 5, 8, kind === 'blossom' ? '#E4B4A3' : '#F3E9CF');
+      const petal = kind === 'blossom' ? '#E4B4A3' : tint(base, 0.32);
+      r(5, 9, 1, 2, tint(base, -0.1));
+      r(4, 8, 3, 1, petal);
+      r(5, 7, 1, 3, petal);
+      r(5, 8, 1, 1, tint('#E8C25A', -0.05));
     }
   }
 }
