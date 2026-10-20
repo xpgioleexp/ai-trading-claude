@@ -154,18 +154,43 @@ function drawEdgeHints(ctx, g, b) {
 
 // The animals and people who live in a jar (see behaviors.js): hops and flights
 // get a shadow, sleepers get a z, hiders and climbers vanish for a moment.
+// How something is moving right now, worked out from where it was last frame:
+// a two-step walk cycle with a little hop while it moves, and a slow breath
+// while it stands still.
+const gaits = new WeakMap();
+export function gait(a, t) {
+  let m = gaits.get(a);
+  if (!m) gaits.set(a, (m = { x: a.x, y: a.y, t, speed: 0, dist: 0, out: null }));
+  if (m.out && m.t === t) return m.out;
+  const dt = t - m.t, d = Math.hypot(a.x - m.x, a.y - m.y);
+  if (dt > 0 && dt < 0.5) m.speed += (d / dt - m.speed) * Math.min(1, dt * 12);
+  m.dist += d;
+  m.x = a.x; m.y = a.y; m.t = t;
+  const moving = m.speed > 4, step = m.dist / 5;
+  m.out = {
+    moving,
+    frame: moving ? Math.floor(step) % 2 : 0,
+    hop: moving ? Math.round(Math.abs(Math.sin(step * Math.PI)) * 2) : 0,
+    breath: !moving && Math.sin(t * 2.4 + (a.phase || 0) * 3) > 0.55 ? 1 : 0,
+  };
+  return m.out;
+}
+
 function drawCritters(ctx, g, items) {
   for (const a of [...(g.critters || []), ...(g.wild || [])]) {
     if (a.hidden || a.pose === 'climb') continue;
-    const frame = a.pose === 'sleep' ? 0 : Math.floor(g.t * (a.z > 0 ? 6 : 2) + a.phase) % 2;
+    const walk = gait(a, g.t);
+    const flying = a.z > 0;
+    const frame = a.pose === 'sleep' ? 0 : flying ? Math.floor(g.t * 6 + a.phase) % 2 : walk.frame;
     const img = critterSprite(a.def.shape, a.def.color, a.def.accent, frame);
-    const z = Math.round(a.z || 0);
+    const z = Math.round(a.z || 0) + (flying || a.pose === 'sleep' ? 0 : walk.hop);
+    const breath = a.pose === 'sleep' || flying ? 0 : walk.breath;
     items.push({ y: a.y, draw: () => {
       const x = Math.round(a.x), y = Math.round(a.y);
-      if (z > 0) { ctx.fillStyle = 'rgba(40,30,20,0.25)'; ctx.fillRect(x - 4, y - 1, 8, 2); }
+      if (z > 0 || walk.moving) { ctx.fillStyle = 'rgba(40,30,20,0.22)'; ctx.fillRect(x - 4 + Math.min(2, z >> 2), y - 1, 8 - Math.min(4, z >> 1), 2); }
       if (a.pose === 'hide') { px(ctx, x - 3, y - 3, 6, 3, shade(a.def.color, -0.2)); return; }
       ctx.save();
-      const top = y - img.height + 2 - z + (a.pose === 'crouch' || a.pose === 'slide' ? 3 : 0);
+      const top = y - img.height + 2 - z + breath + (a.pose === 'crouch' || a.pose === 'slide' ? 3 : 0);
       if (a.flip) { ctx.translate(x, 0); ctx.scale(-1, 1); ctx.drawImage(img, -8, top); }
       else ctx.drawImage(img, x - 8, top);
       ctx.restore();
@@ -295,11 +320,15 @@ function drawJarWorld(ctx, g) {
     if (a.hidden) continue;
     const sleeping = g.night || a.mode === 'sleep';
     const img = a.species === 'bunny' ? bunnySprite(a.frame, sleeping) : animalSprite(a.species, a.frame, sleeping, a.inWater);
+    const walk = gait(a, g.t);
+    // Bunnies hop in arcs; the others bob a little as they go and breathe when still.
+    const lift = sleeping || a.inWater ? 0 : walk.moving ? (a.species === 'bunny' ? walk.hop * 2 : walk.hop >> 1) : -walk.breath;
     items.push({
       y: a.inWater ? a.y - 40 : a.y,
       draw: () => {
         ctx.save();
-        const top = Math.round(a.y) - img.height + 1;
+        if (lift > 0) { ctx.fillStyle = 'rgba(40,30,20,0.2)'; ctx.fillRect(Math.round(a.x) - 4, Math.round(a.y) - 1, 8, 2); }
+        const top = Math.round(a.y) - img.height + 1 - lift;
         if (a.flip) {
           ctx.translate(Math.round(a.x), 0);
           ctx.scale(-1, 1);
@@ -526,7 +555,10 @@ function drawAvatarAt(ctx, p, look, isMe, t) {
   ctx.fillStyle = 'rgba(41,55,47,0.25)';
   ctx.fillRect(x + 3, Math.round(p.y) + 1, 10, 2);
   if (p.sleeping) return;
-  ctx.drawImage(avatarSprite(look, p.dir || 0, p.frame || 0, p.pose || 'walk'), x, y);
+  // Standing still, you breathe: a one-pixel settle every couple of seconds.
+  const still = (p.pose || 'walk') === 'walk' && !(p.path?.length) && !(Math.abs((p.tx ?? p.x) - p.x) + Math.abs((p.ty ?? p.y) - p.y) > 1);
+  const breath = still && Math.sin(t * 2.2 + (isMe ? 0 : 1.7)) > 0.6 ? 1 : 0;
+  ctx.drawImage(avatarSprite(look, p.dir || 0, p.frame || 0, p.pose || 'walk'), x, y + breath);
   // Tools in hand
   if (p.pose === 'swing') {
     const up = p.frame === 0;
@@ -1190,6 +1222,13 @@ function drawEffects(ctx, g) {
     if (e.kind === 'splash') {
       const t = age;
       if (t < 0.5) px(ctx, Math.round(e.x + e.vx * t), Math.round(e.y - 30 * t + 70 * t * t), 2, 2, 'rgba(183,224,236,0.9)');
+    }
+    if (e.kind === 'dust' && age < 0.35) {
+      // Two soft puffs that spread and fade where a foot landed.
+      ctx.fillStyle = `rgba(214,198,160,${0.7 * (1 - age / 0.35)})`;
+      const spread = Math.round(age * 14), lift = Math.round(age * 8);
+      ctx.fillRect(Math.round(e.x) - 2 - spread, Math.round(e.y) - 1 - lift, 2, 2);
+      ctx.fillRect(Math.round(e.x) + 1 + spread, Math.round(e.y) - 1 - lift, 2, 2);
     }
     if (e.kind === 'sparkle' && Math.floor(age * 8) % 2 === 0) ctx.drawImage(sparkleSprite(), Math.round(e.x) - 3, Math.round(e.y) - 3);
     if (e.kind === 'item') {

@@ -51,7 +51,8 @@ import './catalog-data.js'; // the big catalogue: furniture sets, wall pieces, w
 import { collect as collectFarmItem } from './farm.js';
 
 const SAVE_KEY = 'little-us-terrarium';
-const SPEED = 52; // pixels per second
+const SPEED = 84; // pixels per second
+const STRIDE = 6; // pixels walked per frame of the walk cycle
 const FEET = 5; // feet sit a little below the tile centre
 
 const canvas = document.querySelector('#game');
@@ -603,7 +604,10 @@ function updatePlayer(dt) {
   if (Math.abs(dx) > Math.abs(dy) + 0.5) p.dir = dx < 0 ? DIRS.left : DIRS.right;
   else if (Math.abs(dy) > 0.5) p.dir = dy < 0 ? DIRS.up : DIRS.down;
   p.walked = (p.walked || 0) + Math.min(step, dist);
-  p.frame = Math.floor(p.walked / 5) % 4;
+  const frame = Math.floor(p.walked / STRIDE) % 4;
+  // A little puff of dust each time a foot lands (not indoors or in water).
+  if (frame !== p.frame && frame % 2 === 1 && g.scene !== 'home' && !p.slow) g.effects.push({ kind: 'dust', x: p.x + (frame === 1 ? -3 : 3), y: p.y, t0: g.t });
+  p.frame = frame;
   if (dist <= step) {
     p.x = tx;
     p.y = ty;
@@ -681,8 +685,8 @@ function cleanLook(l) {
 
 function updateOthers(dt) {
   for (const o of g.others) {
-    o.x += (o.tx - o.x) * Math.min(1, dt * 10);
-    o.y += (o.ty - o.y) * Math.min(1, dt * 10);
+    o.x += (o.tx - o.x) * Math.min(1, dt * 14);
+    o.y += (o.ty - o.y) * Math.min(1, dt * 14);
   }
 }
 

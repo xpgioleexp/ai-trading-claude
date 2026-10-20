@@ -201,7 +201,8 @@ const BEHAVIORS = {
   follower(a, env, dt, t) {
     // Trots after you, a couple of tiles behind, once you're friends.
     if (!env.friend(a.def)) return BEHAVIORS.wander(a, env, dt, t);
-    if (!walk(a, env, dt, 55)) return;
+    // Jogs to catch up when you've walked off ahead.
+    if (!walk(a, env, dt, dist(a, env.player) > 4 ? 92 : 60)) return;
     if (dist(a, env.player) <= 2) { a.pose = null; return; }
     // Goes around ponds and buildings instead of getting stuck behind them.
     const path = env.route ? env.route({ c: a.c, r: a.r }, env.player, true) : null;
